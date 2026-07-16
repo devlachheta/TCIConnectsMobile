@@ -1,51 +1,67 @@
+import { ScrollView, StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useState } from "react";
 import AuthFooter from "@/components/authfooter";
-import PrimaryButton from "@/components/PrimaryBotton";
-import { View, Text, StyleSheet } from "react-native";
 import AuthHeader from "@/components/authheader";
 import AuthInput from "@/components/authInput";
-import { useState } from "react";
+import PrimaryButton from "@/components/PrimaryBotton";
+import { ImageBackground } from "expo-image";
+
 
 export default function HomeScreen() {
-  const [password, setPassword] = useState("")
+  const [password, setPassword] = useState("");
+
   return (
-    <>
+    <SafeAreaView style={styles.safeArea}>
 
-      <View style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
         <AuthHeader />
-        <AuthInput
-          label="Username or Email"
-          placeholder="Email"
+        <ImageBackground
+          source={require("../../assets/images/login-bgimg-DX-S1Q5C.png")}
+          style={styles.background}
+          resizeMode="cover"
+        >
 
-          keyboardType="email-address"
-        />
-        <AuthInput
-          label="Password"
-          placeholder="password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-        <PrimaryButton
-          title="Login"
-          onPress={() => {
-            alert("Login Clicked")
-          }} />
-      </View>
-      <View style={styles.container}>
+          <AuthInput
+            label="Username or Email"
+            placeholder="Email"
+            keyboardType="email-address"
+          />
 
+          <AuthInput
+            label="Password"
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+
+          <PrimaryButton
+            title="Login"
+            onPress={() => alert("Login Clicked")}
+          />
+        </ImageBackground>
         <AuthFooter />
-
-      </View>
-    </>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    backgroundColor: "#00254C",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBlock: "auto"
-  }
-})
+    backgroundColor: "#FFFFFF",
+  },
+
+  container: {
+    flexGrow: 1,
+    paddingTop: 5,
+  },
+  background: {
+    flex: 1,
+  },
+
+});

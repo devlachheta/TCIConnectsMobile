@@ -42,12 +42,12 @@ export default function PrimaryButton({
 
 const styles = StyleSheet.create({
     button: {
-        backgroundColor: "#0152A8",
-        width: "80%",
+        width: "100%",
         height: 55,
+        backgroundColor: "#0152A8",
         borderRadius: 10,
-        alignItems: "center",
         justifyContent: "center",
+        alignItems: "center",
     },
     buttonText: {
         color: "white",

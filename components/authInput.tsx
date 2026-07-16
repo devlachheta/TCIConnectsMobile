@@ -23,10 +23,9 @@ export default function AuthInput({
     const [hidePassword, setHidePassword] = useState(secureTextEntry);
     return (
         <View style={styles.container}>
-            {/* Label */}
+
             <Text style={styles.label}>{label}</Text>
 
-            {/* Input */}
             <View style={styles.inputContainer}>
                 <TextInput
                     style={styles.input}
@@ -72,6 +71,7 @@ const styles = StyleSheet.create({
     inputContainer: {
         flexDirection: "row",
         alignItems: "center",
+        width: "100%",
         borderWidth: 1,
         borderColor: "#CBD5E1",
         borderRadius: 12,
@@ -83,7 +83,8 @@ const styles = StyleSheet.create({
         flex: 1,
         height: 55,
         fontSize: 16,
-        color: "#1E293B",
+        alignSelf: "center",
+        alignItems: "center"
     },
 
     icon: {
