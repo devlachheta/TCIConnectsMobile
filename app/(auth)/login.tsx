@@ -7,7 +7,7 @@ export default function Login() {
             {/* Header */}
             {/* Login Form */}
 
-            <AuthFooter />
+
         </View>
     );
 }
