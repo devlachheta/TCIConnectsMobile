@@ -1,12 +1,11 @@
+import AuthFooter from "@/components/authfooter";
 import { View, Text, StyleSheet } from "react-native";
 
 export default function HomeScreen() {
   return (
     <>
       <View style={styles.container}>
-        <Text >
-          I lov
-        </Text>
+        <AuthFooter />
       </View>
     </>
   );
