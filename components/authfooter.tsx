@@ -76,7 +76,7 @@ export default function AuthFooter() {
 
 const styles = StyleSheet.create({
     container: {
-        paddingTop: 75,
+        paddingTop: 50,
         paddingBottom: 30,
         paddingHorizontal: 24,
         alignItems: "center",

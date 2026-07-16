@@ -10,12 +10,11 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 interface AuthInputProps extends TextInputProps {
-    label: string;
+
     error?: string;
 }
 
 export default function AuthInput({
-    label,
     error,
     secureTextEntry,
     ...props
@@ -24,13 +23,11 @@ export default function AuthInput({
     return (
         <View style={styles.container}>
 
-            <Text style={styles.label}>{label}</Text>
-
             <View style={styles.inputContainer}>
                 <TextInput
                     style={styles.input}
                     secureTextEntry={hidePassword}
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor="#fff"
                     {...props}
                 />
 
@@ -42,7 +39,7 @@ export default function AuthInput({
                         <Ionicons
                             name={hidePassword ? "eye-off-outline" : "eye-outline"}
                             size={22}
-                            color="#64748B"
+                            color="#fff"
                         />
                     </Pressable>
                 )}
@@ -58,24 +55,16 @@ export default function AuthInput({
 const styles = StyleSheet.create({
     container: {
         width: "100%",
-        marginBottom: 18,
-    },
-
-    label: {
-        fontSize: 15,
-        fontWeight: "600",
-        color: "#1E293B",
-        marginBottom: 8,
     },
 
     inputContainer: {
         flexDirection: "row",
         alignItems: "center",
         width: "100%",
+        marginTop: 30,
         borderWidth: 1,
-        borderColor: "#CBD5E1",
-        borderRadius: 12,
-        backgroundColor: "#FFFFFF",
+        borderColor: "#fff",
+        borderRadius: 50,
         paddingHorizontal: 15,
     },
 
@@ -84,7 +73,8 @@ const styles = StyleSheet.create({
         height: 55,
         fontSize: 16,
         alignSelf: "center",
-        alignItems: "center"
+        alignItems: "center",
+        color: "#fff"
     },
 
     icon: {
