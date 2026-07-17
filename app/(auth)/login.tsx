@@ -14,6 +14,7 @@ import { login } from "../../services/authService";
 
 
 export default function Login() {
+<<<<<<< HEAD
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const router = useRouter();
@@ -97,11 +98,26 @@ export default function Login() {
             );
         }
     };
+=======
+  const [password, setPassword] = useState("");
+>>>>>>> feature/mobile-registration
 
-    return (
-        <SafeAreaView style={styles.safeArea}
-            edges={["top"]}
+  return (
+    <SafeAreaView style={styles.safeArea}
+      edges={["top"]}
+    >
+
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
+        <AuthHeader />
+        <ImageBackground
+          source={require("../../assets/images/login-bgimg-DX-S1Q5C.png")}
+          style={styles.background}
+          resizeMode="cover"
         >
+<<<<<<< HEAD
             <ImageBackground
                 source={require("../../assets/images/login-bgimg-DX-S1Q5C.png")}
                 style={styles.background}
@@ -147,9 +163,39 @@ export default function Login() {
             </ImageBackground>
         </SafeAreaView>
     );
+=======
+
+          <AuthInput
+            placeholder="enter your email"
+            keyboardType="email-address"
+          />
+
+          <AuthInput
+            placeholder="enter your password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+
+          <Text style={styles.forget}>Forget password ?</Text>
+
+          <PrimaryButton
+            title="Login"
+            onPress={() => alert("Login Clicked")}
+          />
+          <Text style={styles.register_link}>
+            New to TCI Dental Lab? Create Your Account Here
+          </Text>
+        </ImageBackground>
+        <AuthFooter />
+      </ScrollView>
+    </SafeAreaView >
+  );
+>>>>>>> feature/mobile-registration
 }
 
 const styles = StyleSheet.create({
+<<<<<<< HEAD
     safeArea: {
         flex: 1,
     },
@@ -187,4 +233,34 @@ const styles = StyleSheet.create({
         marginTop: 20,
         marginBottom: 30,
     },
+=======
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#fff"
+  },
+
+  container: {
+    flexGrow: 1,
+    paddingTop: 5,
+  },
+  background: {
+    flex: 1,
+  },
+  forget: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+    paddingTop: 10,
+    textAlign: "right",
+  },
+  register_link: {
+    color: "#fff",
+    fontSize: 15,
+    paddingTop: 10,
+    fontWeight: "bold",
+    textAlign: "center",
+    paddingBottom: 10
+  }
+
+>>>>>>> feature/mobile-registration
 });
