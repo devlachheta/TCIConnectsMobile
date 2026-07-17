@@ -11,7 +11,6 @@ import { Dropdown } from "react-native-element-dropdown";
 import Checkbox from "expo-checkbox";
 
 
-
 export default function Register() {
   const [password, setPassword] = useState("");
   const [country, setCountry] = useState("");
@@ -67,7 +66,7 @@ export default function Register() {
           source={require("../../assets/images/sign-up-bgimg-CSoYyOzh.png")}
 
           style={styles.background}
-          resizeMode="cover"
+          contentFit="cover"
         >
           <AuthInput
             placeholder="Full Name"
