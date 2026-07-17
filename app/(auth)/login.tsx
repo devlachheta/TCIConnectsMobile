@@ -77,7 +77,6 @@ export default function Login() {
             );
 
             const userRole = response.user?.role;
-
             if (userRole === "admin" || userRole === "doctor") {
                 router.replace("/(tabs)/home");
             } else {
@@ -96,77 +95,93 @@ export default function Login() {
         }
     };
 
-  return (
-    <SafeAreaView style={styles.safeArea}
-      edges={["top"]}
-    >
-
-      <ScrollView
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-      >
-        <AuthHeader />
-        <ImageBackground
-          source={require("../../assets/images/login-bgimg-DX-S1Q5C.png")}
-          style={styles.background}
-          resizeMode="cover"
+    return (
+        <SafeAreaView style={styles.safeArea}
+            edges={["top"]}
         >
+            <ImageBackground
+                source={require("../../assets/images/login-bgimg-DX-S1Q5C.png")}
+                style={styles.background}
+                contentFit="cover"
+            >
+                <AuthHeader />
+                <ScrollView
+                    contentContainerStyle={styles.container}
+                    showsVerticalScrollIndicator={false}
+                >
 
-          <AuthInput
-            placeholder="enter your email"
-            keyboardType="email-address"
-          />
 
-          <AuthInput
-            placeholder="enter your password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
+                    <View style={styles.formContainer}>
+                        <AuthInput
+                            placeholder="Enter your email or mobile number"
+                            value={username}
+                            onChangeText={setUsername}
+                            autoCapitalize="none"
+                        />
 
-          <Text style={styles.forget}>Forget password ?</Text>
+                        <AuthInput
+                            placeholder="Enter your password"
+                            value={password}
+                            onChangeText={setPassword}
+                            secureTextEntry
+                        />
 
-          <PrimaryButton
-            title="Login"
-            onPress={() => alert("Login Clicked")}
-          />
-          <Text style={styles.register_link}>
-            New to TCI Dental Lab? Create Your Account Here
-          </Text>
-        </ImageBackground>
-        <AuthFooter />
-      </ScrollView>
-    </SafeAreaView >
-  );
+                        <Text style={styles.forget}>Forgot Password?</Text>
+
+                        <PrimaryButton
+                            title="Login"
+                            onPress={handleLogin}
+                        />
+
+                        <Text style={styles.registerLink}>
+                            New to TCI Dental Lab?{"\n"}
+                            Create Your Account Here
+                        </Text>
+                    </View>
+
+                    <AuthFooter />
+                </ScrollView>
+            </ImageBackground>
+        </SafeAreaView>
+    );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#fff"
-  },
+    safeArea: {
+        flex: 1,
+    },
 
-  container: {
-    flexGrow: 1,
-    paddingTop: 5,
-  },
-  background: {
-    flex: 1,
-  },
-  forget: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
-    paddingTop: 10,
-    textAlign: "right",
-  },
-  register_link: {
-    color: "#fff",
-    fontSize: 15,
-    paddingTop: 10,
-    fontWeight: "bold",
-    textAlign: "center",
-    paddingBottom: 10
-  }
+    background: {
+        flex: 1,
+        width: "100%",
+        height: "100%",
+    },
 
+    container: {
+        flexGrow: 1,
+        justifyContent: "space-between",
+    },
+
+    formContainer: {
+        marginTop: 60,
+        paddingHorizontal: 20,
+    },
+
+    forget: {
+        color: "#fff",
+        fontSize: 15,
+        fontWeight: "600",
+        textAlign: "right",
+        marginTop: 10,
+        marginBottom: 20,
+    },
+
+    registerLink: {
+        color: "#fff",
+        fontSize: 15,
+        fontWeight: "600",
+        textAlign: "center",
+        marginTop: 20,
+        marginBottom: 30,
+    },
 });
