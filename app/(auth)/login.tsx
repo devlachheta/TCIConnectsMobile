@@ -14,7 +14,6 @@ import { login } from "../../services/authService";
 
 
 export default function Login() {
-<<<<<<< HEAD
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const router = useRouter();
@@ -96,9 +95,6 @@ export default function Login() {
             );
         }
     };
-=======
-  const [password, setPassword] = useState("");
->>>>>>> feature/mobile-registration
 
   return (
     <SafeAreaView style={styles.safeArea}
@@ -115,53 +111,6 @@ export default function Login() {
           style={styles.background}
           resizeMode="cover"
         >
-<<<<<<< HEAD
-            <ImageBackground
-                source={require("../../assets/images/login-bgimg-DX-S1Q5C.png")}
-                style={styles.background}
-                contentFit="cover"
-            >
-                <AuthHeader />
-                <ScrollView
-                    contentContainerStyle={styles.container}
-                    showsVerticalScrollIndicator={false}
-                >
-
-
-                    <View style={styles.formContainer}>
-                        <AuthInput
-                            placeholder="Enter your email or mobile number"
-                            value={username}
-                            onChangeText={setUsername}
-                            autoCapitalize="none"
-                        />
-
-                        <AuthInput
-                            placeholder="Enter your password"
-                            value={password}
-                            onChangeText={setPassword}
-                            secureTextEntry
-                        />
-
-                        <Text style={styles.forget}>Forgot Password?</Text>
-
-                        <PrimaryButton
-                            title="Login"
-                            onPress={handleLogin}
-                        />
-
-                        <Text style={styles.registerLink}>
-                            New to TCI Dental Lab?{"\n"}
-                            Create Your Account Here
-                        </Text>
-                    </View>
-
-                    <AuthFooter />
-                </ScrollView>
-            </ImageBackground>
-        </SafeAreaView>
-    );
-=======
 
           <AuthInput
             placeholder="enter your email"
@@ -189,49 +138,9 @@ export default function Login() {
       </ScrollView>
     </SafeAreaView >
   );
->>>>>>> feature/mobile-registration
 }
 
 const styles = StyleSheet.create({
-<<<<<<< HEAD
-    safeArea: {
-        flex: 1,
-    },
-
-    background: {
-        flex: 1,
-        width: "100%",
-        height: "100%",
-    },
-
-    container: {
-        flexGrow: 1,
-        justifyContent: "space-between",
-    },
-
-    formContainer: {
-        marginTop: 60,
-        paddingHorizontal: 20,
-    },
-
-    forget: {
-        color: "#fff",
-        fontSize: 15,
-        fontWeight: "600",
-        textAlign: "right",
-        marginTop: 10,
-        marginBottom: 20,
-    },
-
-    registerLink: {
-        color: "#fff",
-        fontSize: 15,
-        fontWeight: "600",
-        textAlign: "center",
-        marginTop: 20,
-        marginBottom: 30,
-    },
-=======
   safeArea: {
     flex: 1,
     backgroundColor: "#fff"
@@ -260,5 +169,4 @@ const styles = StyleSheet.create({
     paddingBottom: 10
   }
 
->>>>>>> feature/mobile-registration
 });
