@@ -55,6 +55,7 @@ export default function AuthInput({
 const styles = StyleSheet.create({
     container: {
         width: "100%",
+
     },
 
     inputContainer: {
