@@ -76,64 +76,64 @@ export default function AuthFooter() {
 
 const styles = StyleSheet.create({
     container: {
-        paddingTop: 50,
-        paddingBottom: 30,
-        paddingHorizontal: 24,
+        paddingTop: 20,
+        paddingBottom: 15,
+        paddingHorizontal: 20,
         alignItems: "center",
-        marginTop: "auto",
-        borderTopLeftRadius: 10,
-        borderTopRightRadius: 10,
+        borderTopLeftRadius: 15,
+        borderTopRightRadius: 15,
         overflow: "hidden",
+        marginTop: 50
     },
 
     logo: {
-        fontSize: 28,
+        fontSize: 22,
         fontWeight: "700",
-        color: "#FFFFFF",
-        marginBottom: 15,
-        alignSelf: "flex-start"
+        color: "#fff",
+        alignSelf: "flex-start",
+        marginBottom: 10,
     },
 
     description: {
         color: "#CBD5E1",
-        fontSize: 14,
+        fontSize: 12,
+        lineHeight: 18,
         textAlign: "left",
-        lineHeight: 22,
-        marginBottom: 10,
+        marginBottom: 15,
     },
 
     socialContainer: {
         flexDirection: "row",
-        marginBottom: 25,
-        alignSelf: "flex-start"
+        alignSelf: "flex-start",
+        marginBottom: 15,
     },
 
     iconButton: {
-        width: 46,
-        height: 46,
-        borderRadius: 23,
-        backgroundColor: "#0d6efd",
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        backgroundColor: "#0D6EFD",
         justifyContent: "center",
         alignItems: "center",
-        marginHorizontal: 8,
+        marginRight: 12,
     },
+
     divider: {
         width: "100%",
         height: 1,
         backgroundColor: "#334155",
-        marginBottom: 8,
+        marginBottom: 10,
     },
 
     copyright: {
         color: "#94A3B8",
-        fontSize: 12,
-        textAlign: "center",
-        marginBottom: 8,
+        fontSize: 11,
+        marginBottom: 6,
     },
 
     privacy: {
         color: "#3B82F6",
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: "600",
     },
 });
