@@ -11,6 +11,8 @@ import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Alert } from "react-native";
 import { login } from "../../services/authService";
+import axios from "axios";
+import { TouchableOpacity } from "react-native";
 
 
 export default function Login() {
@@ -56,11 +58,6 @@ export default function Login() {
         }
 
         try {
-            console.log("Sending:");
-            console.log({
-                username: trimmedUsername,
-                password: trimmedPassword,
-            });
             const response = await login(
                 trimmedUsername,
                 trimmedPassword
@@ -83,15 +80,15 @@ export default function Login() {
                 Alert.alert("Error", "Invalid user role");
             }
 
-        } catch (error: any) {
-            console.log("Status:", error.response?.status);
-            console.log("Data:", error.response?.data);
-            console.log("Full Error:", error);
-
-            Alert.alert(
-                "Login Failed",
-                JSON.stringify(error.response?.data)
-            );
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                Alert.alert(
+                    "Login Failed",
+                    error.response?.data?.detail || "Something went wrong"
+                );
+            } else {
+                Alert.alert("Error", "Unexpected error");
+            }
         }
     };
 
@@ -99,49 +96,50 @@ export default function Login() {
         <SafeAreaView style={styles.safeArea}
             edges={["top"]}
         >
-            <ImageBackground
-                source={require("../../assets/images/login-bgimg-DX-S1Q5C.png")}
-                style={styles.background}
-                contentFit="cover"
+
+            <AuthHeader />
+            <ScrollView
+                contentContainerStyle={styles.container}
+                showsVerticalScrollIndicator={false}
             >
-                <AuthHeader />
-                <ScrollView
-                    contentContainerStyle={styles.container}
-                    showsVerticalScrollIndicator={false}
-                >
 
 
-                    <View style={styles.formContainer}>
-                        <AuthInput
-                            placeholder="Enter your email or mobile number"
-                            value={username}
-                            onChangeText={setUsername}
-                            autoCapitalize="none"
-                        />
+                <View style={styles.formContainer}>
+                    <AuthInput
+                        placeholder="Enter your email or mobile number"
+                        value={username}
+                        onChangeText={setUsername}
+                        autoCapitalize="none"
+                    />
 
-                        <AuthInput
-                            placeholder="Enter your password"
-                            value={password}
-                            onChangeText={setPassword}
-                            secureTextEntry
-                        />
+                    <AuthInput
+                        placeholder="Enter your password"
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry
+                    />
 
-                        <Text style={styles.forget}>Forgot Password?</Text>
+                    <Text style={styles.forget}>Forgot Password?</Text>
 
-                        <PrimaryButton
-                            title="Login"
-                            onPress={handleLogin}
-                        />
+                    <PrimaryButton
+                        title="Login"
+                        onPress={handleLogin}
+                    />
 
+                    <TouchableOpacity
+                        onPress={() => router.push("/(auth)/registration")}
+                    >
                         <Text style={styles.registerLink}>
-                            New to TCI Dental Lab?{"\n"}
+                            New to TCI Dental Lab?
+                            {"\n"}
                             Create Your Account Here
                         </Text>
-                    </View>
+                    </TouchableOpacity>
+                </View>
 
-                    <AuthFooter />
-                </ScrollView>
-            </ImageBackground>
+                {/* <AuthFooter /> */}
+            </ScrollView>
+
         </SafeAreaView>
     );
 }
@@ -160,11 +158,13 @@ const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
         justifyContent: "space-between",
+        backgroundColor: "rgb(2, 30, 72)"
     },
 
     formContainer: {
-        marginTop: 60,
-        paddingHorizontal: 20,
+        flex: 1,
+        justifyContent: "center",
+
     },
 
     forget: {
