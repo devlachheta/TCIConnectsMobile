@@ -1,15 +1,12 @@
-import { Text, View, StyleSheet } from "react-native";
 import Login from "../(auth)/login";
 
-import Forgot from "../(auth)/forgotpassword";
-import Register from "../(auth)/registration";
+import Register from "../(auth)/register";
 
 export default function Index() {
   return (
     <>
       <Login />
-
-      {/* <Register /> */}
+      <Register />
     </>
   )
 }
