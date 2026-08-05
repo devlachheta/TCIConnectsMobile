@@ -1,9 +1,9 @@
 import React from "react";
 import {
-    Pressable,
-    Text,
-    StyleSheet,
     ActivityIndicator,
+    Pressable,
+    StyleSheet,
+    Text,
 } from "react-native";
 
 type PrimaryButtonProps = {
@@ -42,11 +42,14 @@ export default function PrimaryButton({
 
 const styles = StyleSheet.create({
     button: {
-        width: "100%",
+        width: "80%",
+        alignSelf: "center",
+
         height: 55,
         backgroundColor: "#0152A8",
         borderRadius: 50,
-        marginTop:20,
+        marginTop: 20,
+
         justifyContent: "center",
         alignItems: "center",
     },

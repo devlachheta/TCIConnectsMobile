@@ -1,17 +1,19 @@
-import { SafeAreaView } from "react-native-safe-area-context";
-import { ScrollView, StyleSheet, View } from "react-native";
 import AuthHeader from "@/components/authheader";
-import { ImageBackground } from "expo-image";
 import AuthInput from "@/components/authInput";
 import PrimaryButton from "@/components/PrimaryBotton";
-import { Text } from "react-native-gesture-handler";
-import AuthFooter from "@/components/authfooter";
-import { useState } from "react";
-import { Dropdown } from "react-native-element-dropdown";
 import Checkbox from "expo-checkbox";
-
-
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Dropdown } from "react-native-element-dropdown";
+import { Text } from "react-native-gesture-handler";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { register } from "../../services/authService";
 export default function Register() {
+  const router = useRouter();
+
+  const [loading, setLoading] = useState(false);
+
   const [password, setPassword] = useState("");
   const [country, setCountry] = useState("");
   const [businessType, setBusinessType] = useState("");
@@ -23,36 +25,103 @@ export default function Register() {
   const [vatId, setVatId] = useState("");
   const [address, setAddress] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [isChecked, setChecked] = useState(false);
   const businessData = [
-    { label: "Select Type Of Business", value: "" },
     { label: "Dentist", value: "Dentist" },
     { label: "Dental Lab", value: "Dental Lab" },
     { label: "Other", value: "Other" },
   ];
 
   const countryData = [
-    { label: "Select Country", value: "" },
     { label: "Belgium", value: "Belgium" },
     { label: "Lebanon", value: "Lebanon" },
     { label: "Other", value: "Other" },
   ];
-  const [isChecked, setChecked] = useState(false);
-  const handleRegister = () => {
+
+  const handleSubmit = async () => {
+    if (
+      !fullName.trim() ||
+      !phone.trim() ||
+      !email.trim() ||
+      !businessName.trim() ||
+      !businessType.trim() ||
+      !country.trim() ||
+      !address.trim() ||
+      !password.trim() ||
+      !confirmPassword.trim()
+    ) {
+      Alert.alert("Error", "All fields are required");
+      return;
+    }
+
+    if (!/^[A-Za-z ]+$/.test(fullName)) {
+      Alert.alert("Error", "Full name can contain only letters.");
+      return;
+    }
+
+    if (!/^[6-9]\d{9}$/.test(phone)) {
+      Alert.alert("Error", "Phone number must contain exactly 10 digits.");
+      return;
+    }
+
+    const emailRegex =
+      /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+    if (!emailRegex.test(email)) {
+      Alert.alert("Error", "Please enter a valid email address.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert("Error", "Passwords do not match.");
+      return;
+    }
+
+    if (!isChecked) {
+      Alert.alert(
+        "Error",
+        "Please accept the GDPR policy."
+      );
+      return;
+    }
+
     const registerData = {
       full_name: fullName,
-      phone: phone,
-      email: email,
+      phone,
+      email,
       business_name: businessName,
       business_type: businessType,
       license_number: licenseNumber,
       vat_id: vatId,
-      country: country,
-      address: address,
-      password: password,
+      country,
+      address,
+      password,
       confirm_password: confirmPassword,
     };
-    console.log(registerData);
-  }
+
+    try {
+      setLoading(true);
+
+      const response = await register(registerData);
+
+      Alert.alert(
+        "Success",
+        "Registration successful! Your account is under admin review."
+      );
+
+      router.replace("/(auth)/login");
+
+    } catch (error: any) {
+      Alert.alert(
+        "Registration Failed",
+        error.response?.data?.message ||
+        error.response?.data?.detail ||
+        "Registration failed"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <SafeAreaView style={styles.safeArea}
       edges={["top"]}
@@ -62,134 +131,127 @@ export default function Register() {
         showsVerticalScrollIndicator={false}
       >
         <AuthHeader />
-        <ImageBackground
-          source={require("../../assets/images/sign-up-bgimg-CSoYyOzh.png")}
 
-          style={styles.background}
-          contentFit="cover"
-        >
-          <AuthInput
-            placeholder="Full Name"
-            value={fullName}
-            onChangeText={setFullName}
-          />
-          <AuthInput
-            placeholder="Phone Number"
-            keyboardType="phone-pad"
-            value={phone}
-            onChangeText={setPhone}
+        <AuthInput
+          placeholder="Full Name"
+          value={fullName}
+          onChangeText={setFullName}
+        />
+        <AuthInput
+          placeholder="Phone Number"
+          keyboardType="phone-pad"
+          value={phone}
+          onChangeText={setPhone}
 
-          />
-          <AuthInput
-            placeholder="Email"
-            keyboardType="email-address"
-            value={email}
-            onChangeText={setEmail}
+        />
+        <AuthInput
+          placeholder="Email"
+          keyboardType="email-address"
+          value={email}
+          onChangeText={setEmail}
 
-          />
-          <AuthInput
-            placeholder="Business Name "
-            value={businessName}
-            onChangeText={setBusinessName}
+        />
+        <AuthInput
+          placeholder="Business Name "
+          value={businessName}
+          onChangeText={setBusinessName}
 
+        />
+
+        <Dropdown
+          style={styles.dropdown}
+          placeholderStyle={styles.placeholderStyle}
+          selectedTextStyle={styles.selectedTextStyle}
+          itemTextStyle={styles.itemTextStyle}
+          activeColor="#0152A8"
+          data={businessData}
+          labelField="label"
+          valueField="value"
+          placeholder="Select Type of Business"
+          value={businessType}
+          onChange={(item) => {
+            setBusinessType(item.value);
+          }}
+          renderRightIcon={() => (
+            <Text style={styles.arrow}>▼</Text>
+          )}
+        />
+
+        <AuthInput
+          placeholder="Registration or License Number"
+          value={licenseNumber}
+          onChangeText={setLicenseNumber}
+        />
+        <AuthInput
+          placeholder="VAT/TAX ID (if applicable)"
+          value={vatId}
+          onChangeText={setVatId}
+        />
+
+        <Dropdown
+          style={styles.dropdown}
+          placeholderStyle={styles.placeholderStyle}
+          selectedTextStyle={styles.selectedTextStyle}
+          itemTextStyle={styles.itemTextStyle}
+          activeColor="#0152A8"
+          data={countryData}
+          labelField="label"
+          valueField="value"
+          placeholder="Select Country"
+          value={country}
+          onChange={(item) => {
+            setCountry(item.value);
+          }}
+          renderRightIcon={() => (
+            <Text style={styles.arrow}>▼</Text>
+          )}
+        />
+        <AuthInput
+          placeholder="Address"
+          value={address}
+          onChangeText={setAddress}
+        />
+        <AuthInput
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+        <AuthInput
+          placeholder=" Confirm Password"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          secureTextEntry
+        />
+
+        <View style={styles.checkboxContainer}>
+          <Checkbox
+            value={isChecked}
+            onValueChange={setChecked}
+            color={isChecked ? "#0152A8" : undefined}
           />
 
-          <Dropdown
-            style={styles.dropdown}
-            placeholderStyle={styles.placeholderStyle}
-            selectedTextStyle={styles.selectedTextStyle}
-            itemTextStyle={styles.itemTextStyle}
-            activeColor="#0152A8"
-            data={businessData}
-            labelField="label"
-            valueField="value"
-            placeholder="Select Type of Business"
-            value={businessType}
-            onChange={(item) => {
-              setBusinessType(item.value);
-            }}
-            renderRightIcon={() => (
-              <Text style={styles.arrow}>▼</Text>
-            )}
-          />
-
-          <AuthInput
-            placeholder="Registration or License Number"
-            value={licenseNumber}
-            onChangeText={setLicenseNumber}
-          />
-          <AuthInput
-            placeholder="VAT/TAX ID (if applicable)"
-            value={vatId}
-            onChangeText={setVatId}
-          />
-
-          <Dropdown
-            style={styles.dropdown}
-            placeholderStyle={styles.placeholderStyle}
-            selectedTextStyle={styles.selectedTextStyle}
-            itemTextStyle={styles.itemTextStyle}
-            activeColor="#0152A8"
-            data={countryData}
-            labelField="label"
-            valueField="value"
-            placeholder="Select Country"
-            value={country}
-            onChange={(item) => {
-              setCountry(item.value);
-            }}
-            renderRightIcon={() => (
-              <Text style={styles.arrow}>▼</Text>
-            )}
-          />
-          <AuthInput
-            placeholder="Address"
-            value={address}
-            onChangeText={setAddress}
-          />
-          <AuthInput
-            placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-          <AuthInput
-            placeholder=" Confirm Password"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry
-          />
-
-          <View style={styles.checkboxContainer}>
-            <Checkbox
-              value={isChecked}
-              onValueChange={setChecked}
-              color={isChecked ? "#0152A8" : undefined}
-            />
-
-            <Text style={styles.checkboxText}>
-              I consent to the processing of my personal data under GDPR.
-              <Text style={styles.policyLink}>
-                {" "}View Policy
-              </Text>
+          <Text style={styles.checkboxText}>
+            I consent to the processing of my personal data under GDPR.
+            <Text style={styles.policyLink}>
+              {" "}View Policy
             </Text>
-          </View>
-          <PrimaryButton
-            title="Submit"
-            onPress={handleRegister}
-          />
+          </Text>
+        </View>
+        <PrimaryButton
+          title="Submit"
+          onPress={handleSubmit}
+        />
 
-
+        <TouchableOpacity
+          onPress={() => router.push("/(auth)/login")}>
           <Text
             style={styles.login_link}
           >
             Already have an account? Log In here
           </Text>
+        </TouchableOpacity>
 
-
-
-        </ImageBackground>
-        <AuthFooter />
       </ScrollView>
     </SafeAreaView >
   );
@@ -203,6 +265,8 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     paddingTop: 5,
+    paddingBottom: 100,
+    backgroundColor: "rgb(2,30,72)"
   },
   background: {
     flex: 1,
@@ -212,11 +276,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     marginHorizontal: 20,
-    marginTop: 15,
-    marginBottom: 20,
+    marginTop: 10,
   },
 
   checkboxText: {
+    width: "80%",
+    alignSelf: "center",
+
     color: "#fff",
     fontSize: 14,
     marginLeft: 10,
@@ -238,13 +304,15 @@ const styles = StyleSheet.create({
     paddingBottom: 10
   },
   dropdown: {
-    height: 55,
+    width: "80%",
+    alignSelf: "center",
+    height: 45,
     borderWidth: 1,
     borderColor: "#FFFFFF",
     borderRadius: 30,
-    paddingHorizontal: 20,
+    paddingHorizontal: 15,
     backgroundColor: "transparent",
-    marginTop: 27
+    marginTop: 15
   },
 
   placeholderStyle: {

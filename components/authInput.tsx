@@ -1,13 +1,13 @@
+import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
-    View,
+    Pressable,
+    StyleSheet,
     Text,
     TextInput,
-    StyleSheet,
-    Pressable,
     TextInputProps,
+    View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 
 interface AuthInputProps extends TextInputProps {
 
@@ -54,7 +54,8 @@ export default function AuthInput({
 
 const styles = StyleSheet.create({
     container: {
-        width: "100%",
+        width: "80%",
+        alignSelf: "center",
 
     },
 
@@ -62,20 +63,22 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         width: "100%",
-        marginTop: 30,
+        marginTop: 18,
         borderWidth: 1,
         borderColor: "#fff",
-        borderRadius: 50,
+        borderRadius: 25,
         paddingHorizontal: 15,
+        height: 48,
     },
 
     input: {
         flex: 1,
-        height: 55,
+        height: 48,
         fontSize: 16,
         alignSelf: "center",
         alignItems: "center",
-        color: "#fff"
+        color: "#fff",
+
     },
 
     icon: {
