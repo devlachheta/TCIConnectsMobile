@@ -1,11 +1,10 @@
+import AuthFooter from "@/components/authfooter";
 import AuthHeader from "@/components/authheader";
-import { ScrollView, StyleSheet } from "react-native";
-import { useState } from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { ImageBackground } from "expo-image";
 import AuthInput from "@/components/authInput";
 import PrimaryButton from "@/components/PrimaryBotton";
-import AuthFooter from "@/components/authfooter";
+import { ImageBackground } from "expo-image";
+import { ScrollView, StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 export default function Forgot() {
   return (
     <SafeAreaView style={styles.safeArea}

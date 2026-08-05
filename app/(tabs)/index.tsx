@@ -1,11 +1,11 @@
 
-import Login from "../(auth)/login";
 
+import Register from "../(auth)/registration";
 
 export default function Index() {
   return (
     <>
-      <Login />
+      <Register />
     </>
   )
 }
