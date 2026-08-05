@@ -9,104 +9,101 @@ import { useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { login } from "../../services/authService";
+import axios from "axios";
+import { TouchableOpacity } from "react-native";
 
 
 export default function Login() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const router = useRouter();
-  const handleLogin = async () => {
-    const trimmedUsername = username.trim();
-    const trimmedPassword = password.trim();
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+    const router = useRouter();
+    const handleLogin = async () => {
+        const trimmedUsername = username.trim();
+        const trimmedPassword = password.trim();
 
-    if (!trimmedUsername || !trimmedPassword) {
-      Alert.alert("Error", "All fields are required");
-      return;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const mobileRegex = /^[6-9]\d{9}$/;
+        if (!trimmedUsername || !trimmedPassword) {
+            Alert.alert("Error", "All fields are required");
+            return;
+        }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const mobileRegex = /^[6-9]\d{9}$/;
 
-    const isEmail = emailRegex.test(trimmedUsername);
-    const isMobile = mobileRegex.test(trimmedUsername);
+        const isEmail = emailRegex.test(trimmedUsername);
+        const isMobile = mobileRegex.test(trimmedUsername);
 
-    if (!isEmail && !isMobile) {
-      Alert.alert(
-        "Error",
-        "Enter a valid email or 10-digit mobile number"
-      );
-      return;
-    }
+        if (!isEmail && !isMobile) {
+            Alert.alert(
+                "Error",
+                "Enter a valid email or 10-digit mobile number"
+            );
+            return;
+        }
 
-    if (trimmedPassword.length < 8) {
-      Alert.alert(
-        "Error",
-        "Password must be at least 8 characters"
-      );
-      return;
-    }
+        if (trimmedPassword.length < 8) {
+            Alert.alert(
+                "Error",
+                "Password must be at least 8 characters"
+            );
+            return;
+        }
 
-    if (trimmedPassword.includes(" ")) {
-      Alert.alert(
-        "Error",
-        "Password cannot contain spaces"
-      );
-      return;
-    }
+        if (trimmedPassword.includes(" ")) {
+            Alert.alert(
+                "Error",
+                "Password cannot contain spaces"
+            );
+            return;
+        }
 
-    try {
-      console.log("Sending:");
-      console.log({
-        username: trimmedUsername,
-        password: trimmedPassword,
-      });
-      const response = await login(
-        trimmedUsername,
-        trimmedPassword
-      );
+        try {
+            const response = await login(
+                trimmedUsername,
+                trimmedPassword
+            );
 
-      await AsyncStorage.setItem(
-        "access_token",
-        response.access_token
-      );
+            await AsyncStorage.setItem(
+                "access_token",
+                response.access_token
+            );
 
-      await AsyncStorage.setItem(
-        "user",
-        JSON.stringify(response.user)
-      );
+            await AsyncStorage.setItem(
+                "user",
+                JSON.stringify(response.user)
+            );
 
-      const userRole = response.user?.role;
-      if (userRole === "admin" || userRole === "doctor") {
-        router.replace("/(tabs)/home");
-      } else {
-        Alert.alert("Error", "Invalid user role");
-      }
+            const userRole = response.user?.role;
+            if (userRole === "admin" || userRole === "doctor") {
+                router.replace("/(tabs)/home");
+            } else {
+                Alert.alert("Error", "Invalid user role");
+            }
 
-    } catch (error: any) {
-      console.log("Status:", error.response?.status);
-      console.log("Data:", error.response?.data);
-      console.log("Full Error:", error);
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                Alert.alert(
+                    "Login Failed",
+                    error.response?.data?.detail || "Something went wrong"
+                );
+            } else {
+                Alert.alert("Error", "Unexpected error");
+            }
+        }
+    };
 
-      Alert.alert(
-        "Login Failed",
-        JSON.stringify(error.response?.data)
-      );
-    }
-  };
-
-  return (
-    <SafeAreaView style={styles.safeArea}
-      edges={["top"]}
-    >
-      <ImageBackground
-        source={require("../../assets/images/login-bgimg-DX-S1Q5C.png")}
-        style={styles.background}
-        contentFit="cover"
-      >
-        <AuthHeader />
-        <ScrollView
-          contentContainerStyle={styles.container}
-          showsVerticalScrollIndicator={false}
+    return (
+        <SafeAreaView style={styles.safeArea}
+            edges={["top"]}
         >
+            <ImageBackground
+                source={require("../../assets/images/login-bgimg-DX-S1Q5C.png")}
+                style={styles.background}
+                contentFit="cover"
+            >
+                <AuthHeader />
+                <ScrollView
+                    contentContainerStyle={styles.container}
+                    showsVerticalScrollIndicator={false}
+                >
 
 
           <View style={styles.formContainer}>
@@ -138,48 +135,48 @@ export default function Login() {
           </View>
 
           <AuthFooter />
-        </ScrollView>
-      </ImageBackground>
-    </SafeAreaView>
+        </ScrollView >
+      </ImageBackground >
+    </SafeAreaView >
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
+    safeArea: {
+        flex: 1,
+    },
 
-  background: {
-    flex: 1,
-    width: "100%",
-    height: "100%",
-  },
+    background: {
+        flex: 1,
+        width: "100%",
+        height: "100%",
+    },
 
-  container: {
-    flexGrow: 1,
-    justifyContent: "space-between",
-  },
+    container: {
+        flexGrow: 1,
+        justifyContent: "space-between",
+    },
 
-  formContainer: {
-    marginTop: 60,
-    paddingHorizontal: 20,
-  },
+    formContainer: {
+        marginTop: 60,
+        paddingHorizontal: 20,
+    },
 
-  forget: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "600",
-    textAlign: "right",
-    marginTop: 10,
-    marginBottom: 20,
-  },
+    forget: {
+        color: "#fff",
+        fontSize: 15,
+        fontWeight: "600",
+        textAlign: "right",
+        marginTop: 10,
+        marginBottom: 20,
+    },
 
-  registerLink: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "600",
-    textAlign: "center",
-    marginTop: 20,
-    marginBottom: 30,
-  },
+    registerLink: {
+        color: "#fff",
+        fontSize: 15,
+        fontWeight: "600",
+        textAlign: "center",
+        marginTop: 20,
+        marginBottom: 30,
+    },
 });
