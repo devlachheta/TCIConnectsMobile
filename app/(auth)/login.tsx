@@ -1,15 +1,13 @@
-import { ScrollView, StyleSheet } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useState } from "react";
 import AuthFooter from "@/components/authfooter";
 import AuthHeader from "@/components/authheader";
 import AuthInput from "@/components/authInput";
 import PrimaryButton from "@/components/PrimaryBotton";
-import { ImageBackground } from "expo-image";
-import { Text, View } from "react-native";
-import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Alert } from "react-native";
+import { ImageBackground } from "expo-image";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { login } from "../../services/authService";
 
 
@@ -77,11 +75,8 @@ export default function Login() {
       );
 
       const userRole = response.user?.role;
-
-      if (userRole === "admin") {
-        router.replace("/(tabs)");
-      } else if (userRole === "doctor") {
-        router.replace("/(tabs)");
+      if (userRole === "admin" || userRole === "doctor") {
+        router.replace("/(tabs)/home");
       } else {
         Alert.alert("Error", "Invalid user role");
       }
