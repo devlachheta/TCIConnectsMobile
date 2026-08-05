@@ -6,17 +6,24 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ImageBackground } from "expo-image";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { login } from "../../services/authService";
 import axios from "axios";
-import { TouchableOpacity } from "react-native";
-
+import { login } from "../../services/authService";
 
 export default function Login() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+
     const router = useRouter();
+
     const handleLogin = async () => {
         const trimmedUsername = username.trim();
         const trimmedPassword = password.trim();
@@ -25,6 +32,7 @@ export default function Login() {
             Alert.alert("Error", "All fields are required");
             return;
         }
+
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         const mobileRegex = /^[6-9]\d{9}$/;
 
@@ -72,12 +80,12 @@ export default function Login() {
             );
 
             const userRole = response.user?.role;
+
             if (userRole === "admin" || userRole === "doctor") {
                 router.replace("/(tabs)/home");
             } else {
                 Alert.alert("Error", "Invalid user role");
             }
-
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 Alert.alert(
@@ -91,7 +99,8 @@ export default function Login() {
     };
 
     return (
-        <SafeAreaView style={styles.safeArea}
+        <SafeAreaView
+            style={styles.safeArea}
             edges={["top"]}
         >
             <ImageBackground
@@ -100,45 +109,54 @@ export default function Login() {
                 contentFit="cover"
             >
                 <AuthHeader />
+
                 <ScrollView
                     contentContainerStyle={styles.container}
                     showsVerticalScrollIndicator={false}
                 >
+                    <View style={styles.formContainer}>
+                        <AuthInput
+                            placeholder="Enter your email or mobile number"
+                            value={username}
+                            onChangeText={setUsername}
+                            autoCapitalize="none"
+                        />
 
+                        <AuthInput
+                            placeholder="Enter your password"
+                            value={password}
+                            onChangeText={setPassword}
+                            secureTextEntry
+                        />
 
-          <View style={styles.formContainer}>
-            <AuthInput
-              placeholder="Enter your email or mobile number"
-              value={username}
-              onChangeText={setUsername}
-              autoCapitalize="none"
-            />
+                        <Text style={styles.forget}>
+                            Forgot Password?
+                        </Text>
 
-            <AuthInput
-              placeholder="Enter your password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
+                        <PrimaryButton
+                            title="Login"
+                            onPress={handleLogin}
+                        />
 
-            <Text style={styles.forget}>Forgot Password?</Text>
+                        <TouchableOpacity
+                            onPress={() =>
+                                router.push("/(auth)/registration")
+                            }
+                        >
+                            <Text style={styles.registerLink}>
+                                New to TCI Dental Lab?
+                                {"\n"}
+                                Create Your Account Here
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
 
-            <PrimaryButton
-              title="Login"
-              onPress={handleLogin}
-            />
-
-            <Text style={styles.registerLink}>
-              New to TCI Dental Lab?{"\n"}
-              Create Your Account Here
-            </Text>
-          </View>
-
-          <AuthFooter />
-        </ScrollView >
-      </ImageBackground >
-    </SafeAreaView >
-  );
+                    {/* Uncomment if you want footer */}
+                    {/* <AuthFooter /> */}
+                </ScrollView>
+            </ImageBackground>
+        </SafeAreaView>
+    );
 }
 
 const styles = StyleSheet.create({
@@ -155,10 +173,12 @@ const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
         justifyContent: "space-between",
+        backgroundColor: "rgb(2, 30, 72)",
     },
 
     formContainer: {
-        marginTop: 60,
+        flex: 1,
+        justifyContent: "center",
         paddingHorizontal: 20,
     },
 
