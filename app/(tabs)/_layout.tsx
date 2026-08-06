@@ -28,6 +28,15 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="newcases"
+        options={{
+          title: "NewCases",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="folder-open" size={size} color={color} />
+          ),
+        }}
+      />
 
       <Tabs.Screen
         name="chat"
@@ -38,17 +47,6 @@ export default function TabLayout() {
           ),
         }}
       />
-
-      <Tabs.Screen
-        name="notifications"
-        options={{
-          title: "Notifications",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="notifications" size={size} color={color} />
-          ),
-        }}
-      />
-
       <Tabs.Screen
         name="profile"
         options={{

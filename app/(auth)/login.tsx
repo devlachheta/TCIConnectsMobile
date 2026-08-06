@@ -16,20 +16,35 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import axios from "axios";
+import { LinearGradient } from "expo-linear-gradient";
 import { login } from "../../services/authService";
+
 
 export default function Login() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
 
     const router = useRouter();
+    const [error, setError] = useState("");
+    const [usernameError, setUsernameError] = useState("");
+    const [passwordError, setPasswordError] = useState("");
 
     const handleLogin = async () => {
+        setError("");
+        setUsernameError("");
+        setPasswordError("");
         const trimmedUsername = username.trim();
         const trimmedPassword = password.trim();
 
+        if (!trimmedUsername) {
+            setUsernameError("Email is required");
+        }
+
+        if (!trimmedPassword) {
+            setPasswordError("Password is required");
+        }
+
         if (!trimmedUsername || !trimmedPassword) {
-            Alert.alert("Error", "All fields are required");
             return;
         }
 
@@ -40,24 +55,17 @@ export default function Login() {
         const isMobile = mobileRegex.test(trimmedUsername);
 
         if (!isEmail && !isMobile) {
-            Alert.alert(
-                "Error",
-                "Enter a valid email or 10-digit mobile number"
-            );
+            setUsernameError("Enter a valid email or mobile number");
             return;
         }
 
         if (trimmedPassword.length < 8) {
-            Alert.alert(
-                "Error",
-                "Password must be at least 8 characters"
-            );
+            setPasswordError("Password must be at least 8 characters");
             return;
         }
 
         if (trimmedPassword.includes(" ")) {
-            Alert.alert(
-                "Error",
+            setPasswordError(
                 "Password cannot contain spaces"
             );
             return;
@@ -82,104 +90,119 @@ export default function Login() {
             const userRole = response.user?.role;
 
             if (userRole === "admin" || userRole === "doctor") {
-                router.replace("/(tabs)/home");
+                router.replace("/(tabs)");
             } else {
-                Alert.alert("Error", "Invalid user role");
+                setError("Invalid user role");
             }
         } catch (error) {
+            console.log("Login Error:", error);
             if (axios.isAxiosError(error)) {
-                Alert.alert(
-                    "Login Failed",
+                console.log("Response:", error.response?.data);
+                setError(
                     error.response?.data?.detail || "Something went wrong"
                 );
             } else {
-                Alert.alert("Error", "Unexpected error");
+                setError("Unexpected error");
             }
         }
-    };
+    }
 
     return (
         <SafeAreaView
             style={styles.safeArea}
             edges={["top"]}
         >
-            <ImageBackground
-                source={require("../../assets/images/login-bgimg-DX-S1Q5C.png")}
-                style={styles.background}
-                contentFit="cover"
+            <LinearGradient
+                colors={["#00254C", "#024F9D"]}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
+                style={styles.gradient}
             >
-                <AuthHeader />
-
                 <ScrollView
                     contentContainerStyle={styles.container}
                     showsVerticalScrollIndicator={false}
                 >
-                    <View style={styles.formContainer}>
+                    <AuthHeader />
+                    <View style={styles.content}>
+                        <Text style={styles.heading}>Login to TCI Connect</Text>
+                        <Text style={styles.label}>Email</Text>
                         <AuthInput
-                            placeholder="Enter your email or mobile number"
+                            placeholder="Enter your email"
                             value={username}
                             onChangeText={setUsername}
                             autoCapitalize="none"
-                        />
+                        />{usernameError ? (
+                            <Text style={styles.errorText}>{usernameError}</Text>
+                        ) : null}
 
+                        <Text style={styles.label}>Password</Text>
                         <AuthInput
                             placeholder="Enter your password"
                             value={password}
                             onChangeText={setPassword}
                             secureTextEntry
                         />
-
-                        <Text style={styles.forget}>
-                            Forgot Password?
-                        </Text>
+                        {passwordError ? (
+                            <Text style={styles.errorText}>{passwordError}</Text>
+                        ) : null}
+                        <TouchableOpacity
+                            onPress={() =>
+                                router.push("/(auth)/forgotpassword")
+                            }
+                        >
+                            <Text style={styles.forget}>
+                                Forgot Password?
+                            </Text>
+                        </TouchableOpacity>
+                        {error ? (
+                            <Text style={styles.errorText}>{error}</Text>
+                        ) : null}
 
                         <PrimaryButton
-                            title="Login"
+                            title="Log In"
                             onPress={handleLogin}
                         />
-
-                        <TouchableOpacity
+                        <PrimaryButton
+                            title="New to TCI CRM? Sign up here"
                             onPress={() =>
                                 router.push("/(auth)/registration")
                             }
-                        >
-                            <Text style={styles.registerLink}>
-                                New to TCI Dental Lab?
-                                {"\n"}
-                                Create Your Account Here
-                            </Text>
-                        </TouchableOpacity>
+                        />
                     </View>
-
-                    {/* Uncomment if you want footer */}
-                    {/* <AuthFooter /> */}
                 </ScrollView>
-            </ImageBackground>
-        </SafeAreaView>
+            </LinearGradient>
+        </SafeAreaView >
     );
 }
 
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
+        backgroundColor: "#024F9D",
     },
-
-    background: {
+    gradient: {
         flex: 1,
-        width: "100%",
-        height: "100%",
     },
-
     container: {
         flexGrow: 1,
-        justifyContent: "space-between",
-        backgroundColor: "rgb(2, 30, 72)",
+        paddingHorizontal: 28,
     },
 
-    formContainer: {
-        flex: 1,
-        justifyContent: "center",
-        paddingHorizontal: 20,
+    content: {
+        marginVertical: "auto",
+    },
+    heading: {
+        fontSize: 30,
+        fontWeight: "700",
+        color: "#fff",
+        marginBottom: 20,
+    },
+    label: {
+        color: "#fff",
+        marginTop: 20,
+        fontSize: 16,
+        marginHorizontal: 8,
+        fontWeight: "600"
     },
 
     forget: {
@@ -187,7 +210,7 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: "600",
         textAlign: "right",
-        marginTop: 10,
+        marginTop: 15,
         marginBottom: 20,
     },
 
@@ -198,5 +221,11 @@ const styles = StyleSheet.create({
         textAlign: "center",
         marginTop: 20,
         marginBottom: 30,
+    },
+    errorText: {
+        color: "#FF6B6B",
+        fontSize: 14,
+        marginTop: 8,
+        marginHorizontal: 8,
     },
 });

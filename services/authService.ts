@@ -8,3 +8,23 @@ export const login = async (username: string, password: string) => {
 
     return response.data;
 };
+
+export const forgotPassword = async (email: string) => {
+    const response = await api.post("/forgot-password", {
+        email,
+    });
+
+    return response.data;
+};
+
+export const resetPassword = async (
+    email: string,
+    password: string
+) => {
+    const response = await api.post("/reset-password", {
+        email,
+        password,
+    });
+
+    return response.data;
+};
