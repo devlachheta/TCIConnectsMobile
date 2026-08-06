@@ -1,5 +1,4 @@
-
-export default function Cases() {
+export default function StatCard() {
     return (
         <>
         </>

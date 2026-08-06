@@ -1,18 +1,19 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 export default function AuthHeader() {
+  const router = useRouter();
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>
-        TCI Connect
-      </Text>
-
-      <TouchableOpacity style={styles.searchButton}>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => router.back()}
+      >
         <Ionicons
-          name="search"
-          size={20}
+          name="arrow-back"
+          size={26}
           color="#FFFFFF"
         />
       </TouchableOpacity>
@@ -22,33 +23,14 @@ export default function AuthHeader() {
 
 const styles = StyleSheet.create({
   container: {
-    height: 60,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    backgroundColor: "#0152A8",
-    width: "100%",
+    height: 70,
+    justifyContent: "center"
   },
 
-  title: {
-    color: "#FFFFFF",
-
-    fontSize: 20,
-
-    fontWeight: "700",
-  },
-  searchButton: {
-    width: 38,
-
-    height: 38,
-
-    borderRadius: 19,
-
+  backButton: {
+    width: 40,
+    height: 40,
     justifyContent: "center",
-
     alignItems: "center",
-
-    backgroundColor: "#0A61C9",
-  }
+  },
 });

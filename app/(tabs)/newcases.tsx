@@ -1,5 +1,5 @@
 
-export default function Cases() {
+export default function NewCases() {
     return (
         <>
         </>
