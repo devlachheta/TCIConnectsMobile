@@ -4,6 +4,8 @@ import {
     Pressable,
     StyleSheet,
     Text,
+    TextStyle,
+    ViewStyle,
 } from "react-native";
 
 type PrimaryButtonProps = {
@@ -11,19 +13,24 @@ type PrimaryButtonProps = {
     onPress: () => void;
     loading?: boolean;
     disabled?: boolean;
-}
 
+    buttonStyle?: ViewStyle;
+    textStyle?: TextStyle;
+};
 export default function PrimaryButton({
     title,
     onPress,
     loading = false,
-    disabled = false
+    disabled = false,
+    buttonStyle,
+    textStyle,
 }: PrimaryButtonProps) {
 
     return (
         <Pressable
             style={({ pressed }) => [
                 styles.button,
+                buttonStyle,
                 pressed && styles.pressed,
                 (disabled || loading) && styles.disabled,
             ]}
@@ -33,7 +40,9 @@ export default function PrimaryButton({
             {loading ? (
                 <ActivityIndicator color="#FFFFFF" />
             ) : (
-                <Text style={styles.buttonText}>{title}</Text>
+                <Text style={[styles.buttonText, textStyle]}>
+                    {title}
+                </Text>
             )}
         </Pressable>
 
@@ -42,14 +51,12 @@ export default function PrimaryButton({
 
 const styles = StyleSheet.create({
     button: {
-        width: "80%",
+        width: "100%",
         alignSelf: "center",
-
         height: 55,
         backgroundColor: "#0152A8",
         borderRadius: 50,
         marginTop: 20,
-
         justifyContent: "center",
         alignItems: "center",
     },

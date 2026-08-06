@@ -1,4 +1,4 @@
-import AuthHeader from "@/components/authheader";
+
 import AuthInput from "@/components/authInput";
 import PrimaryButton from "@/components/PrimaryBotton";
 import Checkbox from "expo-checkbox";
@@ -130,34 +130,43 @@ export default function Register() {
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
-        <AuthHeader />
+        <View style={styles.content}>
+          <Text style={styles.Rheading}>
+            TCI Connect Sign Up
+          </Text>
+        </View>
 
+        <Text style={styles.label}>Full Name</Text>
         <AuthInput
-          placeholder="Full Name"
+          placeholder="Enter your full name"
           value={fullName}
           onChangeText={setFullName}
         />
+        <Text style={styles.label}>Phone No</Text>
         <AuthInput
-          placeholder="Phone Number"
+
+          placeholder="Enter your phone no"
           keyboardType="phone-pad"
           value={phone}
           onChangeText={setPhone}
 
         />
+        <Text style={styles.label}>Email</Text>
         <AuthInput
-          placeholder="Email"
+          placeholder="Enter your email"
           keyboardType="email-address"
           value={email}
           onChangeText={setEmail}
 
         />
+        <Text style={styles.label}>Business Name</Text>
         <AuthInput
-          placeholder="Business Name "
+          placeholder="Enter business name"
           value={businessName}
           onChangeText={setBusinessName}
 
         />
-
+        <Text style={styles.label}>Dentist</Text>
         <Dropdown
           style={styles.dropdown}
           placeholderStyle={styles.placeholderStyle}
@@ -176,28 +185,30 @@ export default function Register() {
             <Text style={styles.arrow}>▼</Text>
           )}
         />
-
+        <Text style={styles.label}>Registration or License Number</Text>
         <AuthInput
-          placeholder="Registration or License Number"
+          placeholder="Enter registration or license number"
           value={licenseNumber}
           onChangeText={setLicenseNumber}
         />
+        <Text style={styles.label}>VAT / Tax ID (if applicable)</Text>
         <AuthInput
-          placeholder="VAT/TAX ID (if applicable)"
+          placeholder="Enter VAT / Tax ID"
           value={vatId}
           onChangeText={setVatId}
         />
+        <Text style={styles.label}>Select Country</Text>
 
         <Dropdown
           style={styles.dropdown}
           placeholderStyle={styles.placeholderStyle}
           selectedTextStyle={styles.selectedTextStyle}
           itemTextStyle={styles.itemTextStyle}
-          activeColor="#0152A8"
+          activeColor="rgb(2,30,72)"
           data={countryData}
           labelField="label"
-          valueField="value"
           placeholder="Select Country"
+          valueField="value"
           value={country}
           onChange={(item) => {
             setCountry(item.value);
@@ -206,19 +217,22 @@ export default function Register() {
             <Text style={styles.arrow}>▼</Text>
           )}
         />
+        <Text style={styles.label}>Address</Text>
         <AuthInput
-          placeholder="Address"
+          placeholder="Enter address"
           value={address}
           onChangeText={setAddress}
         />
+        <Text style={styles.label}>Password</Text>
         <AuthInput
-          placeholder="Password"
+          placeholder="Enter your password"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
         />
+        <Text style={styles.label}>Confirm Password</Text>
         <AuthInput
-          placeholder=" Confirm Password"
+          placeholder="Enter confirm password"
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           secureTextEntry
@@ -228,7 +242,7 @@ export default function Register() {
           <Checkbox
             value={isChecked}
             onValueChange={setChecked}
-            color={isChecked ? "#0152A8" : undefined}
+            color={isChecked ? "rgb(2,30,72)" : undefined}
           />
 
           <Text style={styles.checkboxText}>
@@ -241,6 +255,17 @@ export default function Register() {
         <PrimaryButton
           title="Submit"
           onPress={handleSubmit}
+          buttonStyle={{
+            backgroundColor: "#fff",
+            borderWidth: 2,
+            borderColor: "#FFFFFF",
+            width: "100%",
+          }}
+          textStyle={{
+            color: "black",
+            fontSize: 16,
+            fontWeight: "700",
+          }}
         />
 
         <TouchableOpacity
@@ -259,14 +284,30 @@ export default function Register() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#fff"
+    backgroundColor: "#0152A8"
   },
+
 
   container: {
     flexGrow: 1,
-    paddingTop: 5,
+    paddingHorizontal: 28,
     paddingBottom: 100,
-    backgroundColor: "rgb(2,30,72)"
+  },
+  content: {
+    marginVertical: "auto",
+  },
+  Rheading: {
+    color: "#FFFFFF",
+    fontSize: 28,
+    fontWeight: "700",
+
+  },
+  label: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "500",
+    marginTop: 20,
+    marginHorizontal: 8,
   },
   background: {
     flex: 1,
@@ -280,7 +321,7 @@ const styles = StyleSheet.create({
   },
 
   checkboxText: {
-    width: "80%",
+    width: "100%",
     alignSelf: "center",
 
     color: "#fff",
@@ -304,7 +345,7 @@ const styles = StyleSheet.create({
     paddingBottom: 10
   },
   dropdown: {
-    width: "80%",
+    width: "100%",
     alignSelf: "center",
     height: 45,
     borderWidth: 1,
@@ -316,13 +357,13 @@ const styles = StyleSheet.create({
   },
 
   placeholderStyle: {
-    color: "#FFFFFF",
-    fontSize: 16,
+    color: "#fff",
+    fontSize: 12,
   },
 
   selectedTextStyle: {
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: 18,
   },
 
   itemTextStyle: {

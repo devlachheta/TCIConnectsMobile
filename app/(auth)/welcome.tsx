@@ -1,47 +1,49 @@
 
-import { View, Text, StyleSheet } from "react-native";
-import { Image } from "expo-image";
 import PrimaryButton from "@/components/PrimaryBotton";
+import { ImageBackground } from "expo-image";
 import { router } from "expo-router";
-
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 export default function WelcomeScreen() {
     return (
-        <><View style={styles.container}>
+        <>
+            <ImageBackground
+                source={require("../../assets/images/welcome-image.png")}
+                style={styles.background}
+                contentFit="cover"
+            >
+                <View style={styles.container}>
+                    <View style={styles.content}>
+                        <Text style={styles.title}>
+                            Welcome to TCI Connect
+                        </Text>
 
-            <Text style={styles.logo}>
-                TCI Connect
-            </Text>
-
-            <Text style={styles.title}>
-                Welcome to TCI Connect
-            </Text>
-
-            <Text style={styles.subtitle}>
-                Your gateway to seamless dental lab management.
-            </Text>
-
-            <View style={styles.buttonContainer}>
-                <PrimaryButton
-                    title="Create Account"
-                    onPress={() => router.push("/(auth)/registration")}
-                />
-
-                <View style={{ height: 20 }} />
-
-                <PrimaryButton
-                    title="Sign In"
-                    onPress={() => router.push("/(auth)/login")}
-                />
-            </View>
-
-
-            {/* <Image
-                source={require("../../assets/images/login-bgimg-DX-S1Q5C.png")}
-                style={styles.image}
-                contentFit="contain"
-            /> */}
-
-        </View>
+                        <View style={styles.buttonContainer}>
+                            <PrimaryButton
+                                title="Create new account"
+                                onPress={() => router.push("/(auth)/registration")}
+                                buttonStyle={{
+                                    backgroundColor: "#fff",
+                                    borderWidth: 2,
+                                    borderColor: "#FFFFFF",
+                                    width: "80%",
+                                }}
+                                textStyle={{
+                                    color: "black",
+                                    fontSize: 16,
+                                    fontWeight: "700",
+                                }}
+                            />
+                            <View style={{ height: 20 }} />
+                            <TouchableOpacity
+                                onPress={() => router.push("/(auth)/login")}>
+                                <Text style={styles.loginLink}>
+                                    I already have an account ?
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </ImageBackground >
 
         </>
     );
@@ -49,37 +51,35 @@ export default function WelcomeScreen() {
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
-        justifyContent: "center",
+        flex: 1
+    },
+    content: {
+        marginTop: "auto",
+        paddingBottom: 100,
         alignItems: "center",
-        backgroundColor: "rgb(2, 30, 72)"
+        width: "100%",
     },
-    logo: {
-        color: "#fff",
-        fontSize: 34,
-        fontWeight: "700",
+
+    background: {
+        flex: 1,
+        width: "100%",
+        height: "100%",
     },
-    // image: {
-    //     width: "100%",
-    //     height: 260,
-    //     marginVertical: 30,
-    // },
 
     buttonContainer: {
-        width: "100%"
+        width: "100%",
 
     },
     title: {
-        fontSize: 28,
-        fontWeight: "700",
+        fontSize: 25,
+        fontWeight: "800",
         color: "#fff",
-        marginBottom: 10,
     },
-
-    subtitle: {
-        fontSize: 16,
-        fontWeight: "400",
-        color: "#fff",
+    loginLink: {
+        color: "#FFFFFF",
+        fontSize: 17,
+        fontWeight: "700",
         textAlign: "center",
     },
+
 })
