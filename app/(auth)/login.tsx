@@ -23,7 +23,6 @@ import { login } from "../../services/authService";
 export default function Login() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-
     const router = useRouter();
     const [error, setError] = useState("");
     const [usernameError, setUsernameError] = useState("");
@@ -161,6 +160,16 @@ export default function Login() {
                         <PrimaryButton
                             title="Log In"
                             onPress={handleLogin}
+                            buttonStyle={{
+                                backgroundColor: "#fff",
+                                borderWidth: 2,
+                                borderColor: "#fff",
+                            }}
+                            textStyle={{
+                                color: "#000",
+                                fontSize: 16,
+                                fontWeight: 700
+                            }}
                         />
                         <PrimaryButton
                             title="New to TCI CRM? Sign up here"

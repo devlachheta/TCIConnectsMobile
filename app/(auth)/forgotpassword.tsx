@@ -1,21 +1,18 @@
-import AuthFooter from "@/components/authfooter";
 import AuthHeader from "@/components/authheader";
 import AuthInput from "@/components/authInput";
 import PrimaryButton from "@/components/PrimaryBotton";
-import { ImageBackground } from "expo-image";
+import axios from "axios";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
-import axios from "axios";
 import { forgotPassword } from "../../services/authService";
 
 export default function Forgot() {

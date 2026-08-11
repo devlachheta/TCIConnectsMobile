@@ -13,7 +13,6 @@ type PrimaryButtonProps = {
     onPress: () => void;
     loading?: boolean;
     disabled?: boolean;
-
     buttonStyle?: ViewStyle;
     textStyle?: TextStyle;
 };
@@ -54,7 +53,7 @@ const styles = StyleSheet.create({
         width: "100%",
         alignSelf: "center",
         height: 55,
-        backgroundColor: "#0152A8",
+        backgroundColor: "#024F9D",
         borderRadius: 50,
         marginTop: 20,
         justifyContent: "center",
