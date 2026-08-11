@@ -1,7 +1,9 @@
 
+import AuthHeader from "@/components/authheader";
 import AuthInput from "@/components/authInput";
 import PrimaryButton from "@/components/PrimaryBotton";
 import Checkbox from "expo-checkbox";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
@@ -126,158 +128,166 @@ export default function Register() {
     <SafeAreaView style={styles.safeArea}
       edges={["top"]}
     >
-      <ScrollView
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.content}>
-          <Text style={styles.Rheading}>
-            TCI Connect Sign Up
-          </Text>
-        </View>
+      <LinearGradient
+        colors={["#00254C", "#024F9D"]}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={styles.gradient}
+      >      <AuthHeader />
+        <ScrollView
+          contentContainerStyle={styles.container}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.content}>
+            <Text style={styles.Rheading}>
+              TCI Connect Sign Up
+            </Text>
+          </View>
 
-        <Text style={styles.label}>Full Name</Text>
-        <AuthInput
-          placeholder="Enter your full name"
-          value={fullName}
-          onChangeText={setFullName}
-        />
-        <Text style={styles.label}>Phone No</Text>
-        <AuthInput
+          <Text style={styles.label}>Full Name</Text>
+          <AuthInput
+            placeholder="Enter your full name"
+            value={fullName}
+            onChangeText={setFullName}
+          />
+          <Text style={styles.label}>Phone No</Text>
+          <AuthInput
 
-          placeholder="Enter your phone no"
-          keyboardType="phone-pad"
-          value={phone}
-          onChangeText={setPhone}
+            placeholder="Enter your phone no"
+            keyboardType="phone-pad"
+            value={phone}
+            onChangeText={setPhone}
 
-        />
-        <Text style={styles.label}>Email</Text>
-        <AuthInput
-          placeholder="Enter your email"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
+          />
+          <Text style={styles.label}>Email</Text>
+          <AuthInput
+            placeholder="Enter your email"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
 
-        />
-        <Text style={styles.label}>Business Name</Text>
-        <AuthInput
-          placeholder="Enter business name"
-          value={businessName}
-          onChangeText={setBusinessName}
+          />
+          <Text style={styles.label}>Business Name</Text>
+          <AuthInput
+            placeholder="Enter business name"
+            value={businessName}
+            onChangeText={setBusinessName}
 
-        />
-        <Text style={styles.label}>Dentist</Text>
-        <Dropdown
-          style={styles.dropdown}
-          placeholderStyle={styles.placeholderStyle}
-          selectedTextStyle={styles.selectedTextStyle}
-          itemTextStyle={styles.itemTextStyle}
-          activeColor="#0152A8"
-          data={businessData}
-          labelField="label"
-          valueField="value"
-          placeholder="Select Type of Business"
-          value={businessType}
-          onChange={(item) => {
-            setBusinessType(item.value);
-          }}
-          renderRightIcon={() => (
-            <Text style={styles.arrow}>▼</Text>
-          )}
-        />
-        <Text style={styles.label}>Registration or License Number</Text>
-        <AuthInput
-          placeholder="Enter registration or license number"
-          value={licenseNumber}
-          onChangeText={setLicenseNumber}
-        />
-        <Text style={styles.label}>VAT / Tax ID (if applicable)</Text>
-        <AuthInput
-          placeholder="Enter VAT / Tax ID"
-          value={vatId}
-          onChangeText={setVatId}
-        />
-        <Text style={styles.label}>Select Country</Text>
+          />
+          <Text style={styles.label}>Dentist</Text>
+          <Dropdown
+            style={styles.dropdown}
+            placeholderStyle={styles.placeholderStyle}
+            selectedTextStyle={styles.selectedTextStyle}
+            itemTextStyle={styles.itemTextStyle}
+            activeColor="transparent"
+            data={businessData}
+            labelField="label"
+            valueField="value"
+            placeholder="Select Type of Business"
+            value={businessType}
+            onChange={(item) => {
+              setBusinessType(item.value);
+            }}
+            renderRightIcon={() => (
+              <Text style={styles.arrow}>▼</Text>
+            )}
+          />
+          <Text style={styles.label}>Registration or License Number</Text>
+          <AuthInput
+            placeholder="Enter registration or license number"
+            value={licenseNumber}
+            onChangeText={setLicenseNumber}
+          />
+          <Text style={styles.label}>VAT / Tax ID (if applicable)</Text>
+          <AuthInput
+            placeholder="Enter VAT / Tax ID"
+            value={vatId}
+            onChangeText={setVatId}
+          />
+          <Text style={styles.label}>Select Country</Text>
 
-        <Dropdown
-          style={styles.dropdown}
-          placeholderStyle={styles.placeholderStyle}
-          selectedTextStyle={styles.selectedTextStyle}
-          itemTextStyle={styles.itemTextStyle}
-          activeColor="rgb(2,30,72)"
-          data={countryData}
-          labelField="label"
-          placeholder="Select Country"
-          valueField="value"
-          value={country}
-          onChange={(item) => {
-            setCountry(item.value);
-          }}
-          renderRightIcon={() => (
-            <Text style={styles.arrow}>▼</Text>
-          )}
-        />
-        <Text style={styles.label}>Address</Text>
-        <AuthInput
-          placeholder="Enter address"
-          value={address}
-          onChangeText={setAddress}
-        />
-        <Text style={styles.label}>Password</Text>
-        <AuthInput
-          placeholder="Enter your password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-        <Text style={styles.label}>Confirm Password</Text>
-        <AuthInput
-          placeholder="Enter confirm password"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry
-        />
-
-        <View style={styles.checkboxContainer}>
-          <Checkbox
-            value={isChecked}
-            onValueChange={setChecked}
-            color={isChecked ? "rgb(2,30,72)" : undefined}
+          <Dropdown
+            style={styles.dropdown}
+            placeholderStyle={styles.placeholderStyle}
+            selectedTextStyle={styles.selectedTextStyle}
+            itemTextStyle={styles.itemTextStyle}
+            activeColor="rgb(2,30,72)"
+            data={countryData}
+            labelField="label"
+            placeholder="Select Country"
+            valueField="value"
+            value={country}
+            onChange={(item) => {
+              setCountry(item.value);
+            }}
+            renderRightIcon={() => (
+              <Text style={styles.arrow}>▼</Text>
+            )}
+          />
+          <Text style={styles.label}>Address</Text>
+          <AuthInput
+            placeholder="Enter address"
+            value={address}
+            onChangeText={setAddress}
+          />
+          <Text style={styles.label}>Password</Text>
+          <AuthInput
+            placeholder="Enter your password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+          <Text style={styles.label}>Confirm Password</Text>
+          <AuthInput
+            placeholder="Enter confirm password"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
           />
 
-          <Text style={styles.checkboxText}>
-            I consent to the processing of my personal data under GDPR.
-            <Text style={styles.policyLink}>
-              {" "}View Policy
+          <View style={styles.checkboxContainer}>
+            <Checkbox
+              value={isChecked}
+              onValueChange={setChecked}
+              color={isChecked ? "rgb(2,30,72)" : undefined}
+            />
+
+            <Text style={styles.checkboxText}>
+              I consent to the processing of my personal data under GDPR.
+              <Text style={styles.policyLink}>
+                {" "}View Policy
+              </Text>
             </Text>
-          </Text>
-        </View>
-        <PrimaryButton
-          title="Submit"
-          onPress={handleSubmit}
-          buttonStyle={{
-            backgroundColor: "#fff",
-            borderWidth: 2,
-            borderColor: "#FFFFFF",
-            width: "100%",
-          }}
-          textStyle={{
-            color: "black",
-            fontSize: 16,
-            fontWeight: "700",
-          }}
-        />
+          </View>
+          <PrimaryButton
+            title="Submit"
+            onPress={handleSubmit}
+            buttonStyle={{
+              backgroundColor: "#fff",
+              borderWidth: 2,
+              borderColor: "#FFFFFF",
+              width: "100%",
+            }}
+            textStyle={{
+              color: "black",
+              fontSize: 16,
+              fontWeight: "700",
+            }}
+          />
 
-        <TouchableOpacity
-          onPress={() => router.push("/(auth)/login")}>
-          <Text
-            style={styles.login_link}
-          >
-            Already have an account? Log In here
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push("/(auth)/login")}>
+            <Text
+              style={styles.login_link}
+            >
+              Already have an account? Log In here
+            </Text>
+          </TouchableOpacity>
 
-      </ScrollView>
+        </ScrollView>
+      </LinearGradient>
+
     </SafeAreaView >
   );
 }
@@ -286,7 +296,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#0152A8"
   },
-
+  gradient: {
+    flex: 1,
+  },
 
   container: {
     flexGrow: 1,

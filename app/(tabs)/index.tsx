@@ -1,8 +1,8 @@
 
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import StatCard from "../../components/doctordashboard/StatCard";
 import DashboardHeader from "@/components/doctordashboard/DashboardHeader";
+import StatCard from "../../components/doctordashboard/StatCard";
 
 export default function Index() {
   return (

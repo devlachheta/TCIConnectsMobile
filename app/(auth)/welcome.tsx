@@ -25,7 +25,7 @@ export default function WelcomeScreen() {
                                     backgroundColor: "#fff",
                                     borderWidth: 2,
                                     borderColor: "#FFFFFF",
-                                    width: "80%",
+                                    width: "100%",
                                 }}
                                 textStyle={{
                                     color: "black",
