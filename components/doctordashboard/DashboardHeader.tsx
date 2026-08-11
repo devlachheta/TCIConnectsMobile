@@ -1,6 +1,7 @@
-import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-
+import React, { useState } from "react";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import DashboardDrawer from "./DashboardDrawer";
 interface DashboardHeaderProps {
     notificationCount?: number;
     profileImage?: string;
@@ -13,55 +14,63 @@ export default function DashboardHeader({
     onNotificationPress,
     onMenuPress,
 }: DashboardHeaderProps) {
+    const [drawerVisible, setDrawerVisible] = useState(false);
     return (
-        <View style={styles.container}>
-            <TouchableOpacity
-                style={styles.menuButton}
-                onPress={onMenuPress}
-            >
-                <Ionicons
-                    name="menu"
-                    size={30}
-                    color="#021E48"
-                />
-            </TouchableOpacity>
-
-            <View style={styles.rightSection}>
+        <>
+            <View style={styles.container}>
                 <TouchableOpacity
-                    style={styles.notificationButton}
-                    onPress={onNotificationPress}
+                    style={styles.menuButton}
+                    onPress={() => setDrawerVisible(true)}
                 >
                     <Ionicons
-                        name="notifications-outline"
-                        size={24}
-                        color="#0152A8"
+                        name="menu"
+                        size={30}
+                        color="#021E48"
                     />
-
-                    {notificationCount > 0 && (
-                        <View style={styles.badge}>
-                            <Text style={styles.badgeText}>
-                                {notificationCount}
-                            </Text>
-                        </View>
-                    )}
                 </TouchableOpacity>
 
-                {profileImage ? (
-                    <Image
-                        source={{ uri: profileImage }}
-                        style={styles.avatar}
-                    />
-                ) : (
-                    <View style={styles.avatar}>
+                <View style={styles.rightSection}>
+                    <TouchableOpacity
+                        style={styles.notificationButton}
+                        onPress={onNotificationPress}
+                    >
                         <Ionicons
-                            name="person"
+                            name="notifications-outline"
                             size={24}
                             color="#0152A8"
                         />
-                    </View>
-                )}
+
+                        {notificationCount > 0 && (
+                            <View style={styles.badge}>
+                                <Text style={styles.badgeText}>
+                                    {notificationCount}
+                                </Text>
+                            </View>
+                        )}
+                    </TouchableOpacity>
+
+                    {profileImage ? (
+                        <Image
+                            source={{ uri: profileImage }}
+                            style={styles.avatar}
+                        />
+                    ) : (
+                        <View style={styles.avatar}>
+                            <Ionicons
+                                name="person"
+                                size={24}
+                                color="#0152A8"
+                            />
+                        </View>
+                    )}
+                </View>
             </View>
-        </View>
+
+            <DashboardDrawer
+                visible={drawerVisible}
+                onClose={() => setDrawerVisible(false)}
+            />
+        </>
     );
 }
 

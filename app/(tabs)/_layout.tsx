@@ -28,12 +28,13 @@ export default function TabLayout() {
           ),
         }}
       />
+
       <Tabs.Screen
         name="newcases"
         options={{
-          title: "NewCases",
+          title: "New Cases",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="folder-open" size={size} color={color} />
+            <Ionicons name="add-circle" size={size} color={color} />
           ),
         }}
       />
@@ -47,6 +48,7 @@ export default function TabLayout() {
           ),
         }}
       />
+
       <Tabs.Screen
         name="profile"
         options={{
@@ -54,6 +56,50 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person" size={size} color={color} />
           ),
+        }}
+      />
+
+      {/* Hidden Pages */}
+
+      <Tabs.Screen
+        name="pricing"
+        options={{
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
+        name="gdpr"
+        options={{
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
+        name="setting"
+        options={{
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
+        name="qa"
+        options={{
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
+        name="helpfaq"
+        options={{
+          href: null,
         }}
       />
     </Tabs>
