@@ -41,3 +41,15 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Android / Gradle generated files
+android/build/
+**/android/build/
+**/build/
+
+# Gradle
+.gradle/
+**/.gradle/
+
+# Expo native build
+.expo/

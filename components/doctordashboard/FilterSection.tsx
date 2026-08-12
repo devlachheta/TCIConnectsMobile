@@ -9,16 +9,34 @@ import {
 } from "react-native";
 import DropDownPicker from "react-native-dropdown-picker";
 
-export default function FilterSection() {
+interface FilterSectionProps {
+    onApply: (status: string, deadline: string) => void;
+    onReset: () => void;
+}
+
+export default function FilterSection({
+    onApply,
+    onReset,
+}: FilterSectionProps) {
     const [open, setOpen] = useState(false);
-    const [status, setStatus] = useState("all");
+    const [status, setStatus] = useState("");
+
+    const [deadline, setDeadline] = useState("");
 
     const [items, setItems] = useState([
-        { label: "All", value: "all" },
-        { label: "Submitted", value: "submitted" },
-        { label: "Pending", value: "pending" },
-        { label: "Completed", value: "completed" },
+        { label: "All", value: "" },
+        { label: "Submitted", value: "Submitted" },
+        { label: "InProduction", value: "InProduction" },
+        { label: "QualityCheck", value: "QualityCheck" },
+        { label: "Shipped", value: "Shipped" },
+        { label: "Delivered", value: "Delivered" },
     ]);
+
+    const handleReset = () => {
+        setStatus("");
+        setDeadline("");
+        onReset();
+    };
 
     return (
         <>
@@ -37,7 +55,7 @@ export default function FilterSection() {
                         setOpen={setOpen}
                         setValue={setStatus}
                         setItems={setItems}
-                        placeholder="Select Status"
+                        placeholder="All"
                         style={styles.dropdown}
                         dropDownContainerStyle={
                             styles.dropdownContainer
@@ -63,6 +81,8 @@ export default function FilterSection() {
                             placeholder="mm/dd/yyyy"
                             placeholderTextColor="#666"
                             style={styles.dateInput}
+                            value={deadline}
+                            onChangeText={setDeadline}
                         />
                     </View>
                 </View>
@@ -73,6 +93,9 @@ export default function FilterSection() {
 
                 <TouchableOpacity
                     style={styles.applyButton}
+                    onPress={() =>
+                        onApply(status, deadline)
+                    }
                 >
                     <Text style={styles.buttonText}>
                         Apply
@@ -81,6 +104,7 @@ export default function FilterSection() {
 
                 <TouchableOpacity
                     style={styles.resetButton}
+                    onPress={handleReset}
                 >
                     <Text style={styles.buttonText}>
                         Reset
