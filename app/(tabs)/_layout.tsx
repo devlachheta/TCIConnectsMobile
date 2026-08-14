@@ -7,6 +7,7 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: "#0152A8",
+        tabBarHideOnKeyboard: false,
       }}
     >
       <Tabs.Screen
@@ -82,12 +83,6 @@ export default function TabLayout() {
         }}
       />
 
-      <Tabs.Screen
-        name="setting"
-        options={{
-          href: null,
-        }}
-      />
 
       <Tabs.Screen
         name="qa"

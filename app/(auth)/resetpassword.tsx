@@ -1,19 +1,18 @@
 import AuthHeader from "@/components/authheader";
 import AuthInput from "@/components/authInput";
 import PrimaryButton from "@/components/PrimaryBotton";
+import { resetPassword } from "@/services/authService";
+import axios from "axios";
+import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    Alert,
     ScrollView,
     StyleSheet,
     Text,
-    View,
+    View
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
-import axios from "axios";
-import { resetPassword } from "@/services/authService";
 
 export default function ResetPassword() {
     const router = useRouter();

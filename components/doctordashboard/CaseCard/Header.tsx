@@ -1,17 +1,18 @@
+import ProfileMenu from "@/components/doctordashboard/CaseCard/ProfileMenu";
 import { Image } from "expo-image";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-
+import { StyleSheet, Text, View } from "react-native";
 interface HeaderProps {
     caseId: string;
     status: string;
-    onMenuPress?: () => void;
+
 }
 
 export default function Header({
     caseId,
     status,
-    onMenuPress,
+
 }: HeaderProps) {
+
     return (
         <View style={styles.container}>
             <View style={styles.leftSection}>
@@ -35,15 +36,7 @@ export default function Header({
                 </View>
             </View>
 
-            <TouchableOpacity
-                style={styles.menuButton}
-                onPress={onMenuPress}
-            >
-                <Image
-                    source={require("@/assets/images/buttonsvg.png")}
-                    style={styles.buttonIcon}
-                />
-            </TouchableOpacity>
+            <ProfileMenu />
         </View>
     );
 }
@@ -75,10 +68,6 @@ const styles = StyleSheet.create({
         width: 16.67,
         height: 13.33,
     },
-    buttonIcon: {
-        width: 4,
-        height: 25
-    },
 
     textContainer: {
         justifyContent: "center",
@@ -104,12 +93,5 @@ const styles = StyleSheet.create({
         fontFamily: "roboto",
         fontWeight: "500",
         color: "#808080",
-    },
-
-    menuButton: {
-        width: 36,
-        height: 36,
-        justifyContent: "center",
-        alignItems: "center",
     },
 });

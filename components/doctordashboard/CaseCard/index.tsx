@@ -15,7 +15,7 @@ export default function CaseCard() {
             <Header
                 caseId="73"
                 status="Submitted"
-                onMenuPress={() => console.log("Menu")}
+
             />
 
             <PatientInfo

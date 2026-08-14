@@ -1,6 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
+import { useEffect, useState } from "react";
 import {
+  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -18,6 +21,37 @@ export default function DashboardDrawer({
   visible,
   onClose,
 }: DashboardDrawerProps) {
+  const [profileName, setProfileName] = useState("");
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  useEffect(() => {
+    loadProfile();
+  }, [visible]);
+
+  const loadProfile = async () => {
+    try {
+      const storedUser = await AsyncStorage.getItem("user");
+
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+
+        setProfileName(user.full_name || "");
+
+        if (user.profile_image) {
+          const imageUrl = user.profile_image.startsWith("http")
+            ? `${user.profile_image}?t=${Date.now()}`
+            : `https://tcidentallab.com/tci-uploads/profile/${encodeURIComponent(
+              user.profile_image
+            )}?t=${Date.now()}`;
+
+          setProfileImage(imageUrl);
+        } else {
+          setProfileImage(null);
+        }
+      }
+    } catch (error) {
+      console.log("Drawer Profile Error:", error);
+    }
+  };
   return (
     <Modal
       visible={visible}
@@ -50,17 +84,24 @@ export default function DashboardDrawer({
 
             <View style={styles.profileSection}>
               <View style={styles.profileImage}>
-                <Ionicons
-                  name="person"
-                  size={28}
-                  color="#0152A8"
-                />
+                {profileImage ? (
+                  <Image
+                    source={{ uri: profileImage }}
+                    style={styles.drawerProfileImage}
+                  />
+                ) : (
+                  <Ionicons
+                    name="person"
+                    size={28}
+                    color="#0152A8"
+                  />
+                )}
               </View>
 
 
               <View style={styles.profileInfo}>
                 <Text style={styles.profileName}>
-                  Randy Orton
+                  {profileName || "User"}
                 </Text>
 
                 <TouchableOpacity
@@ -330,5 +371,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#EF4444",
     marginLeft: 14,
+  },
+  drawerProfileImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 26,
   },
 });

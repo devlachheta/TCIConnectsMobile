@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import ProfileMenu from "./CaseCard/ProfileMenu";
 import DashboardDrawer from "./DashboardDrawer";
 interface DashboardHeaderProps {
     notificationCount?: number;
@@ -10,9 +11,7 @@ interface DashboardHeaderProps {
 }
 export default function DashboardHeader({
     notificationCount = 0,
-    profileImage,
     onNotificationPress,
-    onMenuPress,
 }: DashboardHeaderProps) {
     const [drawerVisible, setDrawerVisible] = useState(false);
     return (
@@ -49,20 +48,7 @@ export default function DashboardHeader({
                         )}
                     </TouchableOpacity>
 
-                    {profileImage ? (
-                        <Image
-                            source={{ uri: profileImage }}
-                            style={styles.avatar}
-                        />
-                    ) : (
-                        <View style={styles.avatar}>
-                            <Ionicons
-                                name="person"
-                                size={24}
-                                color="#0152A8"
-                            />
-                        </View>
-                    )}
+                    <ProfileMenu />
                 </View>
             </View>
 
@@ -79,11 +65,16 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingTop: 15,
         paddingBottom: 15,
+
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
+
         backgroundColor: "#fff",
-        elevation: 2,
+
+        position: "relative",
+        zIndex: 9999,
+        elevation: 20,
     },
     menuButton: {
         width: 45,
@@ -108,6 +99,10 @@ const styles = StyleSheet.create({
     rightSection: {
         flexDirection: "row",
         alignItems: "center",
+
+        position: "relative",
+        zIndex: 9999,
+        elevation: 20,
     },
 
     notificationButton: {
@@ -137,14 +132,5 @@ const styles = StyleSheet.create({
         color: "#fff",
         fontSize: 10,
         fontWeight: "700",
-    },
-
-    avatar: {
-        width: 46,
-        height: 46,
-        borderRadius: 23,
-        backgroundColor: "#F5F8FC",
-        justifyContent: "center",
-        alignItems: "center",
     },
 });

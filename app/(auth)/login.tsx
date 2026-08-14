@@ -1,22 +1,20 @@
-import AuthFooter from "@/components/authfooter";
+
 import AuthHeader from "@/components/authheader";
 import AuthInput from "@/components/authInput";
 import PrimaryButton from "@/components/PrimaryBotton";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ImageBackground } from "expo-image";
+import axios from "axios";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    Alert,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import axios from "axios";
-import { LinearGradient } from "expo-linear-gradient";
 import { login } from "../../services/authService";
 
 
