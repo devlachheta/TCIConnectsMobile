@@ -1,17 +1,11 @@
 import api from "./api";
 
-export const getProfile = async (token: string) => {
-  const response = await api.get("/profile", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
+export const getProfile = async () => {
+  const response = await api.get("/profile");
   return response.data;
 };
 
 export const updateProfile = async (
-  token: string,
   profileData: {
     full_name: string;
     phone: string;
@@ -24,18 +18,13 @@ export const updateProfile = async (
 ) => {
   const response = await api.put(
     "/update-profile",
-    profileData,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
+    profileData
   );
 
   return response.data;
 };
+
 export const uploadProfileImage = async (
-  token: string,
   imageUri: string
 ) => {
   const formData = new FormData();
@@ -51,7 +40,6 @@ export const uploadProfileImage = async (
     formData,
     {
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "multipart/form-data",
       },
     }

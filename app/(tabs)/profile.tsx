@@ -55,24 +55,7 @@ export default function Profile() {
         try {
             setLoading(true);
 
-            const token = await AsyncStorage.getItem("access_token");
-
-            if (!token) {
-                Alert.alert(
-                    "Session Expired",
-                    "Please login again.",
-                    [
-                        {
-                            text: "OK",
-                            onPress: () =>
-                                router.replace("/(auth)/login"),
-                        },
-                    ]
-                );
-                return;
-            }
-
-            const response = await getProfile(token);
+            const response = await getProfile();
 
             console.log("Get Profile Response:", response);
 
@@ -207,30 +190,6 @@ export default function Profile() {
 
         try {
             setSaving(true);
-
-            const token =
-                await AsyncStorage.getItem(
-                    "access_token"
-                );
-
-            if (!token) {
-                Alert.alert(
-                    "Session Expired",
-                    "Please login again.",
-                    [
-                        {
-                            text: "OK",
-                            onPress: () =>
-                                router.replace(
-                                    "/(auth)/login"
-                                ),
-                        },
-                    ]
-                );
-                return;
-            }
-
-
             const profileData = {
                 full_name: fullName.trim(),
                 phone: phone.trim(),
@@ -244,11 +203,7 @@ export default function Profile() {
             };
 
 
-            const response =
-                await updateProfile(
-                    token,
-                    profileData
-                );
+            const response = await updateProfile(profileData);
 
             console.log(
                 "Update Profile Response:",
@@ -274,10 +229,7 @@ export default function Profile() {
                 );
 
                 const imageResponse =
-                    await uploadProfileImage(
-                        token,
-                        profileImage
-                    );
+                    await uploadProfileImage(profileImage);
 
                 console.log(
                     "Upload Profile Image Response:",
@@ -332,7 +284,7 @@ export default function Profile() {
             }
 
             // Refresh profile text data from backend
-            const latestProfile = await getProfile(token);
+            const latestProfile = await getProfile();
 
             if (latestProfile?.success && latestProfile?.user) {
                 const user = latestProfile.user;
