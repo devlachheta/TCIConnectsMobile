@@ -37,7 +37,7 @@ export default function AppointmentInfo({
 const styles = StyleSheet.create({
     container: {
         flexDirection: "row",
-        justifyContent: "space-between",
+        columnGap: 30,
         paddingHorizontal: 18,
         paddingVertical: 18,
         borderTopWidth: 1,
@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     },
 
     Column: {
-        flex: 2,
+        flex: 1,
     },
 
     label: {

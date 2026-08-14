@@ -6,6 +6,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import * as SecureStore from "expo-secure-store";
 import { useState } from "react";
 import {
     ScrollView,
@@ -17,11 +18,12 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { login } from "../../services/authService";
 
-
 export default function Login() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+
     const router = useRouter();
+
     const [error, setError] = useState("");
     const [usernameError, setUsernameError] = useState("");
     const [passwordError, setPasswordError] = useState("");
@@ -30,13 +32,16 @@ export default function Login() {
         setError("");
         setUsernameError("");
         setPasswordError("");
+
         const trimmedUsername = username.trim();
         const trimmedPassword = password.trim();
 
+        // Username validation
         if (!trimmedUsername) {
             setUsernameError("Email is required");
         }
 
+        // Password validation
         if (!trimmedPassword) {
             setPasswordError("Password is required");
         }
@@ -45,6 +50,7 @@ export default function Login() {
             return;
         }
 
+        // Email / mobile validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         const mobileRegex = /^[6-9]\d{9}$/;
 
@@ -52,15 +58,21 @@ export default function Login() {
         const isMobile = mobileRegex.test(trimmedUsername);
 
         if (!isEmail && !isMobile) {
-            setUsernameError("Enter a valid email or mobile number");
+            setUsernameError(
+                "Enter a valid email or mobile number"
+            );
             return;
         }
 
+        // Password length validation
         if (trimmedPassword.length < 8) {
-            setPasswordError("Password must be at least 8 characters");
+            setPasswordError(
+                "Password must be at least 8 characters"
+            );
             return;
         }
 
+        // Password space validation
         if (trimmedPassword.includes(" ")) {
             setPasswordError(
                 "Password cannot contain spaces"
@@ -69,40 +81,72 @@ export default function Login() {
         }
 
         try {
+            // Call login API
             const response = await login(
                 trimmedUsername,
                 trimmedPassword
             );
 
-            await AsyncStorage.setItem(
+            console.log("Login successful");
+
+            // Check whether JWT exists
+            if (!response?.access_token) {
+                console.log(
+                    "Login response does not contain access_token"
+                );
+
+                setError(
+                    "Login successful, but authentication token was not received."
+                );
+
+                return;
+            }
+
+            // Store JWT securely
+            await SecureStore.setItemAsync(
                 "access_token",
                 response.access_token
             );
 
+            // Store user information
             await AsyncStorage.setItem(
                 "user",
                 JSON.stringify(response.user)
             );
 
+            console.log("JWT stored successfully");
+
+            // Get user role
             const userRole = response.user?.role;
 
-            if (userRole === "admin" || userRole === "doctor") {
+            // Navigate based on role
+            if (
+                userRole === "admin" ||
+                userRole === "doctor"
+            ) {
                 router.replace("/(tabs)");
             } else {
                 setError("Invalid user role");
             }
+
         } catch (error) {
             console.log("Login Error:", error);
+
             if (axios.isAxiosError(error)) {
-                console.log("Response:", error.response?.data);
+                console.log(
+                    "Response:",
+                    error.response?.data
+                );
+
                 setError(
-                    error.response?.data?.detail || "Something went wrong"
+                    error.response?.data?.detail ||
+                    "Something went wrong"
                 );
             } else {
                 setError("Unexpected error");
             }
         }
-    }
+    };
 
     return (
         <SafeAreaView

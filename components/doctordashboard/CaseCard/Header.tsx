@@ -4,13 +4,14 @@ import { StyleSheet, Text, View } from "react-native";
 interface HeaderProps {
     caseId: string;
     status: string;
+    onMenuPress: () => void;
 
 }
 
 export default function Header({
     caseId,
     status,
-
+    onMenuPress,
 }: HeaderProps) {
 
     return (
