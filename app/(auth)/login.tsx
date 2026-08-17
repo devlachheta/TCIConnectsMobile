@@ -1,4 +1,3 @@
-
 import AuthHeader from "@/components/authheader";
 import AuthInput from "@/components/authInput";
 import PrimaryButton from "@/components/PrimaryBotton";

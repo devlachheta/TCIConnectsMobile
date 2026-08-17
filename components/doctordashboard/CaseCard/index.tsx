@@ -15,25 +15,24 @@ interface CaseCardProps {
 
 export default function CaseCard({ caseData }: CaseCardProps) {
 
-
-    // Calculate whether deadline has passed
     const deadlinePassed = caseData.delivery_deadline
         ? new Date(caseData.delivery_deadline) < new Date()
         : false;
 
     const files = caseData.files || [];
-
     const casePdf = files.find(
         (file: any) =>
             file.file_category === "case_document"
     );
 
+
     const digitalFiles = files.filter(
         (file: any) =>
             file.file_category === "digital_file"
-    );
+    ).slice(0, 5);
 
-    const previewFiles = files.filter(
+
+    const previewFile = files.find(
         (file: any) =>
             file.file_category === "preview_file"
     );
@@ -45,21 +44,25 @@ export default function CaseCard({ caseData }: CaseCardProps) {
             <Header
                 caseId={caseData.id}
                 status={caseData.status}
-                onMenuPress={() => console.log("Menu")}
+                onMenuPress={() =>
+                    console.log("Menu")
+                }
             />
-
-            {/* Patient */}
             <PatientInfo
                 patientName={caseData.patient_name}
             />
 
+
             {/* Appointment + Age */}
             <AppointmentInfo
-                appointmentDate={caseData.appointment_date}
+                appointmentDate={
+                    caseData.appointment_date
+                }
                 age={`${caseData.age} Years`}
             />
 
-            {/* Case PDF */}
+
+
             <PDFSection
                 fileName={
                     casePdf?.file_name ||
@@ -76,45 +79,60 @@ export default function CaseCard({ caseData }: CaseCardProps) {
                     );
                 }}
             />
-
-            {/* Digital Files */}
             {digitalFiles.length > 0 ? (
-                digitalFiles.map((file: any) => (
-                    <DigitalFileSection
-                        key={file.id}
-                        title="Digital File"
-                        fileName={file.file_name}
-                        onDownload={() => {
-                            openCaseFile(
-                                file.file_path,
-                                file.file_name
-                            );
-                        }}
-                    />
-                ))
+
+                digitalFiles.map(
+                    (file: any) => (
+
+                        <DigitalFileSection
+                            key={file.id}
+                            title="Digital File"
+                            fileName={file.file_name}
+                            onDownload={() => {
+
+                                openCaseFile(
+                                    file.file_path,
+                                    file.file_name
+                                );
+
+                            }}
+                        />
+
+                    )
+                )
+
             ) : (
+
                 <DigitalFileSection
                     title="Digital Files"
                     fileName="No Digital Files"
-                    onDownload={() => {
-                        console.log("No digital files");
-                    }}
+                    onDownload={() =>
+                        console.log(
+                            "No digital files"
+                        )
+                    }
                 />
+
             )}
-            {/* Preview */}
             <PreviewSection
                 fileName={
-                    previewFiles.length > 0
-                        ? previewFiles[0].file_name
-                        : "No Preview Files"
+                    previewFile?.file_name ||
+                    "No Preview File"
                 }
                 onDownload={() => {
-                    console.log(
-                        "PREVIEW FILES:",
-                        previewFiles
+
+                    if (!previewFile) {
+                        return;
+                    }
+
+                    openCaseFile(
+                        previewFile.file_path,
+                        previewFile.file_name
                     );
+
                 }}
             />
+
 
             {/* Deadline */}
             <DeadlineSection
@@ -132,11 +150,13 @@ export default function CaseCard({ caseData }: CaseCardProps) {
                     console.log("Reject")
                 }
             />
-
-            {/* Footer */}
             <FooterActions
-                onEdit={() => console.log("Edit")}
-                onDelete={() => console.log("Delete")}
+                onEdit={() =>
+                    console.log("Edit")
+                }
+                onDelete={() =>
+                    console.log("Delete")
+                }
             />
 
         </View>
@@ -150,10 +170,8 @@ const styles = StyleSheet.create({
         marginHorizontal: 18,
         marginTop: 20,
         overflow: "hidden",
-
         borderWidth: 1,
         borderColor: "#D9E0EC",
-
         elevation: 3,
     },
 });

@@ -1,19 +1,11 @@
-import * as SecureStore from "expo-secure-store";
-import * as Sharing from "expo-sharing";
-import * as IntentLauncher from "expo-intent-launcher";
-import * as FileSystemLegacy from "expo-file-system/legacy";
-
 import {
     Directory,
     File,
     Paths,
 } from "expo-file-system";
 
-// IMPORTANT:
-// Change this import if your native module file is located somewhere else.
-import {
-    downloadFile as nativeDownloadFile,
-} from "@/modules/tci-file-downloader/src";
+import * as SecureStore from "expo-secure-store";
+import * as Sharing from "expo-sharing";
 
 const API_URL = "https://tcidentallab.com/api";
 
@@ -65,9 +57,10 @@ const getMimeType = (fileName: string): string => {
  * Get JWT token
  */
 const getAccessToken = async (): Promise<string> => {
-    const token = await SecureStore.getItemAsync(
-        "access_token"
-    );
+    const token =
+        await SecureStore.getItemAsync(
+            "access_token"
+        );
 
     if (!token) {
         throw new Error(
@@ -93,88 +86,21 @@ const getDownloadUrl = (
 
 
 /**
- * =====================================================
- * DOWNLOAD FILE DIRECTLY TO ANDROID DOWNLOADS
- * =====================================================
+ * Download file to temporary app storage.
  *
- * This uses the custom Kotlin native module.
- *
- * Result:
- *
- * Android
- *   ↓
- * Download
- *   ↓
- * TCI Connect
- *   ↓
- * filename.ext
- *
- * NO folder picker.
- */
-export const downloadCaseFile = async (
-    filePath: string,
-    fileName: string
-): Promise<string> => {
-    try {
-        console.log(
-            "Starting native download:",
-            fileName
-        );
-
-        const token = await getAccessToken();
-
-        const downloadUrl =
-            getDownloadUrl(filePath);
-
-        const mimeType =
-            getMimeType(fileName);
-
-        console.log("Download URL:", downloadUrl);
-        console.log("MIME type:", mimeType);
-
-        const uri =
-            await nativeDownloadFile(
-                downloadUrl,
-                fileName,
-                mimeType,
-                token
-            );
-
-        console.log(
-            "File downloaded successfully:",
-            uri
-        );
-
-        return uri;
-
-    } catch (error) {
-        console.error(
-            "Native download error:",
-            error
-        );
-
-        throw error;
-    }
-};
-/**
- * =====================================================
- * DOWNLOAD TEMPORARY FILE
- * =====================================================
- *
- * Used only for:
- *
+ * This is used by:
  * - Open
  * - Share
+ * - Download before copying to Downloads
  *
- * This does NOT save to Downloads.
+ * The important part is that this destination is
+ * a normal local file, NOT a content:// URI.
  */
 export const downloadTemporaryFile = async (
     filePath: string,
     fileName: string
 ): Promise<string> => {
-
     try {
-
         const token =
             await getAccessToken();
 
@@ -207,7 +133,7 @@ export const downloadTemporaryFile = async (
         /**
          * Destination:
          *
-         * cache/case-files/file.ext
+         * file:///.../cache/case-files/file.mp4
          */
         const destinationFile =
             new File(
@@ -221,7 +147,10 @@ export const downloadTemporaryFile = async (
         );
 
         /**
-         * Download to app cache.
+         * Download directly to local file.
+         *
+         * No Blob.
+         * No Base64.
          */
         const downloadedFile =
             await File.downloadFileAsync(
@@ -242,10 +171,14 @@ export const downloadTemporaryFile = async (
             downloadedFile.uri
         );
 
+        console.log(
+            "File exists:",
+            downloadedFile.exists
+        );
+
         return downloadedFile.uri;
 
     } catch (error) {
-
         console.error(
             "Temporary download error:",
             error
@@ -257,52 +190,177 @@ export const downloadTemporaryFile = async (
 
 
 /**
- * =====================================================
- * OPEN CASE FILE
- * =====================================================
+ * Download file to user's selected directory.
+ *
+ * Flow:
+ *
+ * Server
+ *   ↓
+ * Temporary local file
+ *   ↓
+ * Android Downloads folder
+ */
+export const downloadCaseFile = async (
+    filePath: string,
+    fileName: string
+): Promise<string> => {
+    try {
+        console.log(
+            "Starting file download:",
+            fileName
+        );
+
+        /**
+         * 1. Download to normal local storage first.
+         *
+         * This avoids the content:// problem.
+         */
+        const temporaryUri =
+            await downloadTemporaryFile(
+                filePath,
+                fileName
+            );
+
+        console.log(
+            "Temporary file ready:",
+            temporaryUri
+        );
+
+
+        /**
+         * 2. Ask user to choose a directory.
+         *
+         * On Android, this will normally be:
+         *
+         * Downloads
+         *
+         * Then:
+         *
+         * "Use this folder"
+         */
+        const directory =
+            await Directory.pickDirectoryAsync();
+
+        console.log(
+            "Selected directory:",
+            directory.uri
+        );
+
+
+        /**
+         * 3. Create destination file
+         * inside the selected directory.
+         */
+        const destinationFile =
+            directory.createFile(
+                fileName,
+                getMimeType(fileName)
+            );
+
+        console.log(
+            "Downloads destination:",
+            destinationFile.uri
+        );
+
+
+        /**
+         * 4. Copy the local file into
+         * the user-selected directory.
+         *
+         * IMPORTANT:
+         *
+         * We DON'T call downloadFileAsync()
+         * directly on the content:// URI.
+         */
+        const sourceFile =
+            new File(temporaryUri);
+
+        sourceFile.copy(
+            destinationFile
+        );
+
+        console.log(
+            "File copied successfully:"
+        );
+
+        console.log(
+            destinationFile.uri
+        );
+
+
+        /**
+         * 5. Return the destination URI.
+         */
+        return destinationFile.uri;
+
+    } catch (error) {
+        console.error(
+            "File download error:",
+            error
+        );
+
+        throw error;
+    }
+};
+
+
+/**
+ * Open / share a case file.
  *
  * This does NOT save to Downloads.
  *
- * It downloads the file to temporary storage
- * and opens the Android sharing/open dialog.
+ * It downloads temporarily and then
+ * opens the Android share/open dialog.
  */
 export const openCaseFile = async (
     filePath: string,
     fileName: string
 ): Promise<void> => {
     try {
-        console.log("Opening file:", fileName);
-
-        // 1. Download to app cache
-        const fileUri = await downloadTemporaryFile(
-            filePath,
+        console.log(
+            "Opening file:",
             fileName
         );
 
-        console.log("Temporary file:", fileUri);
-
-        // 2. Convert file:// URI to content:// URI
-        const contentUri =
-            await FileSystemLegacy.getContentUriAsync(
-                fileUri
+        /**
+         * Download to normal local storage.
+         */
+        const uri =
+            await downloadTemporaryFile(
+                filePath,
+                fileName
             );
 
-        console.log("Content URI:", contentUri);
+        console.log(
+            "Opening local file:",
+            uri
+        );
 
-        // 3. Get MIME type
-        const mimeType = getMimeType(fileName);
 
-        console.log("MIME type:", mimeType);
+        /**
+         * Check whether sharing is available.
+         */
+        const sharingAvailable =
+            await Sharing.isAvailableAsync();
 
-        // 4. Open directly using Android VIEW intent
-        await IntentLauncher.startActivityAsync(
-            "android.intent.action.VIEW",
+        if (!sharingAvailable) {
+            throw new Error(
+                "File sharing is not available on this device"
+            );
+        }
+
+
+        /**
+         * Open Android share/open dialog.
+         */
+        await Sharing.shareAsync(
+            uri,
             {
-                data: contentUri,
-                type: mimeType,
+                mimeType:
+                    getMimeType(fileName),
 
-                // FLAG_GRANT_READ_URI_PERMISSION
-                flags: 1,
+                dialogTitle:
+                    `Open ${fileName}`,
             }
         );
 
@@ -314,38 +372,24 @@ export const openCaseFile = async (
     }
 };
 
+
 /**
- * =====================================================
- * SHARE CASE FILE
- * =====================================================
+ * Share a case file.
  *
- * Downloads temporarily and opens
- * Android share dialog.
+ * This is intentionally separate from
+ * the Download button.
  */
 export const shareCaseFile = async (
     filePath: string,
     fileName: string
 ): Promise<void> => {
-
     try {
-
-        console.log(
-            "Sharing file:",
-            fileName
-        );
-
-        /**
-         * Download temporarily
-         */
         const uri =
             await downloadTemporaryFile(
                 filePath,
                 fileName
             );
 
-        /**
-         * Check sharing availability
-         */
         const sharingAvailable =
             await Sharing.isAvailableAsync();
 
@@ -355,9 +399,6 @@ export const shareCaseFile = async (
             );
         }
 
-        /**
-         * Open Android share dialog
-         */
         await Sharing.shareAsync(
             uri,
             {
@@ -370,7 +411,6 @@ export const shareCaseFile = async (
         );
 
     } catch (error) {
-
         console.error(
             "Share file error:",
             error

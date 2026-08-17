@@ -1,21 +1,14 @@
-import {
-    NativeModule,
-    requireNativeModule,
-} from "expo";
+import { NativeModule, requireNativeModule } from "expo";
 
-export interface TciFileDownloaderModuleEvents {}
-
-declare class TciFileDownloaderModule
-    extends NativeModule<TciFileDownloaderModuleEvents> {
-
-    download(
+declare class TciFileDownloaderModule extends NativeModule {
+    download: (
         url: string,
         fileName: string,
         mimeType: string,
         token: string
-    ): Promise<string>;
+    ) => Promise<string>;
 }
 
 export default requireNativeModule<TciFileDownloaderModule>(
     "TciFileDownloader"
-);
+);  

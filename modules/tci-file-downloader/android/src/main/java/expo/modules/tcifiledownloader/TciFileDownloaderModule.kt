@@ -13,7 +13,10 @@ import java.net.URL
 class TciFileDownloaderModule : Module() {
 
     override fun definition() = ModuleDefinition {
+<<<<<<< HEAD
 
+=======
+>>>>>>> file-service
         Name("TciFileDownloader")
 
         AsyncFunction("download") {
@@ -38,7 +41,11 @@ class TciFileDownloaderModule : Module() {
         token: String
     ): String {
 
+<<<<<<< HEAD
         // Android 10+ is required for MediaStore Downloads
+=======
+        // Android 10+ supports MediaStore Downloads
+>>>>>>> file-service
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             throw IOException(
                 "Android 10 or newer is required."
@@ -57,9 +64,17 @@ class TciFileDownloaderModule : Module() {
 
         try {
 
+<<<<<<< HEAD
             // -----------------------------------------
             // 1. Create file in Downloads/TCI Connect
             // -----------------------------------------
+=======
+            // ------------------------------------
+            // 1. Create file in:
+            //
+            // Downloads/TCI Connect
+            // ------------------------------------
+>>>>>>> file-service
 
             val values = ContentValues().apply {
 
@@ -78,7 +93,11 @@ class TciFileDownloaderModule : Module() {
                     "Download/TCI Connect"
                 )
 
+<<<<<<< HEAD
                 // Hide file while downloading
+=======
+                // Keep hidden while downloading
+>>>>>>> file-service
                 put(
                     MediaStore.Downloads.IS_PENDING,
                     1
@@ -94,9 +113,15 @@ class TciFileDownloaderModule : Module() {
                         "Could not create file in Downloads."
                     )
 
+<<<<<<< HEAD
             // -----------------------------------------
             // 2. Connect to FastAPI
             // -----------------------------------------
+=======
+            // ------------------------------------
+            // 2. Connect to FastAPI
+            // ------------------------------------
+>>>>>>> file-service
 
             val url = URL(urlString)
 
@@ -106,9 +131,13 @@ class TciFileDownloaderModule : Module() {
             connection.requestMethod = "GET"
 
             connection.connectTimeout = 30_000
+<<<<<<< HEAD
 
             // 2 minutes
             connection.readTimeout = 120_000
+=======
+            connection.readTimeout = 60_000
+>>>>>>> file-service
 
             connection.setRequestProperty(
                 "Authorization",
@@ -122,9 +151,15 @@ class TciFileDownloaderModule : Module() {
 
             connection.connect()
 
+<<<<<<< HEAD
             // -----------------------------------------
             // 3. Check HTTP response
             // -----------------------------------------
+=======
+            // ------------------------------------
+            // 3. Check response
+            // ------------------------------------
+>>>>>>> file-service
 
             val responseCode =
                 connection.responseCode
@@ -138,10 +173,16 @@ class TciFileDownloaderModule : Module() {
                 )
             }
 
+<<<<<<< HEAD
             // -----------------------------------------
             // 4. Stream server response directly
             //    into Downloads
             // -----------------------------------------
+=======
+            // ------------------------------------
+            // 4. Stream file
+            // ------------------------------------
+>>>>>>> file-service
 
             val input =
                 BufferedInputStream(
@@ -183,9 +224,15 @@ class TciFileDownloaderModule : Module() {
                 }
             }
 
+<<<<<<< HEAD
             // -----------------------------------------
             // 5. Make file visible
             // -----------------------------------------
+=======
+            // ------------------------------------
+            // 5. Make file visible
+            // ------------------------------------
+>>>>>>> file-service
 
             val completedValues =
                 ContentValues().apply {
@@ -203,14 +250,21 @@ class TciFileDownloaderModule : Module() {
                 null
             )
 
+<<<<<<< HEAD
             // -----------------------------------------
             // 6. Return Android content URI
             // -----------------------------------------
+=======
+            // ------------------------------------
+            // 6. Return URI to React Native
+            // ------------------------------------
+>>>>>>> file-service
 
             return fileUri.toString()
 
         } catch (error: Exception) {
 
+<<<<<<< HEAD
             // -----------------------------------------
             // Delete incomplete file
             // -----------------------------------------
@@ -219,12 +273,20 @@ class TciFileDownloaderModule : Module() {
 
                 try {
 
+=======
+            // Delete incomplete file
+            fileUri?.let { uri ->
+                try {
+>>>>>>> file-service
                     resolver.delete(
                         uri,
                         null,
                         null
                     )
+<<<<<<< HEAD
 
+=======
+>>>>>>> file-service
                 } catch (_: Exception) {
                     // Ignore cleanup error
                 }
@@ -233,7 +295,10 @@ class TciFileDownloaderModule : Module() {
             throw error
 
         } finally {
+<<<<<<< HEAD
 
+=======
+>>>>>>> file-service
             connection?.disconnect()
         }
     }

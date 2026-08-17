@@ -6,12 +6,10 @@ export const downloadFile = async (
     mimeType: string,
     token: string
 ): Promise<string> => {
-    return TciFileDownloaderModule.download(
+    return await TciFileDownloaderModule.download(
         url,
         fileName,
         mimeType,
         token
     );
 };
-
-export default TciFileDownloaderModule;
