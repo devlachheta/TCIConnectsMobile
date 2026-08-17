@@ -2,12 +2,53 @@
 import CaseCard from "@/components/doctordashboard/CaseCard";
 import DashboardHeader from "@/components/doctordashboard/DashboardHeader";
 import FilterSection from "@/components/doctordashboard/FilterSection";
+import api from "@/services/api";
 import { Image } from "expo-image";
-import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import StatCard from "../../components/doctordashboard/StatCard";
 
 export default function Index() {
+
+  const [cases, setCases] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalCases, setTotalCases] = useState(0);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [deadlineFilter, setDeadlineFilter] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const fetchCases = async () => {
+    try {
+      setLoading(true);
+
+
+      const response = await api.get("/cases", {
+        params: {
+          page: 1,
+          limit: 10,
+          status: statusFilter || undefined,
+          deadline: deadlineFilter || undefined,
+          search: searchTerm || undefined,
+        },
+      });
+
+
+
+      console.log("Doctor Cases:", response.data);
+      setCases(response.data.items);
+      setTotalCases(response.data.total);
+
+    } catch (error) {
+      console.log("Error fetching doctor cases:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    fetchCases();
+  }, [statusFilter, deadlineFilter]);
+
   return (
     <>
       <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
@@ -24,8 +65,7 @@ export default function Index() {
               Here's your case overview
             </Text>
           </View>
-          <StatCard />
-
+          <StatCard totalPatients={totalCases} />
           <View>
             <Text style={styles.latest}>
               Latest Cases
@@ -37,6 +77,8 @@ export default function Index() {
               placeholder="Search"
               placeholderTextColor="#8E8E93"
               style={styles.searchInput}
+              value={searchTerm}
+              onChangeText={setSearchTerm}
             />
 
             <Image
@@ -45,8 +87,34 @@ export default function Index() {
               contentFit="contain"
             />
           </View>
-          <FilterSection />
-          <CaseCard />
+          <FilterSection
+            onApply={(status, deadline) => {
+              setStatusFilter(status);
+              setDeadlineFilter(deadline);
+            }}
+            onReset={() => {
+              setStatusFilter("");
+              setDeadlineFilter("");
+            }}
+          />
+          {/* CASES */}
+          {loading ? (
+            <ActivityIndicator
+              size="large"
+              style={styles.loader}
+            />
+          ) : cases.length === 0 ? (
+            <Text style={styles.noCases}>
+              No cases found
+            </Text>
+          ) : (
+            cases.map((item) => (
+              <CaseCard
+                key={item.id}
+                caseData={item}
+              />
+            ))
+          )}
         </ScrollView>
       </SafeAreaView>
     </>
@@ -113,6 +181,16 @@ const styles = StyleSheet.create(
     searchIcon: {
       width: 18,
       height: 18,
+    },
+    loader: {
+      marginTop: 30,
+    },
+
+    noCases: {
+      textAlign: "center",
+      marginTop: 30,
+      fontSize: 16,
+      color: "#666",
     },
   }
 );
