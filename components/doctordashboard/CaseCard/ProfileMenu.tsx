@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Image,
   StyleSheet,
@@ -13,9 +13,38 @@ import {
 export default function ProfileMenu() {
   const [menuVisible, setMenuVisible] = useState(false);
 
-  // Temporary values for UI testing
-  const profileName = "John Smith";
-  const profileImage = null;
+  const [profileName, setProfileName] = useState("");
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    try {
+      const storedUser = await AsyncStorage.getItem("user");
+
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+
+        setProfileName(user.full_name || "");
+
+        if (user.profile_image) {
+          const imageUrl = user.profile_image.startsWith("http")
+            ? `${user.profile_image}?t=${Date.now()}`
+            : `https://tcidentallab.com/tci-uploads/profile/${encodeURIComponent(
+              user.profile_image
+            )}?t=${Date.now()}`;
+
+          setProfileImage(imageUrl);
+        } else {
+          setProfileImage(null);
+        }
+      }
+    } catch (error) {
+      console.log("Profile Menu Error:", error);
+    }
+  };
 
   return (
     <View style={styles.container}>

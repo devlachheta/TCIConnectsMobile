@@ -1,7 +1,7 @@
 import AuthHeader from "@/components/authheader";
 import AuthInput from "@/components/authInput";
 import PrimaryButton from "@/components/PrimaryBotton";
-import { Ionicons } from "@expo/vector-icons";
+import api from "@/services/api";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -26,10 +26,6 @@ export default function ChangePassword() {
   const [newPasswordError, setNewPasswordError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
 
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
   const handleChangePassword = async () => {
     // Clear previous errors
     setCurrentPasswordError("");
@@ -40,17 +36,13 @@ export default function ChangePassword() {
 
     // Current password validation
     if (!currentPassword.trim()) {
-      setCurrentPasswordError(
-        "Current password is required"
-      );
+      setCurrentPasswordError("Current password is required");
       hasError = true;
     }
 
     // New password validation
     if (!newPassword.trim()) {
-      setNewPasswordError(
-        "New password is required"
-      );
+      setNewPasswordError("New password is required");
       hasError = true;
     } else if (newPassword.length < 8) {
       setNewPasswordError(
@@ -66,9 +58,7 @@ export default function ChangePassword() {
       );
       hasError = true;
     } else if (newPassword !== confirmPassword) {
-      setConfirmPasswordError(
-        "Passwords do not match"
-      );
+      setConfirmPasswordError("Passwords do not match");
       hasError = true;
     }
 
@@ -76,23 +66,52 @@ export default function ChangePassword() {
       return;
     }
 
-    // Backend API will be connected here.
-    console.log("Change Password:", {
-      currentPassword,
-      newPassword,
-      confirmPassword,
-    });
+    try {
+      const response = await api.post("/change-password", {
+        current_password: currentPassword,
+        new_password: newPassword,
+      });
 
-    Alert.alert(
-      "Success",
-      "Password changed successfully.",
-      [
-        {
-          text: "OK",
-          onPress: () => router.back(),
-        },
-      ]
-    );
+      console.log("Change password response:", response.data);
+
+      if (response.data.success) {
+        Alert.alert(
+          "Success",
+          "Password updated successfully.",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                router.replace("/(auth)/login");
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          "Error",
+          response.data.message || "Unable to change password."
+        );
+      }
+    } catch (error: any) {
+      console.log(
+        "Change password error:",
+        error?.response?.data || error
+      );
+
+      if (error?.response) {
+        Alert.alert(
+          "Error",
+          error.response.data?.message ||
+          "Unable to change password."
+        );
+      } else {
+        Alert.alert(
+          "Error",
+          "Something went wrong. Please try again."
+        );
+      }
+    }
   };
 
   return (
@@ -130,33 +149,12 @@ export default function ChangePassword() {
               Current Password
             </Text>
 
-            <View style={styles.passwordContainer}>
-              <AuthInput
-                placeholder="Enter current password"
-                value={currentPassword}
-                onChangeText={setCurrentPassword}
-                secureTextEntry={!showCurrentPassword}
-              />
-
-              <TouchableOpacity
-                style={styles.eyeButton}
-                onPress={() =>
-                  setShowCurrentPassword(
-                    !showCurrentPassword
-                  )
-                }
-              >
-                <Ionicons
-                  name={
-                    showCurrentPassword
-                      ? "eye-off-outline"
-                      : "eye-outline"
-                  }
-                  size={22}
-                  color="#6B7280"
-                />
-              </TouchableOpacity>
-            </View>
+            <AuthInput
+              placeholder="Enter current password"
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+              secureTextEntry={true}
+            />
 
             {currentPasswordError ? (
               <Text style={styles.errorText}>
@@ -169,33 +167,12 @@ export default function ChangePassword() {
               New Password
             </Text>
 
-            <View style={styles.passwordContainer}>
-              <AuthInput
-                placeholder="Enter new password"
-                value={newPassword}
-                onChangeText={setNewPassword}
-                secureTextEntry={!showNewPassword}
-              />
-
-              <TouchableOpacity
-                style={styles.eyeButton}
-                onPress={() =>
-                  setShowNewPassword(
-                    !showNewPassword
-                  )
-                }
-              >
-                <Ionicons
-                  name={
-                    showNewPassword
-                      ? "eye-off-outline"
-                      : "eye-outline"
-                  }
-                  size={22}
-                  color="#6B7280"
-                />
-              </TouchableOpacity>
-            </View>
+            <AuthInput
+              placeholder="Enter new password"
+              value={newPassword}
+              onChangeText={setNewPassword}
+              secureTextEntry={true}
+            />
 
             {newPasswordError ? (
               <Text style={styles.errorText}>
@@ -207,34 +184,12 @@ export default function ChangePassword() {
             <Text style={styles.label}>
               Confirm New Password
             </Text>
-
-            <View style={styles.passwordContainer}>
-              <AuthInput
-                placeholder="Enter new password again"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry={!showConfirmPassword}
-              />
-
-              <TouchableOpacity
-                style={styles.eyeButton}
-                onPress={() =>
-                  setShowConfirmPassword(
-                    !showConfirmPassword
-                  )
-                }
-              >
-                <Ionicons
-                  name={
-                    showConfirmPassword
-                      ? "eye-off-outline"
-                      : "eye-outline"
-                  }
-                  size={22}
-                  color="#6B7280"
-                />
-              </TouchableOpacity>
-            </View>
+            <AuthInput
+              placeholder="Enter new password again"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry={true}
+            />
 
             {confirmPasswordError ? (
               <Text style={styles.errorText}>
@@ -309,19 +264,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
   },
 
-  passwordContainer: {
-    position: "relative",
-  },
-
-  eyeButton: {
-    position: "absolute",
-    right: 14,
-    top: 0,
-    height: 52,
-    width: 40,
-    justifyContent: "center",
-    alignItems: "center",
-  },
 
   errorText: {
     color: "#FFB4B4",

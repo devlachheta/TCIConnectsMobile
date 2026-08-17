@@ -1,8 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
+import * as SecureStore from "expo-secure-store";
 import { useEffect, useState } from "react";
 import {
+  Alert,
   Image,
   Modal,
   Pressable,
@@ -23,6 +25,28 @@ export default function DashboardDrawer({
 }: DashboardDrawerProps) {
   const [profileName, setProfileName] = useState("");
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const handleLogout = async () => {
+    try {
+      // Remove authentication token
+      await SecureStore.deleteItemAsync("access_token");
+
+      // Remove stored user information
+      await AsyncStorage.removeItem("user");
+
+      // Close drawer
+      onClose();
+
+      // Go to welcome screen
+      router.replace("/(auth)/welcome");
+    } catch (error) {
+      console.log("Logout Error:", error);
+
+      Alert.alert(
+        "Logout Error",
+        "Unable to logout. Please try again."
+      );
+    }
+  };
   useEffect(() => {
     loadProfile();
   }, [visible]);
@@ -235,12 +259,10 @@ export default function DashboardDrawer({
                 </Text>
               </TouchableOpacity>
               <View style={styles.divider} />
-              <TouchableOpacity style={styles.logoutItem}
-
-                onPress={() => {
-                  onClose();
-                  router.push("/(auth)/welcome");
-                }}>
+              <TouchableOpacity
+                style={styles.logoutItem}
+                onPress={handleLogout}
+              >
                 <Ionicons
                   name="log-out-outline"
                   size={22}
