@@ -52,8 +52,7 @@ export default function Index() {
   return (
     <>
       <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-        <DashboardHeader notificationCount={10}
-        />
+        <DashboardHeader />
         <ScrollView
           contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
