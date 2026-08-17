@@ -1,18 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 import ProfileMenu from "./CaseCard/ProfileMenu";
 import DashboardDrawer from "./DashboardDrawer";
+import Notification from "./notification";
 interface DashboardHeaderProps {
-    notificationCount?: number;
     profileImage?: string;
-    onNotificationPress?: () => void;
     onMenuPress?: () => void;
 }
-export default function DashboardHeader({
-    notificationCount = 0,
-    onNotificationPress,
-}: DashboardHeaderProps) {
+export default function DashboardHeader({ }: DashboardHeaderProps) {
     const [drawerVisible, setDrawerVisible] = useState(false);
     return (
         <>
@@ -29,25 +25,8 @@ export default function DashboardHeader({
                 </TouchableOpacity>
 
                 <View style={styles.rightSection}>
-                    <TouchableOpacity
-                        style={styles.notificationButton}
-                        onPress={onNotificationPress}
-                    >
-                        <Ionicons
-                            name="notifications-outline"
-                            size={24}
-                            color="#0152A8"
-                        />
-
-                        {notificationCount > 0 && (
-                            <View style={styles.badge}>
-                                <Text style={styles.badgeText}>
-                                    {notificationCount}
-                                </Text>
-                            </View>
-                        )}
-                    </TouchableOpacity>
-
+                    <Notification />
+                    <View style={{ marginLeft: 10 }}></View>
                     <ProfileMenu />
                 </View>
             </View>
