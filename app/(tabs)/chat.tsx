@@ -12,7 +12,7 @@ import React, {
 import {
     ActivityIndicator,
     FlatList,
-
+    Platform,
     KeyboardAvoidingView,
     StyleSheet,
     Text,
