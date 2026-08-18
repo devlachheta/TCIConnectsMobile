@@ -32,3 +32,79 @@ export const uploadCaseFile = async (
 
   return response.data;
 };
+
+
+export const getCase = async (
+  caseId: number | string
+) => {
+  try {
+    const response = await api.get(
+      `/cases/${caseId}`
+    );
+
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      "❌ Error fetching case:",
+      error?.response?.data ||
+      error?.message ||
+      error
+    );
+
+    throw error;
+  }
+};
+
+export const updateCase = async (
+  caseId: number | string,
+  data: any
+) => {
+  try {
+    const response = await api.put(
+      `/cases/${caseId}`,
+      data
+    );
+
+    console.log(
+      "✅ Case updated:",
+      response.data
+    );
+
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      "❌ Error updating case:",
+      error?.response?.data ||
+      error?.message ||
+      error
+    );
+
+    throw error;
+  }
+};
+
+export const deleteCase = async (
+  caseId: number | string
+) => {
+  try {
+    const response = await api.delete(
+      `/cases/${caseId}`
+    );
+
+    console.log(
+      "✅ Case deleted:",
+      response.data
+    );
+
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      "❌ Error deleting case:",
+      error?.response?.data ||
+      error?.message ||
+      error
+    );
+
+    throw error;
+  }
+};

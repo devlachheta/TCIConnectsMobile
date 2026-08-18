@@ -8,12 +8,19 @@ import Header from "./Header";
 import PatientInfo from "./PatientInfo";
 import PDFSection from "./PDFSection";
 import PreviewSection from "./PreviewSection";
+import {
+    Alert,
+} from "react-native";
+import { deleteCase } from "@/services/caseService";
 
 interface CaseCardProps {
     caseData: any;
+    onCaseDeleted?: (caseId: number) => void;
+    onEdit?: (caseData: any) => void;
 }
 
-export default function CaseCard({ caseData }: CaseCardProps) {
+export default function CaseCard({ caseData, onCaseDeleted,
+    onEdit, }: CaseCardProps) {
 
     const deadlinePassed = caseData.delivery_deadline
         ? new Date(caseData.delivery_deadline) < new Date()
@@ -37,6 +44,44 @@ export default function CaseCard({ caseData }: CaseCardProps) {
             file.file_category === "preview_file"
     );
 
+
+    const handleDelete = () => {
+        Alert.alert(
+            "Delete Case",
+            "Are you sure you want to delete this case?",
+            [
+                {
+                    text: "Cancel",
+                    style: "cancel",
+                },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await deleteCase(caseData.id);
+
+                            Alert.alert(
+                                "Success",
+                                "Case deleted successfully."
+                            );
+
+                            onCaseDeleted?.(
+                                caseData.id
+                            );
+                        } catch (error: any) {
+                            Alert.alert(
+                                "Error",
+                                error?.response?.data?.detail ||
+                                "Failed to delete case."
+                            );
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
     return (
         <View style={styles.card}>
 
@@ -52,16 +97,12 @@ export default function CaseCard({ caseData }: CaseCardProps) {
                 patientName={caseData.patient_name}
             />
 
-
-            {/* Appointment + Age */}
             <AppointmentInfo
                 appointmentDate={
                     caseData.appointment_date
                 }
                 age={`${caseData.age} Years`}
             />
-
-
 
             <PDFSection
                 fileName={
@@ -132,9 +173,6 @@ export default function CaseCard({ caseData }: CaseCardProps) {
 
                 }}
             />
-
-
-            {/* Deadline */}
             <DeadlineSection
                 deadline={
                     caseData.delivery_deadline
@@ -151,12 +189,10 @@ export default function CaseCard({ caseData }: CaseCardProps) {
                 }
             />
             <FooterActions
-                onEdit={() =>
-                    console.log("Edit")
-                }
-                onDelete={() =>
-                    console.log("Delete")
-                }
+                onEdit={() => {
+                    onEdit?.(caseData);
+                }}
+                onDelete={handleDelete}
             />
 
         </View>
