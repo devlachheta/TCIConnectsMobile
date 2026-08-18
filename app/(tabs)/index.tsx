@@ -8,9 +8,10 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import StatCard from "../../components/doctordashboard/StatCard";
+import { useRouter } from "expo-router";
 
 export default function Index() {
-
+  const router = useRouter();
   const [cases, setCases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalCases, setTotalCases] = useState(0);
@@ -112,6 +113,28 @@ export default function Index() {
               <CaseCard
                 key={item.id}
                 caseData={item}
+
+                onEdit={(caseData) => {
+                  router.push({
+                    pathname: "/edit-case",
+                    params: {
+                      caseId: String(caseData.id),
+                    },
+                  });
+                }}
+
+                onCaseDeleted={(deletedId) => {
+                  setCases((prevCases) =>
+                    prevCases.filter(
+                      (caseItem) =>
+                        caseItem.id !== deletedId
+                    )
+                  );
+
+                  setTotalCases((prevTotal) =>
+                    Math.max(prevTotal - 1, 0)
+                  );
+                }}
               />
             ))
           )}
