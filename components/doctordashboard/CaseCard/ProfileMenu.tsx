@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -31,10 +31,10 @@ export default function ProfileMenu() {
 
         if (user.profile_image) {
           const imageUrl = user.profile_image.startsWith("http")
-            ? `${user.profile_image}?t=${Date.now()}`
+            ? user.profile_image
             : `https://tcidentallab.com/tci-uploads/profile/${encodeURIComponent(
               user.profile_image
-            )}?t=${Date.now()}`;
+            )}`;
 
           setProfileImage(imageUrl);
         } else {

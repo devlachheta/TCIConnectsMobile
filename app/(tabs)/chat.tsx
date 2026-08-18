@@ -4,13 +4,13 @@ import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
     FlatList,
+
     KeyboardAvoidingView,
-    Platform,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
-    View,
+    View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -448,11 +448,7 @@ const Chat: React.FC = () => {
         >
             <KeyboardAvoidingView
                 style={styles.container}
-                behavior={
-                    Platform.OS === "ios"
-                        ? "padding"
-                        : "height"
-                }
+                behavior="padding"
                 keyboardVerticalOffset={0}
             >
                 {/* ================= HEADER ================= */}
@@ -700,8 +696,8 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "flex-end",
         paddingHorizontal: 12,
-        paddingTop: 10,
-        paddingBottom: 10,
+        paddingTop: 8,
+        paddingBottom: 8,
         backgroundColor: "#FFFFFF",
         borderTopWidth: 1,
         borderTopColor: "#E5E7EB",
