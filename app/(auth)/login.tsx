@@ -119,10 +119,10 @@ export default function Login() {
             const userRole = response.user?.role;
 
             // Navigate based on role
-            if (
-                userRole === "admin" ||
-                userRole === "doctor"
-            ) {
+            if (userRole === "admin") {
+                router.replace("/(admin)");
+
+            } else if (userRole === "doctor") {
                 router.replace("/(tabs)");
             } else {
                 setError("Invalid user role");
