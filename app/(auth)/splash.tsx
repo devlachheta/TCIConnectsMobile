@@ -3,6 +3,8 @@ import * as SecureStore from "expo-secure-store";
 import { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 export default function Splash() {
     const router = useRouter();
 
@@ -12,9 +14,12 @@ export default function Splash() {
         const checkAuthentication = async () => {
             try {
                 const token = await SecureStore.getItemAsync("access_token");
-
+                const userData = await AsyncStorage.getItem("user");
+                const user = userData ? JSON.parse(userData) : null;
                 timer = setTimeout(() => {
-                    if (token) {
+                    if (token && user?.role === "admin") {
+                        router.replace("/(admin)");
+                    } else if (token && user?.role === "doctor") {
                         router.replace("/(tabs)");
                     } else {
                         router.replace("/(auth)/welcome");

@@ -1,0 +1,89 @@
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+export default function RecentCases() {
+  const router = useRouter();
+
+  return (
+    <SafeAreaView
+      style={styles.container}
+      edges={["top", "bottom"]}
+    >
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Ionicons
+            name="arrow-back"
+            size={30}
+            color="#0000"
+          />
+        </TouchableOpacity>
+
+        <Text style={styles.headerTitle}>
+          Recent Cases
+        </Text>
+      </View>
+
+      {/* Content */}
+      <View style={styles.content}>
+        <Text style={styles.pageTitle}>
+          Recent Cases
+        </Text>
+
+        {/* Recent cases content will be added here */}
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F7F9FC",
+  },
+
+  header: {
+    height: 64,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5E5",
+    paddingHorizontal: 18,
+  },
+
+  backButton: {
+    width: 42,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+  },
+
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#0000",
+  },
+
+  content: {
+    flex: 1,
+    padding: 24,
+  },
+
+  pageTitle: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#063B6D",
+  },
+});
