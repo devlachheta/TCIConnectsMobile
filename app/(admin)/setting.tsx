@@ -1,3 +1,4 @@
+import AdminFooter from "@/components/admindashboard/AdminFooter";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
@@ -38,6 +39,7 @@ export default function Setting() {
           can't edit
         </Text>
       </View>
+      <AdminFooter />
     </SafeAreaView>
   );
 }
