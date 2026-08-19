@@ -1,13 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
+import { Image } from "expo-image";
 
 interface PatientInfoProps {
     patientName: string;
+    profileImage: string;
 }
 
 export default function PatientInfo({
     patientName,
+    profileImage,
 }: PatientInfoProps) {
+
     return (
         <View style={styles.container}>
             <View style={styles.header}>
@@ -16,11 +20,18 @@ export default function PatientInfo({
                 </Text>
 
                 <View style={styles.iconContainer}>
-                    <Ionicons
-                        name="person-outline"
-                        size={20}
-                        color="#666666"
-                    />
+                    {profileImage ? (
+                        <Image
+                            source={{ uri: profileImage }}
+                            style={styles.profileImage}
+                        />
+                    ) : (
+                        <Ionicons
+                            name="person-outline"
+                            size={20}
+                            color="#666666"
+                        />
+                    )}
                 </View>
             </View>
 
@@ -66,5 +77,10 @@ const styles = StyleSheet.create({
         fontSize: 22,
         fontWeight: "700",
         color: "#222222",
+    },
+    profileImage: {
+        width: "100%",
+        height: "100%",
+        borderRadius: 20,
     },
 });

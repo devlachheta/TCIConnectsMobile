@@ -1,5 +1,6 @@
-import { openCaseFile } from "@/services/fileService";
+import { openCaseFile, downloadCaseFile } from "@/services/fileService";
 import { StyleSheet, View } from "react-native";
+import { useState } from "react";
 import AppointmentInfo from "./AppointmentInfo";
 import DeadlineSection from "./DeadlineSection";
 import DigitalFileSection from "./DigitalFileSection";
@@ -11,7 +12,11 @@ import PreviewSection from "./PreviewSection";
 import {
     Alert,
 } from "react-native";
-import { deleteCase } from "@/services/caseService";
+import {
+    deleteCase,
+    approvePreview,
+    rejectPreview,
+} from "@/services/caseService";
 
 interface CaseCardProps {
     caseData: any;
@@ -21,7 +26,9 @@ interface CaseCardProps {
 
 export default function CaseCard({ caseData, onCaseDeleted,
     onEdit, }: CaseCardProps) {
-
+    const [previewStatus, setPreviewStatus] = useState(
+        caseData.preview_status
+    );
     const deadlinePassed = caseData.delivery_deadline
         ? new Date(caseData.delivery_deadline) < new Date()
         : false;
@@ -81,6 +88,42 @@ export default function CaseCard({ caseData, onCaseDeleted,
             ]
         );
     };
+    const handleApprovePreview = async () => {
+        try {
+            await approvePreview(caseData.id);
+
+            setPreviewStatus("Approved");
+
+            Alert.alert(
+                "Success",
+                "Preview approved successfully."
+            );
+        } catch (error: any) {
+            Alert.alert(
+                "Error",
+                error?.response?.data?.detail ||
+                "Failed to approve preview."
+            );
+        }
+    };
+    const handleRejectPreview = async () => {
+        try {
+            await rejectPreview(caseData.id);
+
+            setPreviewStatus("Preview Rejected");
+
+            Alert.alert(
+                "Success",
+                "Preview rejected."
+            );
+        } catch (error: any) {
+            Alert.alert(
+                "Error",
+                error?.response?.data?.detail ||
+                "Failed to reject preview."
+            );
+        }
+    };
 
     return (
         <View style={styles.card}>
@@ -95,6 +138,7 @@ export default function CaseCard({ caseData, onCaseDeleted,
             />
             <PatientInfo
                 patientName={caseData.patient_name}
+                profileImage=""
             />
 
             <AppointmentInfo
@@ -113,56 +157,38 @@ export default function CaseCard({ caseData, onCaseDeleted,
                     if (!casePdf) {
                         return;
                     }
-
                     openCaseFile(
                         casePdf.file_path,
                         casePdf.file_name
                     );
                 }}
             />
-            {digitalFiles.length > 0 ? (
-
-                digitalFiles.map(
-                    (file: any) => (
-
-                        <DigitalFileSection
-                            key={file.id}
-                            title="Digital File"
-                            fileName={file.file_name}
-                            onDownload={() => {
-
-                                openCaseFile(
-                                    file.file_path,
-                                    file.file_name
-                                );
-
-                            }}
-                        />
-
-                    )
-                )
-
-            ) : (
-
-                <DigitalFileSection
-                    title="Digital Files"
-                    fileName="No Digital Files"
-                    onDownload={() =>
-                        console.log(
-                            "No digital files"
-                        )
-                    }
-                />
-
-            )}
+            <DigitalFileSection
+                title="Digital Files"
+                files={digitalFiles.map((file: any) => ({
+                    id: file.id,
+                    fileName: file.file_name,
+                    filePath: file.file_path,
+                }))}
+                onDownload={(file: any) => {
+                    downloadCaseFile(
+                        file.id,
+                        file.fileName
+                    );
+                }}
+            />
             <PreviewSection
                 fileName={
-                    previewFile?.file_name ||
-                    "No Preview File"
+                    previewStatus === "Approved" && previewFile
+                        ? previewFile.file_name
+                        : "No Preview File"
                 }
                 onDownload={() => {
 
-                    if (!previewFile) {
+                    if (
+                        previewStatus !== "Approved" ||
+                        !previewFile
+                    ) {
                         return;
                     }
 
@@ -170,23 +196,15 @@ export default function CaseCard({ caseData, onCaseDeleted,
                         previewFile.file_path,
                         previewFile.file_name
                     );
-
                 }}
             />
             <DeadlineSection
-                deadline={
-                    caseData.delivery_deadline
-                }
+                deadline={caseData.delivery_deadline}
                 status={caseData.status}
-                deadlinePassed={
-                    deadlinePassed
-                }
-                onApprove={() =>
-                    console.log("Approve")
-                }
-                onReject={() =>
-                    console.log("Reject")
-                }
+                deadlinePassed={deadlinePassed}
+                previewStatus={previewStatus}
+                onApprove={handleApprovePreview}
+                onReject={handleRejectPreview}
             />
             <FooterActions
                 onEdit={() => {

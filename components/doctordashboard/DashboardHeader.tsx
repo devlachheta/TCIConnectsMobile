@@ -4,12 +4,14 @@ import { StyleSheet, TouchableOpacity, View } from "react-native";
 import ProfileMenu from "./CaseCard/ProfileMenu";
 import DashboardDrawer from "./DashboardDrawer";
 import Notification from "./notification";
+
 interface DashboardHeaderProps {
     profileImage?: string;
     onMenuPress?: () => void;
 }
 export default function DashboardHeader({ }: DashboardHeaderProps) {
     const [drawerVisible, setDrawerVisible] = useState(false);
+
     return (
         <>
             <View style={styles.container}>
@@ -21,6 +23,7 @@ export default function DashboardHeader({ }: DashboardHeaderProps) {
                         name="menu"
                         size={30}
                         color="#021E48"
+
                     />
                 </TouchableOpacity>
 

@@ -86,9 +86,7 @@ export default function Cases() {
 
             {/* HEADER */}
 
-            <DashboardHeader
-                notificationCount={10}
-            />
+            <DashboardHeader />
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.listContent}

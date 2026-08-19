@@ -17,31 +17,17 @@ api.interceptors.request.use(
                 "access_token"
             );
 
-            console.log(
-                "🔐 Access Token:",
-                token ? "FOUND" : "NOT FOUND"
-            );
+            console.log("ACCESS TOKEN:", token);
 
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`;
-
-                console.log(
-                    "📤 Authorization header added:",
-                    config.method?.toUpperCase(),
-                    config.url
-                );
-            } else {
-                console.log(
-                    "❌ No access token:",
-                    config.method?.toUpperCase(),
-                    config.url
-                );
             }
 
             return config;
+
         } catch (error) {
             console.error(
-                "❌ Error reading access token:",
+                "Error reading access token:",
                 error
             );
 
@@ -50,7 +36,7 @@ api.interceptors.request.use(
     },
     (error) => {
         console.error(
-            "❌ Request interceptor error:",
+            "Request interceptor error:",
             error
         );
 
@@ -61,49 +47,43 @@ api.interceptors.request.use(
 // Handle API responses/errors
 api.interceptors.response.use(
     (response) => {
-        console.log(
-            "✅ API:",
-            response.config.method?.toUpperCase(),
-            response.config.url,
-            response.status
-        );
-
+        // Don't log every successful API request
         return response;
     },
+
     async (error) => {
         const status = error.response?.status;
         const url = error.config?.url;
 
         console.error(
-            "❌ API ERROR:",
+            "API ERROR:",
             error.config?.method?.toUpperCase(),
             url,
             status
         );
 
-        // Show the actual backend response
         if (status === 401) {
             console.error(
-                "🔴 401 RESPONSE:",
+                "401 RESPONSE:",
                 error.response?.data
             );
 
             console.error(
-                "🔴 401 HEADERS:",
+                "401 HEADERS:",
                 error.response?.headers
             );
         }
 
         if (status === 403) {
             console.error(
-                "🟠 403 FORBIDDEN:",
+                "403 FORBIDDEN:",
                 error.response?.data
             );
         }
 
         if (status >= 500) {
             console.error(
-                "🔴 SERVER ERROR:",
+                "SERVER ERROR:",
                 error.response?.data
             );
         }

@@ -8,6 +8,7 @@ import {
     View,
 } from "react-native";
 import DropDownPicker from "react-native-dropdown-picker";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 interface FilterSectionProps {
     onApply: (status: string, deadline: string) => void;
@@ -22,6 +23,8 @@ export default function FilterSection({
     const [status, setStatus] = useState("");
 
     const [deadline, setDeadline] = useState("");
+    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [showDatePicker, setShowDatePicker] = useState(false);
 
     const [items, setItems] = useState([
         { label: "All", value: "" },
@@ -31,6 +34,23 @@ export default function FilterSection({
         { label: "Shipped", value: "Shipped" },
         { label: "Delivered", value: "Delivered" },
     ]);
+    const handleDateChange = (
+        event: any,
+        date?: Date
+    ) => {
+        setShowDatePicker(false);
+
+        if (date) {
+            setSelectedDate(date);
+
+            const formattedDate =
+                `${String(date.getMonth() + 1).padStart(2, "0")}/` +
+                `${String(date.getDate()).padStart(2, "0")}/` +
+                `${date.getFullYear()}`;
+
+            setDeadline(formattedDate);
+        }
+    };
 
     const handleReset = () => {
         setStatus("");
@@ -47,7 +67,6 @@ export default function FilterSection({
                     <Text style={styles.label}>
                         Status
                     </Text>
-
                     <DropDownPicker
                         open={open}
                         value={status}
@@ -56,10 +75,11 @@ export default function FilterSection({
                         setValue={setStatus}
                         setItems={setItems}
                         placeholder="All"
+
+                        listMode="MODAL"
+
                         style={styles.dropdown}
-                        dropDownContainerStyle={
-                            styles.dropdownContainer
-                        }
+                        dropDownContainerStyle={styles.dropdownContainer}
                         textStyle={styles.dropdownText}
                     />
                 </View>
@@ -70,21 +90,35 @@ export default function FilterSection({
                         Delivery Deadline
                     </Text>
 
-                    <View style={styles.input}>
+                    <TouchableOpacity
+                        style={styles.input}
+                        activeOpacity={0.7}
+                        onPress={() => setShowDatePicker(true)}
+                    >
                         <Ionicons
                             name="calendar-outline"
                             size={20}
                             color="#000"
                         />
 
-                        <TextInput
-                            placeholder="mm/dd/yyyy"
-                            placeholderTextColor="#666"
-                            style={styles.dateInput}
-                            value={deadline}
-                            onChangeText={setDeadline}
+                        <Text
+                            style={[
+                                styles.dateText,
+                                !deadline && styles.placeholderText,
+                            ]}
+                        >
+                            {deadline || "mm/dd/yyyy"}
+                        </Text>
+                    </TouchableOpacity>
+
+                    {showDatePicker && (
+                        <DateTimePicker
+                            value={selectedDate}
+                            mode="date"
+                            display="default"
+                            onChange={handleDateChange}
                         />
-                    </View>
+                    )}
                 </View>
             </View>
 
@@ -166,10 +200,15 @@ const styles = StyleSheet.create({
         backgroundColor: "#fff",
     },
 
-    dateInput: {
+    dateText: {
         flex: 1,
         marginLeft: 8,
         fontSize: 16,
+        color: "#333",
+    },
+
+    placeholderText: {
+        color: "#666",
     },
 
     buttonRow: {

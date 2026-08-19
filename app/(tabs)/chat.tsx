@@ -1,70 +1,45 @@
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as SecureStore from "expo-secure-store";
-import { useRouter } from "expo-router";
 import React, {
-    useCallback,
     useEffect,
     useRef,
     useState,
 } from "react";
-
 import {
     ActivityIndicator,
-    FlatList,
-    Platform,
+    Image,
     KeyboardAvoidingView,
+    NativeScrollEvent,
+    NativeSyntheticEvent,
+    Platform,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
-    View
+    View,
 } from "react-native";
-
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import {
-    getChatUser,
-    getMessages,
-    markChatNotificationsRead,
-    markMessagesRead,
-} from "../../services/chatService";
+import api from "@/services/api";
 
+// =====================================================
+// ADMIN CONFIGURATION
+// =====================================================
 
-// ============================================================
-// CONFIGURATION
-// ============================================================
-
-// IMPORTANT:
-//
-// Replace this with the IP address of the computer
-// running your FastAPI backend.
-//
-// Example:
-// http://192.168.1.10:8000
-//
-// DO NOT use localhost when testing on a physical phone.
-//
-// Your phone and computer must be on the same Wi-Fi network.
-//
-const BACKEND_HTTP_URL =
-    "http://192.168.1.10:8000";
-
-
-// WebSocket URL is automatically created.
-//
-// http:// → ws://
-// https:// → wss://
-//
-const BACKEND_WS_URL = "wss://tcidentallab.com/api";
-
-// Your admin ID
+// Change this if your admin has another ID.
 const ADMIN_ID = 1;
 
+const ADMIN_NAME = "Admin";
 
-// ============================================================
-// MESSAGE INTERFACE
-// ============================================================
+// If your admin profile image filename is known,
+// you can put it here.
+// Otherwise leave it null.
+const ADMIN_PROFILE_IMAGE: string | null = null;
+
+// =====================================================
+// MESSAGE TYPE
+// =====================================================
 
 interface Message {
     id: number;
@@ -75,111 +50,61 @@ interface Message {
     timestamp: string;
 }
 
+// =====================================================
+// CHAT SCREEN
+// =====================================================
 
-// ============================================================
-// WEBSOCKET RESPONSE TYPES
-// ============================================================
+export default function Chat() {
 
-interface WebSocketMessage {
-    type: string;
-    data?: Message | any;
-    message?: string;
-}
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [message, setMessage] = useState("");
 
+    const [loading, setLoading] = useState(true);
+    const [sending, setSending] = useState(false);
 
-// ============================================================
-// CHAT COMPONENT
-// ============================================================
+    const scrollViewRef =
+        useRef<ScrollView>(null);
 
-const Chat: React.FC = () => {
+    const isNearBottom =
+        useRef(true);
 
-    const router = useRouter();
+    const isFirstLoad =
+        useRef(true);
 
+    // =================================================
+    // GET DOCTOR ID
+    // =================================================
 
-    // --------------------------------------------------------
-    // STATE
-    // --------------------------------------------------------
+    const getDoctorId = async (): Promise<number | null> => {
 
-    const [message, setMessage] =
-        useState("");
-
-    const [messages, setMessages] =
-        useState<Message[]>([]);
-
-    const [currentUserId, setCurrentUserId] =
-        useState<number | null>(null);
-
-    const [admin, setAdmin] =
-        useState<any>(null);
-
-    const [loading, setLoading] =
-        useState(true);
-
-    const [connected, setConnected] =
-        useState(false);
-
-    const [sending, setSending] =
-        useState(false);
-
-
-    // --------------------------------------------------------
-    // REFS
-    // --------------------------------------------------------
-
-    const flatListRef =
-        useRef<FlatList<Message>>(null);
-
-    const wsRef =
-        useRef<WebSocket | null>(null);
-
-    const reconnectTimeoutRef =
-        useRef<ReturnType<typeof setTimeout> | null>(
-            null
-        );
-
-    const manuallyClosedRef =
-        useRef(false);
-
-    const connectingRef =
-        useRef(false);
-
-
-    // ========================================================
-    // SCROLL
-    // ========================================================
-
-    const scrollToLatest = (
-        animated: boolean = true
-    ) => {
-
-        setTimeout(() => {
-
-            flatListRef.current?.scrollToEnd({
-                animated,
-            });
-
-        }, 100);
-    };
-
-
-    // ========================================================
-    // GET TOKEN
-    // ========================================================
-    const getToken = async (): Promise<string | null> => {
         try {
-            const token = await SecureStore.getItemAsync(
-                "access_token"
-            );
+
+            const storedUser =
+                await AsyncStorage.getItem("user");
+
+            if (!storedUser) {
+
+                console.log(
+                    "Doctor user not found"
+                );
+
+                return null;
+            }
+
+            const user =
+                JSON.parse(storedUser);
 
             console.log(
-                "🔐 WebSocket Access Token:",
-                token ? "FOUND" : "NOT FOUND"
+                "Logged in Doctor ID:",
+                user.id
             );
 
-            return token;
+            return Number(user.id);
+
         } catch (error) {
+
             console.log(
-                "❌ Error reading WebSocket token:",
+                "Get doctor ID error:",
                 error
             );
 
@@ -187,676 +112,39 @@ const Chat: React.FC = () => {
         }
     };
 
-    // ========================================================
-    // ADD MESSAGE SAFELY
-    // ========================================================
-
-    const addMessage = (
-        incomingMessage: Message
-    ) => {
-
-        setMessages((previousMessages) => {
-
-            // Prevent duplicate messages
-            const alreadyExists =
-                previousMessages.some(
-                    (msg) =>
-                        msg.id ===
-                        incomingMessage.id
-                );
-
-            if (alreadyExists) {
-                return previousMessages;
-            }
-
-            return [
-                ...previousMessages,
-                incomingMessage,
-            ];
-        });
-
-
-        scrollToLatest(true);
-    };
-
-
-    // ========================================================
-    // WEBSOCKET MESSAGE HANDLER
-    // ========================================================
-
-    const handleWebSocketMessage = useCallback(
-        async (
-            event: MessageEvent
-        ) => {
-
-            try {
-
-                const response:
-                    WebSocketMessage =
-                    JSON.parse(
-                        event.data
-                    );
-
-
-                console.log(
-                    "WebSocket message:",
-                    response
-                );
-
-
-                // ==========================================
-                // CONNECTION
-                // ==========================================
-
-                if (
-                    response.type ===
-                    "connected"
-                ) {
-
-                    console.log(
-                        "Chat WebSocket connected"
-                    );
-
-                    setConnected(true);
-
-                    return;
-                }
-
-
-                // ==========================================
-                // NEW MESSAGE
-                // ==========================================
-
-                if (
-                    response.type ===
-                    "message"
-                ) {
-
-                    const incomingMessage =
-                        response.data as Message;
-
-
-                    if (!incomingMessage) {
-                        return;
-                    }
-
-
-                    addMessage(
-                        incomingMessage
-                    );
-
-
-                    // --------------------------------------
-                    // If message came from Admin
-                    // mark it read immediately because
-                    // doctor is currently inside chat.
-                    // --------------------------------------
-
-                    if (
-                        currentUserId &&
-                        incomingMessage.sender_id ===
-                        ADMIN_ID &&
-                        incomingMessage.receiver_id ===
-                        currentUserId &&
-                        !incomingMessage.is_read
-                    ) {
-
-                        // Mark through REST API
-                        try {
-
-                            await markMessagesRead(
-                                currentUserId,
-                                ADMIN_ID
-                            );
-
-                        } catch (error) {
-
-                            console.log(
-                                "Read status error:",
-                                error
-                            );
-                        }
-
-
-                        // Update local message
-                        setMessages(
-                            (previousMessages) =>
-                                previousMessages.map(
-                                    (msg) => {
-
-                                        if (
-                                            msg.id ===
-                                            incomingMessage.id
-                                        ) {
-
-                                            return {
-                                                ...msg,
-                                                is_read:
-                                                    true,
-                                            };
-                                        }
-
-                                        return msg;
-                                    }
-                                )
-                        );
-                    }
-
-                    return;
-                }
-
-
-                // ==========================================
-                // MESSAGE SENT CONFIRMATION
-                // ==========================================
-
-                if (
-                    response.type ===
-                    "message_sent"
-                ) {
-
-                    const sentMessage =
-                        response.data as Message;
-
-
-                    if (!sentMessage) {
-                        return;
-                    }
-
-
-                    addMessage(
-                        sentMessage
-                    );
-
-
-                    return;
-                }
-
-
-                // ==========================================
-                // MESSAGE READ
-                // ==========================================
-
-                if (
-                    response.type ===
-                    "message_read"
-                ) {
-
-                    const readData =
-                        response.data;
-
-
-                    if (
-                        !readData?.message_id
-                    ) {
-                        return;
-                    }
-
-
-                    setMessages(
-                        (previousMessages) =>
-                            previousMessages.map(
-                                (msg) => {
-
-                                    if (
-                                        msg.id ===
-                                        readData.message_id
-                                    ) {
-
-                                        return {
-                                            ...msg,
-                                            is_read:
-                                                true,
-                                        };
-                                    }
-
-                                    return msg;
-                                }
-                            )
-                    );
-
-
-                    return;
-                }
-
-
-                // ==========================================
-                // PONG
-                // ==========================================
-
-                if (
-                    response.type ===
-                    "pong"
-                ) {
-
-                    return;
-                }
-
-            } catch (error) {
-
-                console.log(
-                    "WebSocket message parsing error:",
-                    error
-                );
-            }
-
-        },
-        [currentUserId]
-    );
-
-
-    // ========================================================
-    // CONNECT WEBSOCKET
-    // ========================================================
-
-    const connectWebSocket = useCallback(
-        async (
-            userId: number
-        ) => {
-
-            // Prevent duplicate connections
-            if (
-                connectingRef.current
-            ) {
-                return;
-            }
-
-
-            if (
-                wsRef.current &&
-                (
-                    wsRef.current.readyState ===
-                    WebSocket.OPEN ||
-
-                    wsRef.current.readyState ===
-                    WebSocket.CONNECTING
-                )
-            ) {
-
-                return;
-            }
-
-
-            connectingRef.current =
-                true;
-
-
-            try {
-
-                const token =
-                    await getToken();
-
-
-                if (!token) {
-
-                    console.log(
-                        "JWT token not found"
-                    );
-
-                    connectingRef.current =
-                        false;
-
-                    return;
-                }
-
-
-                manuallyClosedRef.current =
-                    false;
-
-                const wsUrl =
-                    `${BACKEND_WS_URL}/mobile-chat/ws/${userId}/${ADMIN_ID}?token=${encodeURIComponent(
-                        token
-                    )}`;
-
-                console.log(
-                    "Connecting WebSocket:",
-                    wsUrl.replace(
-                        token,
-                        "***"
-                    )
-                );
-
-
-                const ws =
-                    new WebSocket(
-                        wsUrl
-                    );
-
-
-                wsRef.current =
-                    ws;
-
-
-                // --------------------------------------------
-                // OPEN
-                // --------------------------------------------
-
-                ws.onopen = () => {
-
-                    console.log(
-                        "WebSocket OPEN"
-                    );
-
-                    connectingRef.current =
-                        false;
-
-                    setConnected(true);
-                };
-
-
-                // --------------------------------------------
-                // MESSAGE
-                // --------------------------------------------
-
-                ws.onmessage =
-                    handleWebSocketMessage;
-
-
-                // --------------------------------------------
-                // ERROR
-                // --------------------------------------------
-
-                ws.onerror = (
-                    error
-                ) => {
-
-                    console.log(
-                        "WebSocket ERROR:",
-                        error
-                    );
-
-                    setConnected(
-                        false
-                    );
-                };
-
-
-                // --------------------------------------------
-                // CLOSE
-                // --------------------------------------------
-
-                ws.onclose = (
-                    event
-                ) => {
-
-                    console.log(
-                        "WebSocket CLOSED:",
-                        event.code,
-                        event.reason
-                    );
-
-
-                    connectingRef.current =
-                        false;
-
-                    setConnected(
-                        false
-                    );
-
-
-                    wsRef.current =
-                        null;
-
-
-                    // Don't reconnect if screen
-                    // intentionally closed.
-                    if (
-                        manuallyClosedRef.current
-                    ) {
-
-                        return;
-                    }
-
-
-                    // ----------------------------------------
-                    // Reconnect after 3 seconds
-                    // ----------------------------------------
-
-                    reconnectTimeoutRef.current =
-                        setTimeout(() => {
-
-                            connectWebSocket(
-                                userId
-                            );
-
-                        }, 3000);
-                };
-
-
-            } catch (error) {
-
-                console.log(
-                    "WebSocket connection error:",
-                    error
-                );
-
-                connectingRef.current =
-                    false;
-
-                setConnected(
-                    false
-                );
-
-            }
-
-        },
-        [
-            handleWebSocketMessage,
-        ]
-    );
-
-
-    // ========================================================
-    // LOAD CHAT
-    // ========================================================
-
-    const loadChat = async () => {
+    // =================================================
+    // GET MESSAGES
+    // =================================================
+
+    const getMessages = async () => {
 
         try {
 
-            setLoading(true);
+            const doctorId =
+                await getDoctorId();
 
-
-            // ------------------------------------------------
-            // Get logged-in user
-            // ------------------------------------------------
-
-            const storedUser =
-                await AsyncStorage.getItem(
-                    "user"
-                );
-
-
-            if (!storedUser) {
-
-                console.log(
-                    "Logged-in user not found"
-                );
-
+            if (!doctorId) {
                 return;
             }
 
-
-            const loggedUser =
-                JSON.parse(
-                    storedUser
+            const response =
+                await api.get(
+                    `/messages/${doctorId}/${ADMIN_ID}`
                 );
-
-
-            const userId =
-                Number(
-                    loggedUser.id
-                );
-
-
-            if (!userId) {
-
-                console.log(
-                    "Invalid user ID"
-                );
-
-                return;
-            }
-
-
-            setCurrentUserId(
-                userId
-            );
-
-
-            // ------------------------------------------------
-            // Get Admin
-            // ------------------------------------------------
-
-            try {
-
-                const adminData =
-                    await getChatUser(
-                        ADMIN_ID
-                    );
-
-                setAdmin(
-                    adminData
-                );
-
-            } catch (error) {
-
-                console.log(
-                    "Admin loading error:",
-                    error
-                );
-            }
-
-
-            // ------------------------------------------------
-            // Clear chat notification
-            // ------------------------------------------------
-
-            try {
-
-                await markChatNotificationsRead(
-                    userId
-                );
-
-            } catch (error) {
-
-                console.log(
-                    "Chat notification error:",
-                    error
-                );
-            }
-
-
-            // ------------------------------------------------
-            // Load old messages
-            // ------------------------------------------------
-
-            const chatMessages =
-                await getMessages(
-                    userId,
-                    ADMIN_ID
-                );
-
-
-            // ------------------------------------------------
-            // Store messages
-            // ------------------------------------------------
-
-            setMessages(
-                chatMessages || []
-            );
-
-
-            // ------------------------------------------------
-            // Mark unread admin messages
-            // ------------------------------------------------
-
-            const hasUnreadAdminMessage =
-                chatMessages.some(
-                    (msg: Message) =>
-                        msg.sender_id ===
-                        ADMIN_ID &&
-
-                        msg.receiver_id ===
-                        userId &&
-
-                        !msg.is_read
-                );
-
-
-            if (
-                hasUnreadAdminMessage
-            ) {
-
-                try {
-
-                    await markMessagesRead(
-                        userId,
-                        ADMIN_ID
-                    );
-
-
-                    setMessages(
-                        (previousMessages) =>
-                            previousMessages.map(
-                                (msg) => {
-
-                                    if (
-                                        msg.sender_id ===
-                                        ADMIN_ID &&
-
-                                        msg.receiver_id ===
-                                        userId
-                                    ) {
-
-                                        return {
-                                            ...msg,
-                                            is_read:
-                                                true,
-                                        };
-                                    }
-
-                                    return msg;
-                                }
-                            )
-                    );
-
-                } catch (error) {
-
-                    console.log(
-                        "Mark read error:",
-                        error
-                    );
-                }
-            }
-
-
-            // ------------------------------------------------
-            // Scroll
-            // ------------------------------------------------
-
-            setTimeout(() => {
-
-                flatListRef.current?.scrollToEnd({
-                    animated: false,
-                });
-
-            }, 200);
-
-
-            // ------------------------------------------------
-            // Connect WebSocket
-            // ------------------------------------------------
-
-            await connectWebSocket(
-                userId
-            );
-
-
-        } catch (error) {
 
             console.log(
-                "Chat loading error:",
+                "Chat messages:",
+                response.data
+            );
+
+            setMessages(response.data);
+
+        } catch (error: any) {
+
+            console.log(
+                "Get messages error:",
+                error?.response?.data ||
+                error?.message ||
                 error
             );
 
@@ -866,779 +154,702 @@ const Chat: React.FC = () => {
         }
     };
 
+    // =================================================
+    // MARK MESSAGES AS READ
+    // =================================================
 
-    // ========================================================
-    // INITIAL LOAD
-    // ========================================================
+    const markMessagesAsRead = async () => {
+
+        try {
+
+            const doctorId =
+                await getDoctorId();
+
+            if (!doctorId) {
+                return;
+            }
+
+            await api.put(
+                `/messages/read/${ADMIN_ID}/${doctorId}`
+            );
+
+            console.log(
+                "Admin messages marked as read"
+            );
+
+        } catch (error: any) {
+
+            console.log(
+                "Mark messages as read error:",
+                error?.response?.data ||
+                error?.message ||
+                error
+            );
+        }
+    };
+
+    // =================================================
+    // OPEN CHAT
+    // =================================================
 
     useEffect(() => {
 
-        loadChat();
+        const openChat = async () => {
 
+            await getMessages();
+
+            await markMessagesAsRead();
+        };
+
+        openChat();
+
+        isFirstLoad.current = true;
+        isNearBottom.current = true;
+
+    }, []);
+
+    // =================================================
+    // REFRESH MESSAGES
+    // =================================================
+
+    useEffect(() => {
+
+        const interval =
+            setInterval(() => {
+
+                getMessages();
+
+            }, 2000);
 
         return () => {
 
-            manuallyClosedRef.current =
-                true;
-
-
-            // Cancel reconnect
-            if (
-                reconnectTimeoutRef.current
-            ) {
-
-                clearTimeout(
-                    reconnectTimeoutRef.current
-                );
-
-                reconnectTimeoutRef.current =
-                    null;
-            }
-
-
-            // Close WebSocket
-            if (
-                wsRef.current
-            ) {
-
-                wsRef.current.close();
-
-                wsRef.current =
-                    null;
-            }
-
-
-            setConnected(
-                false
-            );
+            clearInterval(interval);
         };
 
     }, []);
 
+    // =================================================
+    // HANDLE SCROLL
+    // =================================================
 
-    // ========================================================
+    const handleScroll = (
+        event: NativeSyntheticEvent<NativeScrollEvent>
+    ) => {
+
+        const {
+            layoutMeasurement,
+            contentOffset,
+            contentSize,
+        } = event.nativeEvent;
+
+        const distanceFromBottom =
+            contentSize.height -
+            (
+                contentOffset.y +
+                layoutMeasurement.height
+            );
+
+        isNearBottom.current =
+            distanceFromBottom < 80;
+    };
+
+    // =================================================
+    // AUTO SCROLL
+    // =================================================
+
+    useEffect(() => {
+
+        if (messages.length === 0) {
+            return;
+        }
+
+        // First load
+        if (isFirstLoad.current) {
+
+            setTimeout(() => {
+
+                scrollViewRef.current?.scrollToEnd({
+                    animated: false,
+                });
+
+                isFirstLoad.current = false;
+
+            }, 150);
+
+            return;
+        }
+
+        // New message
+        if (isNearBottom.current) {
+
+            setTimeout(() => {
+
+                scrollViewRef.current?.scrollToEnd({
+                    animated: true,
+                });
+
+            }, 100);
+        }
+
+    }, [messages]);
+
+    // =================================================
     // SEND MESSAGE
-    // ========================================================
+    // =================================================
 
-    const handleSend = () => {
+    const sendMessage = async () => {
 
         const trimmedMessage =
             message.trim();
 
-
-        // Don't send empty
         if (
-            !trimmedMessage
+            !trimmedMessage ||
+            sending
         ) {
             return;
         }
-
-
-        // No user
-        if (
-            !currentUserId
-        ) {
-            return;
-        }
-
-
-        // WebSocket not connected
-        if (
-            !wsRef.current ||
-            wsRef.current.readyState !==
-            WebSocket.OPEN
-        ) {
-
-            console.log(
-                "WebSocket is not connected"
-            );
-
-            return;
-        }
-
 
         try {
 
-            setSending(
-                true
-            );
+            setSending(true);
 
+            const doctorId =
+                await getDoctorId();
 
-            // ------------------------------------------------
-            // Send through WebSocket
-            // ------------------------------------------------
-
-            wsRef.current.send(
-                JSON.stringify({
-                    type: "message",
-                    message:
-                        trimmedMessage,
-                })
-            );
-
-
-            // Clear input
-            setMessage("");
-
-
-            // Backend will send
-            // "message_sent" confirmation.
-            //
-            // We DON'T add the message
-            // locally here because that would
-            // create a duplicate.
-
-
-        } catch (error) {
+            if (!doctorId) {
+                return;
+            }
 
             console.log(
-                "Send WebSocket error:",
+                "Sending message:",
+                {
+                    sender_id: doctorId,
+                    receiver_id: ADMIN_ID,
+                    message: trimmedMessage,
+                }
+            );
+
+            await api.post(
+                "/send-message",
+                {
+                    sender_id: doctorId,
+                    receiver_id: ADMIN_ID,
+                    message: trimmedMessage,
+                }
+            );
+
+            setMessage("");
+
+            isNearBottom.current = true;
+
+            await getMessages();
+
+            setTimeout(() => {
+
+                scrollViewRef.current?.scrollToEnd({
+                    animated: true,
+                });
+
+            }, 150);
+
+        } catch (error: any) {
+
+            console.log(
+                "Send message error:",
+                error?.response?.data ||
+                error?.message ||
                 error
             );
 
         } finally {
 
-            setSending(
-                false
-            );
+            setSending(false);
         }
     };
 
+    // =================================================
+    // ADMIN PROFILE IMAGE
+    // =================================================
 
-    // ========================================================
-    // RENDER MESSAGE
-    // ========================================================
+    const profileImageUrl =
+        ADMIN_PROFILE_IMAGE
+            ? ADMIN_PROFILE_IMAGE.startsWith("http")
+                ? ADMIN_PROFILE_IMAGE
+                : `https://tcidentallab.com/tci-uploads/profile/${encodeURIComponent(
+                    ADMIN_PROFILE_IMAGE
+                )}`
+            : null;
 
-    const renderMessage = ({
-        item,
-    }: {
-        item: Message;
-    }) => {
+    // =================================================
+    // UI
+    // =================================================
 
-        const isDoctor =
-            item.sender_id ===
-            currentUserId;
+    return (
+        <KeyboardAvoidingView
+            style={styles.container}
+            behavior={
+                Platform.OS === "ios"
+                    ? "padding"
+                    : "height"
+            }
+            keyboardVerticalOffset={0}
+        >
 
+            {/* =========================================
+                HEADER
+            ========================================= */}
 
-        return (
-
-            <View
-                style={[
-                    styles.messageWrapper,
-
-                    isDoctor
-                        ? styles.doctorMessageWrapper
-                        : styles.adminMessageWrapper,
-                ]}
+            <SafeAreaView
+                style={styles.safeArea}
+                edges={["top"]}
             >
+                <View style={styles.header}>
 
-                <View
-                    style={[
-                        styles.messageBubble,
+                    {/* Admin Profile */}
 
-                        isDoctor
-                            ? styles.doctorBubble
-                            : styles.adminBubble,
-                    ]}
-                >
+                    <View style={styles.profile}>
 
-                    <Text
-                        style={
-                            styles.messageText
-                        }
-                    >
-                        {item.message}
-                    </Text>
+                        {profileImageUrl ? (
 
+                            <Image
+                                source={{
+                                    uri: profileImageUrl,
+                                }}
+                                style={styles.profileImage}
+                            />
 
-                    <View
-                        style={
-                            styles.messageMeta
-                        }
-                    >
+                        ) : (
 
-                        <Text
-                            style={
-                                styles.messageTime
-                            }
-                        >
-                            {new Date(
-                                item.timestamp
-                            ).toLocaleTimeString(
-                                [],
-                                {
-                                    hour:
-                                        "2-digit",
-                                    minute:
-                                        "2-digit",
-                                }
-                            )}
-                        </Text>
-
-
-                        {isDoctor && (
-
-                            <Text
-                                style={
-                                    styles.messageStatus
-                                }
-                            >
-
-                                {item.is_read
-                                    ? " • Seen"
-                                    : " • Sent"}
-
-                            </Text>
+                            <Ionicons
+                                name="person"
+                                size={22}
+                                color="#777"
+                            />
 
                         )}
 
                     </View>
+                    {/* Admin Information */}
+
+                    <View style={styles.adminInfo}>
+
+                        <Text
+                            style={styles.adminName}
+                            numberOfLines={1}
+                        >
+                            {ADMIN_NAME}
+                        </Text>
+
+                        <Text style={styles.adminStatus}>
+                            Admin
+                        </Text>
+
+                    </View>
 
                 </View>
-
-            </View>
-        );
-    };
-
-
-    // ========================================================
-    // LOADING SCREEN
-    // ========================================================
-
-    if (loading) {
-
-        return (
-
-            <SafeAreaView
-                style={
-                    styles.safeArea
-                }
-            >
-
-                <View
-                    style={
-                        styles.loadingContainer
-                    }
-                >
-
-                    <ActivityIndicator
-                        size="large"
-                        color="#021E48"
-                    />
-
-                    <Text
-                        style={
-                            styles.loadingText
-                        }
-                    >
-                        Loading chat...
-                    </Text>
-
-                </View>
-
             </SafeAreaView>
-        );
-    }
 
+            {/* =========================================
+                MESSAGES
+            ========================================= */}
 
-    // ========================================================
-    // UI
-    // ========================================================
+            <View style={styles.messagesContainer}>
 
-    return (
+                {loading ? (
 
-        <SafeAreaView
-            style={styles.safeArea}
-            edges={["top"]}
-        >
-
-            <KeyboardAvoidingView
-                style={styles.container}
-                behavior="padding"
-                keyboardVerticalOffset={0}
-            >
-
-                {/* ================================================= */}
-                {/* HEADER */}
-                {/* ================================================= */}
-
-                <View
-                    style={styles.header}
-                >
-
-                    <TouchableOpacity
+                    <View
                         style={
-                            styles.backButton
+                            styles.loadingContainer
                         }
-                        onPress={() =>
-                            router.back()
-                        }
-                        activeOpacity={0.7}
                     >
 
-                        <Ionicons
-                            name="arrow-back"
-                            size={24}
-                            color="#021E48"
+                        <ActivityIndicator
+                            size="small"
+                            color="#0864B9"
                         />
 
-                    </TouchableOpacity>
-
-
-                    <View
-                        style={
-                            styles.adminAvatar
-                        }
-                    >
-
                         <Text
                             style={
-                                styles.adminAvatarText
+                                styles.loadingText
                             }
                         >
-                            A
+                            Loading messages...
                         </Text>
 
                     </View>
 
+                ) : messages.length === 0 ? (
 
                     <View
                         style={
-                            styles.headerInfo
+                            styles.emptyContainer
                         }
-                    >
-
-                        <Text
-                            style={
-                                styles.headerTitle
-                            }
-                        >
-                            {admin?.full_name ||
-                                "Admin"}
-                        </Text>
-
-
-                        <View
-                            style={
-                                styles.connectionRow
-                            }
-                        >
-
-                            <View
-                                style={[
-                                    styles.connectionDot,
-
-                                    connected
-                                        ? styles.onlineDot
-                                        : styles.offlineDot,
-                                ]}
-                            />
-
-                            <Text
-                                style={
-                                    styles.connectionText
-                                }
-                            >
-                                {connected
-                                    ? "Online"
-                                    : "Connecting..."}
-                            </Text>
-
-                        </View>
-
-                    </View>
-
-                </View>
-
-
-                {/* ================================================= */}
-                {/* MESSAGES */}
-                {/* ================================================= */}
-
-                <FlatList
-                    ref={flatListRef}
-
-                    style={
-                        styles.messagesList
-                    }
-
-                    data={messages}
-
-                    renderItem={
-                        renderMessage
-                    }
-
-                    keyExtractor={(item) =>
-                        item.id.toString()
-                    }
-
-                    showsVerticalScrollIndicator={
-                        false
-                    }
-
-                    keyboardShouldPersistTaps="handled"
-
-                    contentContainerStyle={
-                        styles.messagesContainer
-                    }
-
-                    keyboardDismissMode="interactive"
-
-                    onContentSizeChange={() => {
-
-                        if (
-                            messages.length > 0
-                        ) {
-
-                            scrollToLatest(
-                                false
-                            );
-                        }
-                    }}
-                />
-
-
-                {/* ================================================= */}
-                {/* INPUT */}
-                {/* ================================================= */}
-
-                <View
-                    style={
-                        styles.inputContainer
-                    }
-                >
-
-                    <TextInput
-                        style={
-                            styles.textInput
-                        }
-
-                        placeholder={
-                            connected
-                                ? "Type a message..."
-                                : "Connecting..."
-                        }
-
-                        placeholderTextColor="#8A8A8A"
-
-                        value={
-                            message
-                        }
-
-                        onChangeText={
-                            setMessage
-                        }
-
-                        multiline
-
-                        editable={
-                            connected &&
-                            !sending
-                        }
-
-                        onSubmitEditing={() => {
-
-                            if (
-                                Platform.OS !==
-                                "ios"
-                            ) {
-
-                                handleSend();
-                            }
-
-                        }}
-                    />
-
-
-                    <TouchableOpacity
-                        style={[
-                            styles.sendButton,
-
-                            (
-                                !connected ||
-                                !message.trim() ||
-                                sending
-                            ) &&
-                            styles.sendButtonDisabled,
-                        ]}
-
-                        onPress={
-                            handleSend
-                        }
-
-                        disabled={
-                            !connected ||
-                            !message.trim() ||
-                            sending
-                        }
-
-                        activeOpacity={0.8}
                     >
 
                         <Ionicons
-                            name="send"
-                            size={19}
+                            name="chatbubble-outline"
+                            size={48}
+                            color="#B8C2CC"
+                        />
+
+                        <Text
+                            style={
+                                styles.emptyText
+                            }
+                        >
+                            No messages yet
+                        </Text>
+
+                        <Text
+                            style={
+                                styles.emptySubText
+                            }
+                        >
+                            Start a conversation with admin
+                        </Text>
+
+                    </View>
+
+                ) : (
+
+                    <ScrollView
+                        ref={scrollViewRef}
+                        style={styles.messageList}
+                        contentContainerStyle={
+                            styles.messageContent
+                        }
+                        keyboardShouldPersistTaps="handled"
+                        showsVerticalScrollIndicator={
+                            false
+                        }
+                        onScroll={handleScroll}
+                        scrollEventThrottle={16}
+                    >
+
+                        {messages.map((item) => {
+
+                            // Admin's message
+                            const isAdminMessage =
+                                String(
+                                    item.sender_id
+                                ) ===
+                                String(ADMIN_ID);
+
+                            return (
+
+                                <View
+                                    key={item.id}
+                                    style={[
+                                        styles.messageBubble,
+
+                                        isAdminMessage
+                                            ? styles.adminMessage
+                                            : styles.doctorMessage,
+                                    ]}
+                                >
+
+                                    <Text
+                                        style={[
+                                            styles.messageText,
+
+                                            isAdminMessage &&
+                                            styles.adminMessageText,
+                                        ]}
+                                    >
+                                        {item.message}
+                                    </Text>
+
+                                    <Text
+                                        style={[
+                                            styles.messageTime,
+
+                                            isAdminMessage &&
+                                            styles.adminMessageTime,
+                                        ]}
+                                    >
+                                        {new Date(
+                                            item.timestamp
+                                        ).toLocaleTimeString(
+                                            [],
+                                            {
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                            }
+                                        )}
+                                    </Text>
+
+                                </View>
+                            );
+                        })}
+
+                    </ScrollView>
+                )}
+
+            </View>
+
+            {/* =========================================
+                MESSAGE INPUT
+            ========================================= */}
+
+            <View style={styles.inputContainer}>
+
+                <TextInput
+                    style={styles.input}
+                    placeholder="Type a message..."
+                    placeholderTextColor="#888"
+                    value={message}
+                    onChangeText={setMessage}
+                    multiline
+                    editable={!sending}
+                    textAlignVertical="center"
+                />
+
+                <TouchableOpacity
+                    style={[
+                        styles.sendButton,
+                        sending &&
+                        styles.sendButtonDisabled,
+                    ]}
+                    onPress={sendMessage}
+                    disabled={sending}
+                    activeOpacity={0.7}
+                >
+
+                    {sending ? (
+
+                        <ActivityIndicator
+                            size="small"
                             color="#FFFFFF"
                         />
 
-                    </TouchableOpacity>
+                    ) : (
 
-                </View>
+                        <Ionicons
+                            name="send"
+                            size={20}
+                            color="#FFFFFF"
+                        />
 
-            </KeyboardAvoidingView>
+                    )}
 
-        </SafeAreaView>
+                </TouchableOpacity>
+
+            </View>
+
+        </KeyboardAvoidingView>
     );
-};
+}
 
-
-export default Chat;
-
-
-// ============================================================
+// =====================================================
 // STYLES
-// ============================================================
+// =====================================================
 
 const styles = StyleSheet.create({
 
-    safeArea: {
-        flex: 1,
-        backgroundColor: "#FFFFFF",
-    },
-
-
     container: {
         flex: 1,
+        backgroundColor: "#F7F9FC",
+    },
+    safeArea: {
         backgroundColor: "#FFFFFF",
     },
 
-
-    // ========================================================
-    // LOADING
-    // ========================================================
-
-    loadingContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-
-
-    loadingText: {
-        marginTop: 10,
-        fontSize: 15,
-        color: "#6B7280",
-    },
-
-
-    // ========================================================
+    // ================================================
     // HEADER
-    // ========================================================
+    // ================================================
 
     header: {
-        height: 65,
+        height: 70,
         flexDirection: "row",
         alignItems: "center",
-        paddingHorizontal: 16,
         backgroundColor: "#FFFFFF",
         borderBottomWidth: 1,
-        borderBottomColor: "#E5E7EB",
+        borderBottomColor: "#E5E5E5",
+        paddingHorizontal: 18,
     },
 
-
-    backButton: {
-        width: 40,
-        height: 40,
-        alignItems: "flex-start",
-        justifyContent: "center",
-        marginRight: 4,
-    },
-
-
-    adminAvatar: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: "#E8EEF7",
+    profile: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: "#F1F3F5",
         alignItems: "center",
         justifyContent: "center",
-        marginRight: 10,
+        marginRight: 12,
+        overflow: "hidden",
+        borderWidth: 1,
+        borderColor: "#E1E5EA",
     },
 
-
-    adminAvatarText: {
-        fontSize: 16,
-        fontWeight: "600",
-        color: "#021E48",
+    profileImage: {
+        width: "100%",
+        height: "100%",
+        borderRadius: 22,
     },
 
-
-    headerInfo: {
+    adminInfo: {
         flex: 1,
+        justifyContent: "center",
     },
 
-
-    headerTitle: {
+    adminName: {
         fontSize: 18,
         fontWeight: "600",
-        color: "#021E48",
+        color: "#000000",
     },
 
-
-    connectionRow: {
-        flexDirection: "row",
-        alignItems: "center",
+    adminStatus: {
+        fontSize: 12,
+        color: "#777777",
         marginTop: 2,
     },
 
-
-    connectionDot: {
-        width: 7,
-        height: 7,
-        borderRadius: 4,
-        marginRight: 5,
-    },
-
-
-    onlineDot: {
-        backgroundColor: "#22C55E",
-    },
-
-
-    offlineDot: {
-        backgroundColor: "#9CA3AF",
-    },
-
-
-    connectionText: {
-        fontSize: 11,
-        color: "#6B7280",
-    },
-
-
-    // ========================================================
+    // ================================================
     // MESSAGES
-    // ========================================================
+    // ================================================
 
-    messagesList: {
+    messagesContainer: {
+        flex: 1,
+        paddingHorizontal: 16,
+    },
+
+    messageList: {
         flex: 1,
     },
 
-
-    messagesContainer: {
-        paddingHorizontal: 16,
-        paddingTop: 20,
-        paddingBottom: 20,
+    messageContent: {
+        flexGrow: 1,
+        justifyContent: "flex-end",
+        paddingTop: 12,
+        paddingBottom: 12,
     },
 
+    // ================================================
+    // LOADING
+    // ================================================
 
-    messageWrapper: {
-        width: "100%",
-        marginBottom: 14,
+    loadingContainer: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
     },
 
-
-    doctorMessageWrapper: {
-        alignItems: "flex-end",
+    loadingText: {
+        marginTop: 8,
+        fontSize: 14,
+        color: "#777777",
     },
 
+    // ================================================
+    // EMPTY
+    // ================================================
 
-    adminMessageWrapper: {
-        alignItems: "flex-start",
+    emptyContainer: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
     },
 
+    emptyText: {
+        marginTop: 10,
+        fontSize: 16,
+        color: "#777777",
+        fontWeight: "600",
+    },
+
+    emptySubText: {
+        marginTop: 5,
+        fontSize: 13,
+        color: "#999999",
+    },
+
+    // ================================================
+    // MESSAGE BUBBLE
+    // ================================================
 
     messageBubble: {
         maxWidth: "78%",
         paddingHorizontal: 14,
-        paddingVertical: 10,
-        borderRadius: 14,
+        paddingVertical: 9,
+        borderRadius: 16,
+        marginBottom: 10,
     },
 
+    // Admin = LEFT
 
-    doctorBubble: {
-        backgroundColor: "#DDF4E8",
-        borderBottomRightRadius: 4,
-    },
-
-
-    adminBubble: {
-        backgroundColor: "#F1F3F5",
+    adminMessage: {
+        alignSelf: "flex-start",
+        backgroundColor: "#FFFFFF",
+        borderWidth: 1,
+        borderColor: "#E5E5E5",
         borderBottomLeftRadius: 4,
     },
 
+    // Doctor = RIGHT
+
+    doctorMessage: {
+        alignSelf: "flex-end",
+        backgroundColor: "#0864B9",
+        borderBottomRightRadius: 4,
+    },
 
     messageText: {
         fontSize: 15,
-        lineHeight: 21,
-        color: "#1F2937",
+        color: "#111111",
     },
 
-
-    messageMeta: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "flex-end",
-        marginTop: 5,
+    adminMessageText: {
+        color: "#111111",
     },
-
 
     messageTime: {
         fontSize: 10,
         color: "#777777",
+        marginTop: 4,
+        alignSelf: "flex-end",
     },
 
-
-    messageStatus: {
-        fontSize: 10,
+    adminMessageTime: {
         color: "#777777",
     },
 
-
-    // ========================================================
+    // ================================================
     // INPUT
-    // ========================================================
+    // ================================================
 
     inputContainer: {
         flexDirection: "row",
         alignItems: "flex-end",
-        paddingHorizontal: 12,
-        paddingTop: 8,
-        paddingBottom: 8,
         backgroundColor: "#FFFFFF",
         borderTopWidth: 1,
-        borderTopColor: "#E5E7EB",
+        borderTopColor: "#E5E5E5",
+        paddingHorizontal: 12,
+        paddingVertical: 10,
     },
 
-
-    textInput: {
+    input: {
         flex: 1,
-        minHeight: 42,
-        maxHeight: 100,
-        borderWidth: 1,
-        borderColor: "#D6D9DE",
+        minHeight: 45,
+        maxHeight: 110,
+        backgroundColor: "#F1F3F5",
         borderRadius: 22,
-        paddingHorizontal: 16,
+        paddingHorizontal: 18,
         paddingVertical: 10,
         fontSize: 15,
-        color: "#1F2937",
-        backgroundColor: "#F9FAFB",
+        color: "#000000",
+        marginRight: 8,
     },
-
 
     sendButton: {
-        width: 42,
-        height: 42,
-        borderRadius: 21,
-        backgroundColor: "#021E48",
+        width: 45,
+        height: 45,
+        borderRadius: 23,
+        backgroundColor: "#0864B9",
         alignItems: "center",
         justifyContent: "center",
-        marginLeft: 7,
     },
-
 
     sendButtonDisabled: {
-        opacity: 0.45,
+        opacity: 0.6,
     },
-
 });

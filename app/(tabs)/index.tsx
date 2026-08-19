@@ -22,8 +22,6 @@ export default function Index() {
   const fetchCases = async () => {
     try {
       setLoading(true);
-
-
       const response = await api.get("/cases", {
         params: {
           page: 1,
@@ -33,10 +31,6 @@ export default function Index() {
           search: searchTerm || undefined,
         },
       });
-
-
-
-      console.log("Doctor Cases:", response.data);
       setCases(response.data.items);
       setTotalCases(response.data.total);
 
@@ -47,8 +41,11 @@ export default function Index() {
     }
   };
   useEffect(() => {
-    fetchCases();
-  }, [statusFilter, deadlineFilter]);
+    const timer = setTimeout(() => {
+      fetchCases();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [statusFilter, deadlineFilter, searchTerm]);
 
   return (
     <>

@@ -12,7 +12,6 @@ import {
 
 export default function ProfileMenu() {
   const [menuVisible, setMenuVisible] = useState(false);
-
   const [profileName, setProfileName] = useState("");
   const [profileImage, setProfileImage] = useState<string | null>(null);
 

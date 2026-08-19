@@ -5,14 +5,15 @@ interface DeadlineSectionProps {
     deadline: string;
     status: string;
     deadlinePassed: boolean;
+    previewStatus: string;
     onApprove: () => void;
     onReject: () => void;
 }
-
 export default function DeadlineSection({
     deadline,
     status,
     deadlinePassed,
+    previewStatus,
     onApprove,
     onReject,
 }: DeadlineSectionProps) {
@@ -62,34 +63,37 @@ export default function DeadlineSection({
             )}
 
             {/* Actions */}
+            {previewStatus === "Waiting User" && (
+                <View style={styles.actionContainer}>
+                    <Text style={styles.actionTitle}>
+                        Actions
+                    </Text>
 
-            <View style={styles.actionContainer}>
-                <Text style={styles.actionTitle}>Actions</Text>
+                    <View style={styles.buttonContainer}>
+                        <TouchableOpacity
+                            style={styles.approveButton}
+                            onPress={onApprove}
+                        >
+                            <Ionicons
+                                name="checkmark"
+                                size={28}
+                                color="#FFFFFF"
+                            />
+                        </TouchableOpacity>
 
-                <View style={styles.buttonContainer}>
-                    <TouchableOpacity
-                        style={styles.approveButton}
-                        onPress={onApprove}
-                    >
-                        <Ionicons
-                            name="checkmark"
-                            size={28}
-                            color="#FFFFFF"
-                        />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles.rejectButton}
-                        onPress={onReject}
-                    >
-                        <Ionicons
-                            name="close"
-                            size={28}
-                            color="#0152A8"
-                        />
-                    </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.rejectButton}
+                            onPress={onReject}
+                        >
+                            <Ionicons
+                                name="close"
+                                size={28}
+                                color="#0152A8"
+                            />
+                        </TouchableOpacity>
+                    </View>
                 </View>
-            </View>
+            )}
 
         </View>
     );

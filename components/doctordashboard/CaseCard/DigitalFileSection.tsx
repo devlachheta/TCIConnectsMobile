@@ -1,49 +1,55 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
+interface DigitalFile {
+    id: number | string;
+    fileName: string;
+}
+
 interface DigitalFileSectionProps {
     title: string;
-    fileName: string;
-    onDownload: () => void;
+    files: DigitalFile[];
+    onDownload: (file: DigitalFile) => void;
 }
 
 export default function DigitalFileSection({
     title,
-    fileName,
+    files,
     onDownload,
 }: DigitalFileSectionProps) {
     return (
         <View style={styles.container}>
-            <Text style={styles.label}>
-                {title}
-            </Text>
+            <Text style={styles.label}>{title}</Text>
 
-            <TouchableOpacity
-                style={styles.fileContainer}
-                activeOpacity={0.8}
-                onPress={onDownload}
-            >
-                <View style={styles.leftSection}>
+            {files.map((file) => (
+                <TouchableOpacity
+                    key={file.id}
+                    style={styles.fileContainer}
+                    activeOpacity={0.8}
+                    onPress={() => onDownload(file)}
+                >
+                    <View style={styles.leftSection}>
+                        <Ionicons
+                            name="document-text-outline"
+                            size={22}
+                            color="#0152A8"
+                        />
+
+                        <Text
+                            style={styles.fileName}
+                            numberOfLines={1}
+                        >
+                            {file.fileName}
+                        </Text>
+                    </View>
+
                     <Ionicons
-                        name="document-text-outline"
+                        name="download-outline"
                         size={22}
                         color="#0152A8"
                     />
-
-                    <Text
-                        style={styles.fileName}
-                        numberOfLines={1}
-                    >
-                        {fileName}
-                    </Text>
-                </View>
-
-                <Ionicons
-                    name="download-outline"
-                    size={22}
-                    color="#0152A8"
-                />
-            </TouchableOpacity>
+                </TouchableOpacity>
+            ))}
         </View>
     );
 }
@@ -77,6 +83,8 @@ const styles = StyleSheet.create({
 
         paddingHorizontal: 14,
         paddingVertical: 14,
+
+        marginBottom: 10,
     },
 
     leftSection: {

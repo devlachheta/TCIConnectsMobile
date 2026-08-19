@@ -45,7 +45,7 @@ export const getCase = async (
     return response.data;
   } catch (error: any) {
     console.error(
-      "❌ Error fetching case:",
+      "Error fetching case:",
       error?.response?.data ||
       error?.message ||
       error
@@ -66,14 +66,14 @@ export const updateCase = async (
     );
 
     console.log(
-      "✅ Case updated:",
+      " Case updated:",
       response.data
     );
 
     return response.data;
   } catch (error: any) {
     console.error(
-      "❌ Error updating case:",
+      "Error updating case:",
       error?.response?.data ||
       error?.message ||
       error
@@ -92,14 +92,94 @@ export const deleteCase = async (
     );
 
     console.log(
-      "✅ Case deleted:",
+      " Case deleted:",
       response.data
     );
 
     return response.data;
   } catch (error: any) {
     console.error(
-      "❌ Error deleting case:",
+      "Error deleting case:",
+      error?.response?.data ||
+      error?.message ||
+      error
+    );
+
+    throw error;
+  }
+};
+
+export const confirmPreviewFiles = async (
+  caseId: number | string
+) => {
+  try {
+    const response = await api.put(
+      `/cases/${caseId}/confirm-preview-files`
+    );
+
+    console.log(
+      " Preview files confirmed:",
+      response.data
+    );
+
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      "Error confirming preview files:",
+      error?.response?.data ||
+      error?.message ||
+      error
+    );
+
+    throw error;
+  }
+};
+
+
+export const approvePreview = async (
+  caseId: number | string
+) => {
+  try {
+    const response = await api.put(
+      `/cases/${caseId}/approve-preview`
+    );
+
+    console.log(
+      " Preview approved:",
+      response.data
+    );
+
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      "Error approving preview:",
+      error?.response?.data ||
+      error?.message ||
+      error
+    );
+
+    throw error;
+  }
+};
+
+
+export const rejectPreview = async (
+  caseId: number | string
+) => {
+  try {
+    const response = await api.put(
+      `/cases/${caseId}/reject-preview`
+    );
+
+    console.log(
+      " Preview rejected:",
+      response.data
+    );
+
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      "Error rejecting preview:",
       error?.response?.data ||
       error?.message ||
       error
