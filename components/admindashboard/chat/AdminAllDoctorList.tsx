@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
   Image,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -35,71 +36,80 @@ export default function AdminAllDoctorList({
       {/* Divider */}
       <View style={styles.divider} />
 
+
       {/* Doctor List */}
-      {doctors.map((doctor) => (
-        <TouchableOpacity
-          key={doctor.id}
-          style={styles.doctorItem}
-          onPress={() => onDoctorPress(doctor)}
-          activeOpacity={0.7}
-        >
-          {/* Profile */}
-          <View style={styles.profileContainer}>
-            {doctor.profile_image ? (
-              <Image
-                source={{
-                  uri: `https://tcidentallab.com/uploads/profile/${encodeURIComponent(
-                    doctor.profile_image
-                  )}`,
-                }}
-                style={styles.profileImage}
-              />
-            ) : (
-              <View style={styles.profilePlaceholder}>
-                <Ionicons
-                  name="person-outline"
-                  size={22}
-                  color="#777"
+      <ScrollView
+        style={styles.doctorList}
+        showsVerticalScrollIndicator={false}
+        nestedScrollEnabled
+      >
+        {doctors.map((doctor) => (
+          <TouchableOpacity
+            key={doctor.id}
+            style={styles.doctorItem}
+            onPress={() => onDoctorPress(doctor)}
+            activeOpacity={0.7}
+          >
+            {/* Profile */}
+            <View style={styles.profileContainer}>
+              {doctor.profile_image ? (
+                <Image
+                  source={{
+                    uri: `https://tcidentallab.com/uploads/profile/${encodeURIComponent(
+                      doctor.profile_image
+                    )}`,
+                  }}
+                  style={styles.profileImage}
                 />
-              </View>
-            )}
-          </View>
+              ) : (
+                <View style={styles.profilePlaceholder}>
+                  <Ionicons
+                    name="person-outline"
+                    size={22}
+                    color="#777"
+                  />
+                </View>
+              )}
+            </View>
 
-          {/* Doctor Name + Unread Count */}
-          <View style={styles.nameContainer}>
-            <Text
-              style={styles.doctorName}
-              numberOfLines={1}
-            >
-              {doctor.name}
+            {/* Doctor Name + Unread Count */}
+            <View style={styles.nameContainer}>
+              <Text
+                style={styles.doctorName}
+                numberOfLines={1}
+              >
+                {doctor.name}
+              </Text>
+
+              {Number(doctor.unread_count) > 0 ? (
+                <View style={styles.unreadBadge}>
+                  <Text style={styles.unreadText}>
+                    {doctor.unread_count}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+
+            {/* Last Active */}
+            <Text style={styles.lastActive}>
+              {doctor.timestamp
+                ? new Date(
+                  doctor.timestamp
+                ).toLocaleString()
+                : ""}
             </Text>
-
-            {/* Unread Count */}
-            {Number(doctor.unread_count) > 0 ? (
-              <View style={styles.unreadBadge}>
-                <Text style={styles.unreadText}>
-                  {doctor.unread_count}
-                </Text>
-              </View>
-            ) : null}
-          </View>
-
-          {/* Last Active */}
-          <Text style={styles.lastActive}>
-            {doctor.timestamp
-              ? new Date(
-                doctor.timestamp
-              ).toLocaleString()
-              : ""}
-          </Text>
-        </TouchableOpacity>
-      ))}
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
     </View>
+
   );
 }
 
 const styles = StyleSheet.create({
   card: {
+    flex: 1,
+
     backgroundColor: "#FFFFFF",
 
     borderRadius: 16,
@@ -228,5 +238,8 @@ const styles = StyleSheet.create({
     color: "#666",
 
     textAlign: "right",
+  },
+  doctorList: {
+    flex: 1
   },
 });

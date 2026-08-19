@@ -21,6 +21,7 @@ import {
 
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import AdminFooter from "@/components/admindashboard/AdminFooter";
 import api from "../../services/api";
 
 type Doctor = {
@@ -45,21 +46,34 @@ export default function AllDoctors() {
   const [loading, setLoading] =
     useState(true);
 
-  // ==========================================
-  // GET ALL DOCTORS FROM BACKEND
-  // ==========================================
-
   const fetchDoctors = async () => {
     try {
-      const response =
-        await api.get("/doctors");
+      const response = await api.get("/doctors");
 
-      console.log(
-        "Doctors:",
-        response.data
+      const sortedDoctors = [...response.data].sort(
+        (a, b) => {
+          // Pending doctors first
+          if (
+            a.status?.toLowerCase() === "pending" &&
+            b.status?.toLowerCase() !== "pending"
+          ) {
+            return -1;
+          }
+
+          if (
+            a.status?.toLowerCase() !== "pending" &&
+            b.status?.toLowerCase() === "pending"
+          ) {
+            return 1;
+          }
+
+          return 0;
+        }
       );
 
-      setDoctors(response.data);
+      console.log("Doctors:", sortedDoctors);
+
+      setDoctors(sortedDoctors);
     } catch (error) {
       console.log(
         "Error fetching doctors:",
@@ -70,9 +84,6 @@ export default function AllDoctors() {
     }
   };
 
-  // ==========================================
-  // REFRESH EVERY TIME SCREEN OPENS
-  // ==========================================
 
   useFocusEffect(
     useCallback(() => {
@@ -80,9 +91,7 @@ export default function AllDoctors() {
     }, [])
   );
 
-  // ==========================================
-  // SEARCH DOCTORS
-  // ==========================================
+
 
   const filteredDoctors =
     doctors.filter((doctor) => {
@@ -189,11 +198,11 @@ export default function AllDoctors() {
             />
           </TouchableOpacity>
 
-          <Text
+          {/* <Text
             style={styles.headerTitle}
           >
             All Doctors
-          </Text>
+          </Text> */}
         </View>
 
         <View
@@ -307,13 +316,8 @@ export default function AllDoctors() {
         ================================== */}
 
         <View style={styles.card}>
-          <Text style={styles.title}>
-            All Doctors
-          </Text>
 
-          <View
-            style={styles.divider}
-          />
+
 
           {/* NO DOCTORS */}
 
@@ -372,9 +376,15 @@ export default function AllDoctors() {
                           source={{
                             uri: profileImage,
                           }}
-                          style={
-                            styles.profileImage
-                          }
+                          style={styles.profileImage}
+                          onError={(error) => {
+                            console.log(
+                              "PROFILE IMAGE ERROR:",
+                              doctor.full_name,
+                              profileImage,
+                              error.nativeEvent
+                            );
+                          }}
                         />
                       ) : (
                         <View
@@ -579,6 +589,7 @@ export default function AllDoctors() {
           )}
         </View>
       </ScrollView>
+      <AdminFooter />
     </SafeAreaView>
   );
 }
@@ -690,15 +701,6 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
 
-  title: {
-    fontSize: 27,
-
-    fontWeight: "500",
-
-    color: "#111",
-
-    marginBottom: 18,
-  },
 
   divider: {
     height: 1,
@@ -707,11 +709,26 @@ const styles = StyleSheet.create({
   },
 
   doctorCard: {
+    backgroundColor: "#FFFFFF",
+
+    borderRadius: 16,
+
+    marginBottom: 16,
+
+    paddingHorizontal: 20,
     paddingVertical: 18,
 
-    borderBottomWidth: 1,
+    shadowColor: "#000",
 
-    borderBottomColor: "#E5E5E5",
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+
+    elevation: 3,
   },
 
   topSection: {

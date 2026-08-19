@@ -32,10 +32,7 @@ export default function AdminHeader({
           />
         </TouchableOpacity>
 
-        {/* Page Title */}
-        <Text style={styles.title}>
-          Dashboard
-        </Text>
+
 
       </View>
 
@@ -103,12 +100,6 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
 
-  title: {
-    fontSize: 26,
-    fontWeight: "600",
-    color: "#111",
-    marginRight: 10,
-  },
 
   rightSection: {
     flexDirection: "row",

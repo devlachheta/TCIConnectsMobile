@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-around",
 
-    paddingHorizontal: 4,
+    paddingHorizontal: 8,
   },
 
   footerItem: {

@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../services/api";
 
+import AdminFooter from "@/components/admindashboard/AdminFooter";
 import AdminAllDoctorList from "@/components/admindashboard/chat/AdminAllDoctorList";
 import AdminDoctorChat from "@/components/admindashboard/chat/AdminDoctorChat";
 
@@ -38,7 +39,22 @@ export default function AllChats() {
 
       console.log("Active Users:", response.data);
 
-      setDoctors(response.data);
+      const sortedDoctors = [...response.data].sort(
+        (a, b) => {
+          if (!a.timestamp && !b.timestamp) return 0;
+
+          if (!a.timestamp) return 1;
+
+          if (!b.timestamp) return -1;
+
+          return (
+            new Date(b.timestamp).getTime() -
+            new Date(a.timestamp).getTime()
+          );
+        }
+      );
+
+      setDoctors(sortedDoctors);
     } catch (error) {
       console.log("Active users error:", error);
     } finally {
@@ -62,9 +78,6 @@ export default function AllChats() {
     };
   }, []);
 
-  // --------------------------------
-  // PARTICULAR DOCTOR CHAT
-  // --------------------------------
   if (selectedDoctor) {
     return (
       <SafeAreaView
@@ -82,9 +95,7 @@ export default function AllChats() {
     );
   }
 
-  // --------------------------------
-  // ALL CHATS / DOCTOR LIST
-  // --------------------------------
+
   return (
     <SafeAreaView
       style={styles.container}
@@ -142,6 +153,7 @@ export default function AllChats() {
           />
         </View>
       )}
+      <AdminFooter />
     </SafeAreaView>
   );
 }

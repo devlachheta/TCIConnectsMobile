@@ -21,6 +21,7 @@ import {
 } from "react-native";
 
 import api from "../../../services/api";
+import AdminFooter from "../AdminFooter";
 
 type Doctor = {
   id: number | string;
@@ -280,187 +281,186 @@ export default function AdminDoctorChat({
       )}`
       : null;
 
-  // --------------------------------
-  // UI
-  // --------------------------------
-
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={
-        Platform.OS === "ios"
-          ? "padding"
-          : "height"
-      }
-      keyboardVerticalOffset={0}
-    >
-      {/* =========================
+    <View style={styles.screen}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={
+          Platform.OS === "ios"
+            ? "padding"
+            : "height"
+        }
+        keyboardVerticalOffset={35}
+      >
+        {/* =========================
           HEADER
       ========================== */}
 
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={onBack}
-          activeOpacity={0.7}
-        >
-          <Ionicons
-            name="arrow-back"
-            size={28}
-            color="#000"
-          />
-        </TouchableOpacity>
-
-        {/* Doctor Profile Image */}
-        <View style={styles.profile}>
-          {profileImageUrl ? (
-            <Image
-              source={{
-                uri: profileImageUrl,
-              }}
-              style={styles.profileImage}
-            />
-          ) : (
-            <Ionicons
-              name="person-outline"
-              size={21}
-              color="#777"
-            />
-          )}
-        </View>
-
-        {/* Doctor Name */}
-        <View style={styles.doctorInfo}>
-          <Text
-            style={styles.doctorName}
-            numberOfLines={1}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={onBack}
+            activeOpacity={0.7}
           >
-            {doctor.name}
-          </Text>
-        </View>
-      </View>
+            <Ionicons
+              name="arrow-back"
+              size={28}
+              color="#000"
+            />
+          </TouchableOpacity>
 
-      {/* =========================
+          {/* Doctor Profile Image */}
+          <View style={styles.profile}>
+            {profileImageUrl ? (
+              <Image
+                source={{
+                  uri: profileImageUrl,
+                }}
+                style={styles.profileImage}
+              />
+            ) : (
+              <Ionicons
+                name="person-outline"
+                size={21}
+                color="#777"
+              />
+            )}
+          </View>
+
+          {/* Doctor Name */}
+          <View style={styles.doctorInfo}>
+            <Text
+              style={styles.doctorName}
+              numberOfLines={1}
+            >
+              {doctor.name}
+            </Text>
+          </View>
+        </View>
+
+        {/* =========================
           MESSAGES
       ========================== */}
 
-      <View style={styles.messagesContainer}>
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator
-              size="small"
-              color="#0864B9"
-            />
+        <View style={styles.messagesContainer}>
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator
+                size="small"
+                color="#0864B9"
+              />
 
-            <Text style={styles.loadingText}>
-              Loading messages...
-            </Text>
-          </View>
-        ) : messages.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
-              No messages yet
-            </Text>
-          </View>
-        ) : (
-          <ScrollView
-            ref={scrollViewRef}
-            style={styles.messageList}
-            contentContainerStyle={
-              styles.messageContent
-            }
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-          >
-            {messages.map((item) => {
-              const isDoctorMessage =
-                String(item.sender_id) ===
-                String(doctor.id);
-
-              return (
-                <View
-                  key={item.id}
-                  style={[
-                    styles.messageBubble,
-                    isDoctorMessage
-                      ? styles.doctorMessage
-                      : styles.adminMessage,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.messageText,
-                      !isDoctorMessage &&
-                      styles.adminMessageText,
-                    ]}
-                  >
-                    {item.message}
-                  </Text>
-
-                  <Text
-                    style={[
-                      styles.messageTime,
-                      !isDoctorMessage &&
-                      styles.adminMessageTime,
-                    ]}
-                  >
-                    {new Date(
-                      item.timestamp
-                    ).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </Text>
-                </View>
-              );
-            })}
-          </ScrollView>
-        )}
-      </View>
-
-      {/* =========================
-          MESSAGE INPUT
-      ========================== */}
-
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Type a message..."
-          placeholderTextColor="#888"
-          value={message}
-          onChangeText={setMessage}
-          multiline
-          editable={!sending}
-          textAlignVertical="center"
-        />
-
-        <TouchableOpacity
-          style={[
-            styles.sendButton,
-            sending &&
-            styles.sendButtonDisabled,
-          ]}
-          onPress={sendMessage}
-          disabled={sending}
-          activeOpacity={0.7}
-        >
-          {sending ? (
-            <ActivityIndicator
-              size="small"
-              color="#fff"
-            />
+              <Text style={styles.loadingText}>
+                Loading messages...
+              </Text>
+            </View>
+          ) : messages.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>
+                No messages yet
+              </Text>
+            </View>
           ) : (
-            <Ionicons
-              name="send"
-              size={20}
-              color="#fff"
-            />
+            <ScrollView
+              ref={scrollViewRef}
+              style={styles.messageList}
+              contentContainerStyle={
+                styles.messageContent
+              }
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              onScroll={handleScroll}
+              scrollEventThrottle={16}
+            >
+              {messages.map((item) => {
+                const isDoctorMessage =
+                  String(item.sender_id) ===
+                  String(doctor.id);
+
+                return (
+                  <View
+                    key={item.id}
+                    style={[
+                      styles.messageBubble,
+                      isDoctorMessage
+                        ? styles.doctorMessage
+                        : styles.adminMessage,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.messageText,
+                        !isDoctorMessage &&
+                        styles.adminMessageText,
+                      ]}
+                    >
+                      {item.message}
+                    </Text>
+
+                    <Text
+                      style={[
+                        styles.messageTime,
+                        !isDoctorMessage &&
+                        styles.adminMessageTime,
+                      ]}
+                    >
+                      {new Date(
+                        item.timestamp
+                      ).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </Text>
+                  </View>
+                );
+              })}
+
+            </ScrollView>
           )}
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+        </View>
+
+
+
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Type a message..."
+            placeholderTextColor="#888"
+            value={message}
+            onChangeText={setMessage}
+            multiline
+            editable={!sending}
+            textAlignVertical="center"
+          />
+
+          <TouchableOpacity
+            style={[
+              styles.sendButton,
+              sending &&
+              styles.sendButtonDisabled,
+            ]}
+            onPress={sendMessage}
+            disabled={sending}
+            activeOpacity={0.7}
+          >
+            {sending ? (
+              <ActivityIndicator
+                size="small"
+                color="#fff"
+              />
+            ) : (
+              <Ionicons
+                name="send"
+                size={20}
+                color="#fff"
+              />
+            )}
+          </TouchableOpacity>
+        </View>
+
+      </KeyboardAvoidingView>
+      <AdminFooter />
+    </View>
   );
 }
 
@@ -644,9 +644,7 @@ const styles = StyleSheet.create({
     color: "#E5E5E5",
   },
 
-  // --------------------------------
-  // INPUT
-  // --------------------------------
+
 
   inputContainer: {
     flexDirection: "row",
@@ -695,5 +693,9 @@ const styles = StyleSheet.create({
 
   sendButtonDisabled: {
     opacity: 0.6,
+  },
+  screen: {
+    flex: 1,
+    backgroundColor: "#F7F9FC",
   },
 });

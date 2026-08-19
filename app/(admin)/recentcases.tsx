@@ -1,3 +1,4 @@
+import AdminFooter from "@/components/admindashboard/AdminFooter";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
@@ -42,6 +43,7 @@ export default function RecentCases() {
 
         {/* Recent cases content will be added here */}
       </View>
+      <AdminFooter />
     </SafeAreaView>
   );
 }
