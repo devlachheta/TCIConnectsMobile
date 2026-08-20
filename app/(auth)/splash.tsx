@@ -224,7 +224,7 @@ export default function Splash() {
                     ) {
 
                         router.replace(
-                            "/(tabs)"
+                            "/(doctor)"
                         );
 
                     } else {

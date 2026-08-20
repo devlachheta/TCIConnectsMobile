@@ -1,4 +1,4 @@
-import AdminFooter from "@/components/admindashboard/AdminFooter";
+// import AdminFooter from "@/components/admindashboard/AdminFooter";
 import api from "@/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -1101,7 +1101,6 @@ export default function AddPrice() {
 
       {renderMaterialModal()}
 
-      <AdminFooter />
     </SafeAreaView>
   );
 }

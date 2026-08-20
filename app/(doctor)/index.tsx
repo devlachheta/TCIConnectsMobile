@@ -1,13 +1,13 @@
 
 import CaseCard from "@/components/doctordashboard/CaseCard";
 import DashboardHeader from "@/components/doctordashboard/DashboardHeader";
-import FilterSection from "@/components/doctordashboard/FilterSection";
+import FilterSection from "@/components/shared/FilterSection";
 import api from "@/services/api";
 import { Image } from "expo-image";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import StatCard from "../../components/doctordashboard/StatCard";
+import StatCard from "@/components/shared/StatCard";
 import { useRouter } from "expo-router";
 
 export default function Index() {
@@ -34,8 +34,20 @@ export default function Index() {
       setCases(response.data.items);
       setTotalCases(response.data.total);
 
-    } catch (error) {
-      console.log("Error fetching doctor cases:", error);
+    } catch (error: any) {
+      console.log("========== CASE API ERROR ==========");
+
+      console.log("Status:", error?.response?.status);
+
+      console.log("Response:", error?.response?.data);
+
+      console.log("URL:", error?.config?.url);
+
+      console.log("Method:", error?.config?.method);
+
+      console.log("Params:", error?.config?.params);
+
+      console.log("====================================");
     } finally {
       setLoading(false);
     }
@@ -56,16 +68,33 @@ export default function Index() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.greetingContainer}>
-            <Text style={styles.greeting}>Hi Sagar,</Text>
+            <Text style={styles.greeting}>Hi, { }</Text>
 
             <Text style={styles.subHeading}>
               Here's your case overview
             </Text>
           </View>
-          <StatCard totalPatients={totalCases} />
+          <StatCard
+            cards={[
+              {
+                title: "Total Patient",
+                value: String(totalCases),
+                icon: require("@/assets/images/totalcasesimg.png"),
+                iconBackgroundColor: "#FFFFFF",
+                cardColor: "#E3F2EF",
+              },
+              {
+                title: "Create a new request",
+                value: "Submit a Case",
+                icon: require("@/assets/images/submitsvg.png"),
+                iconBackgroundColor: "#FFFFFF",
+                cardColor: "#E3F1FA",
+              },
+            ]}
+          />
           <View>
             <Text style={styles.latest}>
-              Latest Cases
+              Latest Patients
             </Text>
 
           </View>
@@ -109,7 +138,6 @@ export default function Index() {
               <CaseCard
                 key={item.id}
                 caseData={item}
-
                 onEdit={(caseData) => {
                   router.push({
                     pathname: "/edit-case",

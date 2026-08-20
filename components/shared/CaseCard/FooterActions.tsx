@@ -2,31 +2,36 @@ import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface FooterActionsProps {
-    onEdit: () => void;
+    onEdit?: () => void;
     onDelete: () => void;
 }
-
 export default function FooterActions({
     onEdit,
     onDelete,
 }: FooterActionsProps) {
     return (
         <View style={styles.container}>
-            <TouchableOpacity
-                style={styles.button}
-                onPress={onEdit}
-                activeOpacity={0.8}
-            >
-                <Ionicons
-                    name="create-outline"
-                    size={15}
-                    color="#0152A8"
-                />
+            {onEdit && (
+                <>
+                    <TouchableOpacity
+                        style={styles.button}
+                        onPress={onEdit}
+                        activeOpacity={0.8}
+                    >
+                        <Ionicons
+                            name="create-outline"
+                            size={15}
+                            color="#0152A8"
+                        />
 
-                <Text style={styles.editText}>
-                    Edit
-                </Text>
-            </TouchableOpacity>
+                        <Text style={styles.editText}>
+                            Edit
+                        </Text>
+                    </TouchableOpacity>
+
+                    <View style={styles.divider} />
+                </>
+            )}
 
             <View style={styles.divider} />
 

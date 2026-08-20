@@ -125,7 +125,7 @@ export default function Login() {
                 router.replace("/(admin)");
 
             } else if (userRole === "doctor") {
-                router.replace("/(tabs)");
+                router.replace("/(doctor)");
             } else {
                 setError("Invalid user role");
             }

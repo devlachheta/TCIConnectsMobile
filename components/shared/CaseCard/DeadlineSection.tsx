@@ -6,8 +6,8 @@ interface DeadlineSectionProps {
     status: string;
     deadlinePassed: boolean;
     previewStatus: string;
-    onApprove: () => void;
-    onReject: () => void;
+    onApprove?: () => void;
+    onReject?: () => void;
 }
 export default function DeadlineSection({
     deadline,
@@ -63,38 +63,50 @@ export default function DeadlineSection({
             )}
 
             {/* Actions */}
-            {previewStatus === "Waiting User" && (
-                <View style={styles.actionContainer}>
-                    <Text style={styles.actionTitle}>
-                        Actions
-                    </Text>
+            {previewStatus === "Waiting User" &&
+                onApprove &&
+                onReject && (
 
-                    <View style={styles.buttonContainer}>
-                        <TouchableOpacity
-                            style={styles.approveButton}
-                            onPress={onApprove}
-                        >
-                            <Ionicons
-                                name="checkmark"
-                                size={28}
-                                color="#FFFFFF"
-                            />
-                        </TouchableOpacity>
+                    <View style={styles.actionContainer}>
 
-                        <TouchableOpacity
-                            style={styles.rejectButton}
-                            onPress={onReject}
-                        >
-                            <Ionicons
-                                name="close"
-                                size={28}
-                                color="#0152A8"
-                            />
-                        </TouchableOpacity>
+                        <Text style={styles.actionTitle}>
+                            Actions
+                        </Text>
+
+                        <View style={styles.buttonContainer}>
+
+                            {/* APPROVE */}
+
+                            <TouchableOpacity
+                                style={styles.approveButton}
+                                onPress={onApprove}
+                                activeOpacity={0.8}
+                            >
+                                <Ionicons
+                                    name="checkmark"
+                                    size={28}
+                                    color="#FFFFFF"
+                                />
+                            </TouchableOpacity>
+
+                            {/* REJECT */}
+
+                            <TouchableOpacity
+                                style={styles.rejectButton}
+                                onPress={onReject}
+                                activeOpacity={0.8}
+                            >
+                                <Ionicons
+                                    name="close"
+                                    size={28}
+                                    color="#0152A8"
+                                />
+                            </TouchableOpacity>
+
+                        </View>
+
                     </View>
-                </View>
-            )}
-
+                )}
         </View>
     );
 }

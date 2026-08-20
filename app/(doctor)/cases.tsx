@@ -1,6 +1,6 @@
 import CaseCard from "@/components/doctordashboard/CaseCard";
 import DashboardHeader from "@/components/doctordashboard/DashboardHeader";
-import FilterSection from "@/components/doctordashboard/FilterSection";
+import FilterSection from "@/components/shared/FilterSection";
 import api from "@/services/api";
 import { Image } from "expo-image";
 import { useEffect, useState } from "react";

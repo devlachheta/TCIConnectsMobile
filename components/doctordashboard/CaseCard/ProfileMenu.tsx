@@ -98,7 +98,7 @@ export default function ProfileMenu() {
             activeOpacity={0.7}
             onPress={() => {
               setMenuVisible(false);
-              router.push("/(tabs)/profile");
+              router.push("/(doctor)/profile");
             }}
           >
             <View style={styles.iconBox}>
@@ -141,7 +141,7 @@ export default function ProfileMenu() {
             activeOpacity={0.7}
             onPress={() => {
               setMenuVisible(false);
-              router.push("/(tabs)/profile");
+              router.push("/(doctor)/profile");
             }}
           >
             <View style={styles.iconBox}>

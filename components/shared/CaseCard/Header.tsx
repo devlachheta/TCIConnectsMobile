@@ -9,7 +9,6 @@ interface HeaderProps {
     onMenuPress: () => void;
 
 }
-
 export default function Header({
     caseId,
     status,
@@ -92,6 +91,7 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         alignItems: "flex-start",
         padding: 18,
+        zIndex: 1,
     },
 
     leftSection: {

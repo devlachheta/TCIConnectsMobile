@@ -3,8 +3,7 @@ import React, { useState } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import ProfileMenu from "./CaseCard/ProfileMenu";
 import DashboardDrawer from "./DashboardDrawer";
-import Notification from "./notification";
-
+import Notification from "../../app/(doctor)/notifications";
 interface DashboardHeaderProps {
     profileImage?: string;
     onMenuPress?: () => void;

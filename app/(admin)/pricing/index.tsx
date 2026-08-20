@@ -1,4 +1,4 @@
-import AdminFooter from "@/components/admindashboard/AdminFooter";
+// import AdminFooter from "@/components/admindashboard/AdminFooter";
 import api from "@/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -570,9 +570,6 @@ export default function AdminPricing() {
           </Text>
         </View>
       </ScrollView>
-
-      {/* Footer */}
-      <AdminFooter />
     </SafeAreaView>
   );
 }

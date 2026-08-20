@@ -21,7 +21,6 @@ export default function FilterSection({
 }: FilterSectionProps) {
     const [open, setOpen] = useState(false);
     const [status, setStatus] = useState("");
-
     const [deadline, setDeadline] = useState("");
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
@@ -76,7 +75,7 @@ export default function FilterSection({
                         setItems={setItems}
                         placeholder="All"
 
-                        listMode="MODAL"
+                        listMode="SCROLLVIEW"
 
                         style={styles.dropdown}
                         dropDownContainerStyle={styles.dropdownContainer}

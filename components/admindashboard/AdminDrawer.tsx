@@ -171,35 +171,42 @@ export default function AdminDrawer({
     </View>
   );
 }
-
 const styles = StyleSheet.create({
-
   drawer: {
     position: "absolute",
+
     left: 0,
     top: 0,
     bottom: 0,
 
-    width: 280,
+    // This gives the right-side visible area
+    width: "64%",
 
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFFFF",
 
     borderRightWidth: 1,
     borderRightColor: "#E5E5E5",
 
-    paddingHorizontal: 20,
-    paddingTop: 45,
-    paddingBottom: 25,
+    paddingHorizontal: 18,
 
-    zIndex: 100,
-    elevation: 10,
+    zIndex: 9999,
+    elevation: 20,
+
+    // subtle shadow
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 4,
+      height: 0,
+    },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
   },
 
   closeButton: {
     position: "absolute",
 
-    top: 20,
-    right: 20,
+    top: 18,
+    right: 16,
 
     zIndex: 10,
 
@@ -211,48 +218,52 @@ const styles = StyleSheet.create({
   },
 
   logoContainer: {
-    marginTop: 35,
-    marginBottom: 55,
+    marginTop: 58,
+    marginBottom: 58,
 
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
   },
 
   logo: {
-    fontSize: 32,
+    fontSize: 26,
     fontWeight: "700",
     color: "#1268E8",
   },
 
   menuContainer: {
-    gap: 12,
+    gap: 10,
   },
 
   menuItem: {
-    height: 56,
+    height: 54,
 
-    borderRadius: 30,
+    borderRadius: 12,
 
     flexDirection: "row",
 
     alignItems: "center",
 
-    paddingHorizontal: 24,
+    paddingHorizontal: 18,
 
     gap: 18,
+
+    // IMPORTANT:
+    // no blue active background
+    backgroundColor: "transparent",
   },
 
   activeMenuItem: {
-    backgroundColor: "#0864B9",
+    backgroundColor: "transparent",
   },
 
   menuText: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "500",
-    color: "#111",
+    color: "#111111",
   },
 
   activeMenuText: {
-    color: "#fff",
+    color: "#111111",
     fontWeight: "600",
   },
 });

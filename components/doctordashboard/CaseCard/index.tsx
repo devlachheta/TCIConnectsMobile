@@ -1,14 +1,14 @@
 import { openCaseFile, downloadCaseFile } from "@/services/fileService";
 import { StyleSheet, View } from "react-native";
 import { useState } from "react";
-import AppointmentInfo from "./AppointmentInfo";
-import DeadlineSection from "./DeadlineSection";
-import DigitalFileSection from "./DigitalFileSection";
-import FooterActions from "./FooterActions";
-import Header from "./Header";
-import PatientInfo from "./PatientInfo";
-import PDFSection from "./PDFSection";
-import PreviewSection from "./PreviewSection";
+import AppointmentInfo from "@/components/shared/CaseCard/AppointmentInfo";
+import DeadlineSection from "@/components/shared/CaseCard/DeadlineSection";
+import DigitalFileSection from "@/components/shared/CaseCard/DigitalFileSection";
+import FooterActions from "@/components/shared/CaseCard/FooterActions";
+import Header from "@/components/shared/CaseCard/Header";
+import PatientInfo from "@/components/shared/CaseCard/PatientInfo";
+import PDFSection from "@/components/shared/CaseCard/PDFSection";
+import PreviewSection from "@/components/shared/CaseCard/PreviewSection";
 import {
     Alert,
 } from "react-native";
@@ -178,11 +178,15 @@ export default function CaseCard({ caseData, onCaseDeleted,
                 }}
             />
             <PreviewSection
+                role="doctor"
+
+                previewStatus={previewStatus}
+
                 fileName={
-                    previewStatus === "Approved" && previewFile
-                        ? previewFile.file_name
-                        : "No Preview File"
+                    previewFile?.file_name ||
+                    "No Preview File"
                 }
+
                 onDownload={() => {
 
                     if (
@@ -196,6 +200,7 @@ export default function CaseCard({ caseData, onCaseDeleted,
                         previewFile.file_path,
                         previewFile.file_name
                     );
+
                 }}
             />
             <DeadlineSection
