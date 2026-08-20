@@ -1,11 +1,9 @@
 import AuthHeader from "@/components/authheader";
 import AuthInput from "@/components/authInput";
 import PrimaryButton from "@/components/PrimaryBotton";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import * as SecureStore from "expo-secure-store";
 import { useState } from "react";
 import {
     ScrollView,
@@ -50,9 +48,11 @@ export default function Login() {
         }
 
         // Email / mobile validation
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        const mobileRegex = /^[6-9]\d{9}$/;
+        const emailRegex =
+            /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+        const mobileRegex =
+            /^[6-9]\d{9}$/;
         const isEmail = emailRegex.test(trimmedUsername);
         const isMobile = mobileRegex.test(trimmedUsername);
 
@@ -88,7 +88,7 @@ export default function Login() {
 
             console.log("Login successful");
 
-            // Check whether JWT exists
+            // Check whether authentication tokens exist
             if (!response?.access_token) {
                 console.log(
                     "Login response does not contain access_token"
@@ -101,19 +101,21 @@ export default function Login() {
                 return;
             }
 
-            // Store JWT securely
-            await SecureStore.setItemAsync(
-                "access_token",
-                response.access_token
-            );
+            if (!response?.refresh_token) {
+                console.log(
+                    "Login response does not contain refresh_token"
+                );
 
-            // Store user information
-            await AsyncStorage.setItem(
-                "user",
-                JSON.stringify(response.user)
-            );
+                setError(
+                    "Login successful, but refresh token was not received."
+                );
 
-            console.log("JWT stored successfully");
+                return;
+            }
+
+            console.log(
+                "Authentication data stored successfully"
+            );
 
             // Get user role
             const userRole = response.user?.role;
