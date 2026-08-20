@@ -1,3 +1,133 @@
+// import * as SecureStore from "expo-secure-store";
+// import api from "./api";
+
+// export const login = async (
+//     username: string,
+//     password: string
+// ) => {
+//     try {
+//         const response = await api.post("/login", {
+//             username,
+//             password,
+//         });
+
+//         console.log("LOGIN RESPONSE:", response.data);
+
+//         const token = response.data?.access_token;
+
+//         if (!token) {
+//             throw new Error(
+//                 "Login successful, but access token was not received."
+//             );
+//         }
+
+//         await SecureStore.setItemAsync(
+//             "access_token",
+//             token
+//         );
+
+//         console.log(" Access token saved successfully");
+
+//         return response.data;
+//     } catch (error: any) {
+//         console.error(
+//             " Login error:",
+//             error?.response?.data || error?.message || error
+//         );
+
+//         throw error;
+//     }
+// };
+
+// export const register = async (data: any) => {
+//     try {
+//         const response = await api.post("/register", data);
+
+//         console.log("REGISTER RESPONSE:", response.data);
+
+//         return response.data;
+//     } catch (error: any) {
+//         console.error(
+//             " Registration error:",
+//             error?.response?.data || error?.message || error
+//         );
+
+//         throw error;
+//     }
+// };
+
+// export const forgotPassword = async (
+//     email: string
+// ) => {
+//     try {
+//         const response = await api.post(
+//             "/forgot-password",
+//             {
+//                 email,
+//             }
+//         );
+
+//         return response.data;
+//     } catch (error: any) {
+//         console.error(
+//             " Forgot password error:",
+//             error?.response?.data || error?.message || error
+//         );
+
+//         throw error;
+//     }
+// };
+
+// export const resetPassword = async (
+//     email: string,
+//     password: string
+// ) => {
+//     try {
+//         const response = await api.post(
+//             "/reset-password",
+//             {
+//                 email,
+//                 password,
+//             }
+//         );
+
+//         return response.data;
+//     } catch (error: any) {
+//         console.error(
+//             " Reset password error:",
+//             error?.response?.data || error?.message || error
+//         );
+
+//         throw error;
+//     }
+// };
+
+// export const logout = async () => {
+//     try {
+//         await SecureStore.deleteItemAsync(
+//             "access_token"
+//         );
+
+//         console.log(" Access token removed");
+//     } catch (error: any) {
+//         console.error(
+//             " Logout error:",
+//             error?.message || error
+//         );
+
+//         throw error;
+//     }
+// };
+
+// export const getAccessToken = async () => {
+//     return await SecureStore.getItemAsync(
+//         "access_token"
+//     );
+// };
+
+
+
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import api from "./api";
 
@@ -11,55 +141,125 @@ export const login = async (
             password,
         });
 
-        console.log("LOGIN RESPONSE:", response.data);
+        console.log(
+            "LOGIN RESPONSE:",
+            response.data
+        );
 
-        const token = response.data?.access_token;
+        const accessToken =
+            response.data?.access_token;
 
-        if (!token) {
+        const refreshToken =
+            response.data?.refresh_token;
+
+        const user =
+            response.data?.user;
+
+        // -----------------------------------------
+        // Validate access token
+        // -----------------------------------------
+
+        if (!accessToken) {
             throw new Error(
                 "Login successful, but access token was not received."
             );
         }
 
+        // -----------------------------------------
+        // Validate refresh token
+        // -----------------------------------------
+
+        if (!refreshToken) {
+            throw new Error(
+                "Login successful, but refresh token was not received."
+            );
+        }
+
+        // -----------------------------------------
+        // Save access token
+        // -----------------------------------------
+
         await SecureStore.setItemAsync(
             "access_token",
-            token
+            accessToken
         );
 
-        console.log("✅ Access token saved successfully");
+        // -----------------------------------------
+        // Save refresh token
+        // -----------------------------------------
+
+        await SecureStore.setItemAsync(
+            "refresh_token",
+            refreshToken
+        );
+
+        // -----------------------------------------
+        // Save user/profile data
+        // -----------------------------------------
+
+        if (user) {
+            await AsyncStorage.setItem(
+                "user",
+                JSON.stringify(user)
+            );
+        }
+
+        console.log(
+            "Authentication data saved successfully"
+        );
 
         return response.data;
+
     } catch (error: any) {
+
         console.error(
-            "❌ Login error:",
-            error?.response?.data || error?.message || error
+            "Login error:",
+            error?.response?.data ||
+            error?.message ||
+            error
         );
 
         throw error;
     }
 };
 
-export const register = async (data: any) => {
+
+export const register = async (
+    data: any
+) => {
     try {
-        const response = await api.post("/register", data);
 
-        console.log("REGISTER RESPONSE:", response.data);
+        const response = await api.post(
+            "/register",
+            data
+        );
+
+        console.log(
+            "REGISTER RESPONSE:",
+            response.data
+        );
 
         return response.data;
+
     } catch (error: any) {
+
         console.error(
-            "❌ Registration error:",
-            error?.response?.data || error?.message || error
+            "Registration error:",
+            error?.response?.data ||
+            error?.message ||
+            error
         );
 
         throw error;
     }
 };
+
 
 export const forgotPassword = async (
     email: string
 ) => {
     try {
+
         const response = await api.post(
             "/forgot-password",
             {
@@ -68,21 +268,27 @@ export const forgotPassword = async (
         );
 
         return response.data;
+
     } catch (error: any) {
+
         console.error(
-            "❌ Forgot password error:",
-            error?.response?.data || error?.message || error
+            "Forgot password error:",
+            error?.response?.data ||
+            error?.message ||
+            error
         );
 
         throw error;
     }
 };
 
+
 export const resetPassword = async (
     email: string,
     password: string
 ) => {
     try {
+
         const response = await api.post(
             "/reset-password",
             {
@@ -92,35 +298,65 @@ export const resetPassword = async (
         );
 
         return response.data;
+
     } catch (error: any) {
+
         console.error(
-            "❌ Reset password error:",
-            error?.response?.data || error?.message || error
+            "Reset password error:",
+            error?.response?.data ||
+            error?.message ||
+            error
         );
 
         throw error;
     }
 };
 
+
 export const logout = async () => {
     try {
+
+        // Remove access token
         await SecureStore.deleteItemAsync(
             "access_token"
         );
 
-        console.log("✅ Access token removed");
+        // Remove refresh token
+        await SecureStore.deleteItemAsync(
+            "refresh_token"
+        );
+
+        // Remove cached user
+        await AsyncStorage.removeItem(
+            "user"
+        );
+
+        console.log(
+            "Authentication data removed"
+        );
+
     } catch (error: any) {
+
         console.error(
-            "❌ Logout error:",
-            error?.message || error
+            "Logout error:",
+            error?.message ||
+            error
         );
 
         throw error;
     }
 };
 
+
 export const getAccessToken = async () => {
     return await SecureStore.getItemAsync(
         "access_token"
+    );
+};
+
+
+export const getRefreshToken = async () => {
+    return await SecureStore.getItemAsync(
+        "refresh_token"
     );
 };
