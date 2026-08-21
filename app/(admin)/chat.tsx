@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   StyleSheet,
@@ -11,7 +11,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../services/api";
 
-import AdminFooter from "@/components/admindashboard/AdminFooter";
 import AdminAllDoctorList from "@/components/admindashboard/chat/AdminAllDoctorList";
 import AdminDoctorChat from "@/components/admindashboard/chat/AdminDoctorChat";
 
@@ -32,27 +31,25 @@ export default function AllChats() {
 
   const [loading, setLoading] = useState(true);
 
-  // Get active users from backend
-  const getActiveUsers = async () => {
+  // Get active users
+  const getActiveUsers = useCallback(async () => {
     try {
       const response = await api.get("/active-users");
 
       console.log("Active Users:", response.data);
 
-      const sortedDoctors = [...response.data].sort(
-        (a, b) => {
-          if (!a.timestamp && !b.timestamp) return 0;
+      const sortedDoctors = [...response.data].sort((a, b) => {
+        if (!a.timestamp && !b.timestamp) return 0;
 
-          if (!a.timestamp) return 1;
+        if (!a.timestamp) return 1;
 
-          if (!b.timestamp) return -1;
+        if (!b.timestamp) return -1;
 
-          return (
-            new Date(b.timestamp).getTime() -
-            new Date(a.timestamp).getTime()
-          );
-        }
-      );
+        return (
+          new Date(b.timestamp).getTime() -
+          new Date(a.timestamp).getTime()
+        );
+      });
 
       setDoctors(sortedDoctors);
     } catch (error) {
@@ -60,24 +57,14 @@ export default function AllChats() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Initial API call
+  // Load users only once when screen opens
   useEffect(() => {
     getActiveUsers();
-  }, []);
+  }, [getActiveUsers]);
 
-  // Automatically refresh unread count every 2 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      getActiveUsers();
-    }, 2000);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
-
+  // Open selected doctor's chat
   if (selectedDoctor) {
     return (
       <SafeAreaView
@@ -88,13 +75,14 @@ export default function AllChats() {
           doctor={selectedDoctor}
           onBack={() => {
             setSelectedDoctor(null);
+
+            // Refresh list after returning from chat
             getActiveUsers();
           }}
         />
       </SafeAreaView>
     );
   }
-
 
   return (
     <SafeAreaView
@@ -143,17 +131,13 @@ export default function AllChats() {
           <AdminAllDoctorList
             doctors={doctors}
             onDoctorPress={(doctor) => {
-              console.log(
-                "Selected Doctor:",
-                doctor
-              );
+              console.log("Selected Doctor:", doctor);
 
               setSelectedDoctor(doctor);
             }}
           />
         </View>
       )}
-      <AdminFooter />
     </SafeAreaView>
   );
 }
@@ -166,25 +150,19 @@ const styles = StyleSheet.create({
 
   header: {
     height: 64,
-
     flexDirection: "row",
     alignItems: "center",
-
     backgroundColor: "#FFFFFF",
-
     borderBottomWidth: 1,
     borderBottomColor: "#E5E5E5",
-
     paddingHorizontal: 18,
   },
 
   backButton: {
     width: 42,
     height: 42,
-
     alignItems: "center",
     justifyContent: "center",
-
     marginRight: 8,
   },
 
@@ -200,21 +178,18 @@ const styles = StyleSheet.create({
 
   loadingContainer: {
     flex: 1,
-
     alignItems: "center",
     justifyContent: "center",
   },
 
   loadingText: {
     marginTop: 10,
-
     fontSize: 15,
     color: "#666",
   },
 
   emptyContainer: {
     flex: 1,
-
     alignItems: "center",
     justifyContent: "center",
   },

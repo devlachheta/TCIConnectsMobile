@@ -21,7 +21,7 @@ import {
 } from "react-native";
 
 import api from "../../../services/api";
-import AdminFooter from "../AdminFooter";
+
 
 type Doctor = {
   id: number | string;
@@ -54,7 +54,18 @@ export default function AdminDoctorChat({
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
 
+  // Pagination
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [hasMoreMessages, setHasMoreMessages] = useState(true);
+
+  const messagesOffset = useRef(0);
+
+  // Scroll position
+  const currentScrollY = useRef(0);
+  const previousContentHeight = useRef(0);
+  const shouldRestoreScroll = useRef(false);
   const scrollViewRef = useRef<ScrollView>(null);
+  const websocketRef = useRef<WebSocket | null>(null);
 
   // --------------------------------
   // SCROLL STATE
@@ -99,10 +110,23 @@ export default function AdminDoctorChat({
       }
 
       const response = await api.get(
-        `/messages/${adminId}/${doctor.id}`
+        `/messages/${adminId}/${doctor.id}?limit=30&offset=0`
       );
 
-      setMessages(response.data);
+      const newMessages: Message[] = response.data;
+
+      console.log(
+        `Loaded ${newMessages.length} messages`
+      );
+
+      setMessages(newMessages);
+
+      messagesOffset.current = newMessages.length;
+
+      // If fewer than 30 came back,
+      // there are no older messages.
+      setHasMoreMessages(newMessages.length === 30);
+
     } catch (error) {
       console.log(
         "Get messages error:",
@@ -110,6 +134,179 @@ export default function AdminDoctorChat({
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+
+  const loadOlderMessages = async () => {
+    if (loadingOlder || !hasMoreMessages) {
+      return;
+    }
+
+    try {
+      const adminId = await getAdminId();
+
+      if (!adminId) {
+        return;
+      }
+
+      setLoadingOlder(true);
+
+      // Save current scroll information
+      previousContentHeight.current = 0;
+      shouldRestoreScroll.current = true;
+
+      const offset = messagesOffset.current;
+
+      console.log(
+        `Loading older messages: limit=30 offset=${offset}`
+      );
+
+      const response = await api.get(
+        `/messages/${adminId}/${doctor.id}?limit=30&offset=${offset}`
+      );
+
+      const olderMessages: Message[] = response.data;
+
+      console.log(
+        `Received ${olderMessages.length} older messages`
+      );
+
+      if (olderMessages.length === 0) {
+        setHasMoreMessages(false);
+        return;
+      }
+
+      setMessages((previousMessages) => {
+        // Prevent duplicates
+        const existingIds = new Set(
+          previousMessages.map((item) => item.id)
+        );
+
+        const uniqueOlderMessages =
+          olderMessages.filter(
+            (item) => !existingIds.has(item.id)
+          );
+
+        return [
+          ...uniqueOlderMessages,
+          ...previousMessages,
+        ];
+      });
+
+      messagesOffset.current += olderMessages.length;
+
+      // If less than 30 came back,
+      // we've reached the beginning.
+      if (olderMessages.length < 30) {
+        setHasMoreMessages(false);
+      }
+
+    } catch (error) {
+      console.log(
+        "Load older messages error:",
+        error
+      );
+    } finally {
+      setLoadingOlder(false);
+    }
+  };
+  // --------------------------------
+  // CONNECT WEBSOCKET
+  // --------------------------------
+
+  const connectWebSocket = async (adminId: number) => {
+    try {
+      const wsUrl =
+        `wss://tcidentallab.com/ws/chat/${adminId}`;
+
+      console.log(
+        "Connecting Admin WebSocket:",
+        wsUrl
+      );
+
+      const ws = new WebSocket(wsUrl);
+
+      websocketRef.current = ws;
+
+      ws.onopen = () => {
+        console.log(
+          " Admin WebSocket connected"
+        );
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const incomingMessage: Message =
+            JSON.parse(event.data);
+
+          console.log(
+            " Admin received WebSocket message:",
+            incomingMessage
+          );
+
+          // Only add messages belonging to
+          // the currently selected doctor
+          const isCurrentConversationMessage =
+            (
+              String(incomingMessage.sender_id) === String(doctor.id) &&
+              String(incomingMessage.receiver_id) === String(adminId)
+            ) ||
+            (
+              String(incomingMessage.sender_id) === String(adminId) &&
+              String(incomingMessage.receiver_id) === String(doctor.id)
+            );
+
+          if (!isCurrentConversationMessage) {
+            return;
+          }
+
+          setMessages((prevMessages) => {
+            // Prevent duplicate messages
+            const alreadyExists =
+              prevMessages.some(
+                (item) =>
+                  item.id ===
+                  incomingMessage.id
+              );
+
+            if (alreadyExists) {
+              return prevMessages;
+            }
+
+            return [
+              ...prevMessages,
+              incomingMessage,
+            ];
+          });
+
+        } catch (error) {
+          console.log(
+            "WebSocket message parse error:",
+            error
+          );
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.log(
+          " Admin WebSocket error:",
+          error
+        );
+      };
+
+      ws.onclose = (event) => {
+        console.log(
+          " Admin WebSocket closed:",
+          event.code,
+          event.reason
+        );
+      };
+    } catch (error) {
+      console.log(
+        "Admin WebSocket connection error:",
+        error
+      );
     }
   };
 
@@ -143,37 +340,47 @@ export default function AdminDoctorChat({
   // --------------------------------
   // OPEN CHAT
   // --------------------------------
-
   useEffect(() => {
+    let isMounted = true;
+
     const openChat = async () => {
+      const adminId = await getAdminId();
+
+      if (!adminId || !isMounted) {
+        return;
+      }
+
       await getMessages();
       await markMessagesAsRead();
+
+      if (isMounted) {
+        await connectWebSocket(adminId);
+      }
+
+      isFirstLoad.current = true;
+      isNearBottom.current = true;
     };
 
     openChat();
 
-    isFirstLoad.current = true;
-    isNearBottom.current = true;
-  }, [doctor.id]);
-
-  // --------------------------------
-  // REFRESH MESSAGES EVERY 2 SECONDS
-  // --------------------------------
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      getMessages();
-    }, 2000);
-
     return () => {
-      clearInterval(interval);
+      isMounted = false;
+
+      if (websocketRef.current) {
+        console.log(
+          " Closing Admin WebSocket"
+        );
+
+        websocketRef.current.close();
+        websocketRef.current = null;
+      }
     };
   }, [doctor.id]);
+
 
   // --------------------------------
   // CHECK WHETHER USER IS NEAR BOTTOM
   // --------------------------------
-
   const handleScroll = (
     event: NativeSyntheticEvent<NativeScrollEvent>
   ) => {
@@ -183,15 +390,54 @@ export default function AdminDoctorChat({
       contentSize,
     } = event.nativeEvent;
 
+    const currentY = contentOffset.y;
+
+    currentScrollY.current = currentY;
+
     const distanceFromBottom =
       contentSize.height -
-      (contentOffset.y +
-        layoutMeasurement.height);
+      (currentY + layoutMeasurement.height);
 
     isNearBottom.current =
       distanceFromBottom < 80;
+
+    if (
+      currentY <= 50 &&
+      !loadingOlder &&
+      hasMoreMessages
+    ) {
+      previousContentHeight.current =
+        contentSize.height;
+
+      shouldRestoreScroll.current = true;
+
+      loadOlderMessages();
+    }
   };
 
+
+  const handleContentSizeChange = (
+    width: number,
+    height: number
+  ) => {
+    if (
+      shouldRestoreScroll.current &&
+      previousContentHeight.current > 0
+    ) {
+      const heightDifference =
+        height -
+        previousContentHeight.current;
+
+      scrollViewRef.current?.scrollTo({
+        y:
+          currentScrollY.current +
+          heightDifference,
+        animated: false,
+      });
+
+      shouldRestoreScroll.current = false;
+    }
+  };
   // --------------------------------
   // AUTO SCROLL
   // --------------------------------
@@ -243,23 +489,39 @@ export default function AdminDoctorChat({
         return;
       }
 
-      await api.post("/send-message", {
-        sender_id: adminId,
-        receiver_id: doctor.id,
-        message: trimmedMessage,
-      });
+      const ws = websocketRef.current;
+
+      // Check WebSocket connection
+      if (
+        !ws ||
+        ws.readyState !== WebSocket.OPEN
+      ) {
+        console.log(
+          " Admin WebSocket is not connected"
+        );
+
+        return;
+      }
+
+      console.log(
+        " Admin sending message:",
+        {
+          receiver_id: doctor.id,
+          message: trimmedMessage,
+        }
+      );
+
+      ws.send(
+        JSON.stringify({
+          receiver_id: Number(doctor.id),
+          message: trimmedMessage,
+        })
+      );
 
       setMessage("");
 
       isNearBottom.current = true;
 
-      await getMessages();
-
-      setTimeout(() => {
-        scrollViewRef.current?.scrollToEnd({
-          animated: true,
-        });
-      }, 150);
     } catch (error) {
       console.log(
         "Send message error:",
@@ -269,14 +531,13 @@ export default function AdminDoctorChat({
       setSending(false);
     }
   };
-
   // --------------------------------
   // PROFILE IMAGE URL
   // --------------------------------
 
   const profileImageUrl =
     doctor.profile_image
-      ? `https://tcidentallab.com/uploads/profile/${encodeURIComponent(
+      ? `https://tcidentallab.com/tci-uploads/profile/${encodeURIComponent(
         doctor.profile_image
       )}`
       : null;
@@ -370,8 +631,20 @@ export default function AdminDoctorChat({
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
               onScroll={handleScroll}
+              onContentSizeChange={handleContentSizeChange}
               scrollEventThrottle={16}
             >
+              {loadingOlder && (
+                <View style={styles.loadingOlder}>
+                  <ActivityIndicator
+                    size="small"
+                    color="#0864B9"
+                  />
+                  <Text style={styles.loadingOlderText}>
+                    Loading older messages...
+                  </Text>
+                </View>
+              )}
               {messages.map((item) => {
                 const isDoctorMessage =
                   String(item.sender_id) ===
@@ -459,7 +732,6 @@ export default function AdminDoctorChat({
         </View>
 
       </KeyboardAvoidingView>
-      <AdminFooter />
     </View>
   );
 }
@@ -697,5 +969,20 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: "#F7F9FC",
+  },
+
+  loadingOlder: {
+    alignItems: "center",
+    justifyContent: "center",
+
+    paddingVertical: 10,
+
+    flexDirection: "row",
+    gap: 8,
+  },
+
+  loadingOlderText: {
+    fontSize: 13,
+    color: "#777",
   },
 });

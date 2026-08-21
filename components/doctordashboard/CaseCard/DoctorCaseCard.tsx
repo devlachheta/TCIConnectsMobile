@@ -141,8 +141,9 @@ export default function CaseCard({ caseData, onCaseDeleted,
 
             <Header
                 caseId={caseData.id}
-                status={caseData.status}
+                status={caseData.status || "Submitted"}
                 patientName={caseData.patient_name}
+                isEdited={caseData.is_edited}
                 expanded={expanded}
                 onExpandPress={toggleExpanded}
             />
@@ -218,7 +219,7 @@ export default function CaseCard({ caseData, onCaseDeleted,
                     />
                     <DeadlineSection
                         deadline={caseData.delivery_deadline}
-                        status={caseData.status}
+                        status={caseData.status || "Submitted"}
                         deadlinePassed={deadlinePassed}
                         previewStatus={previewStatus}
                         onApprove={handleApprovePreview}

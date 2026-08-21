@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Picker } from "@react-native-picker/picker";
 
 interface DeadlineSectionProps {
     deadline: string;
@@ -8,6 +9,8 @@ interface DeadlineSectionProps {
     previewStatus: string;
     onApprove?: () => void;
     onReject?: () => void;
+    onStatusChange?: (status: string) => void;
+    editableStatus?: boolean;
 }
 export default function DeadlineSection({
     deadline,
@@ -16,6 +19,8 @@ export default function DeadlineSection({
     previewStatus,
     onApprove,
     onReject,
+    onStatusChange,
+    editableStatus = false,
 }: DeadlineSectionProps) {
     return (
         <View style={styles.container}>
@@ -38,11 +43,49 @@ export default function DeadlineSection({
                         Status
                     </Text>
 
-                    <View style={styles.statusBadge}>
-                        <Text style={styles.statusText}>
-                            {status}
-                        </Text>
-                    </View>
+                    {editableStatus ? (
+                        <View style={styles.statusPickerContainer}>
+                            <Picker
+                                selectedValue={status}
+                                onValueChange={(value) => {
+                                    onStatusChange?.(value);
+                                }}
+                                style={styles.statusPicker}
+                                dropdownIconColor="#0152A8"
+                            >
+                                <Picker.Item
+                                    label="Submitted"
+                                    value="Submitted"
+                                />
+
+                                <Picker.Item
+                                    label="InProduction"
+                                    value="InProduction"
+                                />
+
+                                <Picker.Item
+                                    label="QualityCheck"
+                                    value="QualityCheck"
+                                />
+
+                                <Picker.Item
+                                    label="Shipped"
+                                    value="Shipped"
+                                />
+
+                                <Picker.Item
+                                    label="Delivered"
+                                    value="Delivered"
+                                />
+                            </Picker>
+                        </View>
+                    ) : (
+                        <View style={styles.statusBadge}>
+                            <Text style={styles.statusText}>
+                                {status}
+                            </Text>
+                        </View>
+                    )}
                 </View>
             </View>
 
@@ -203,5 +246,21 @@ const styles = StyleSheet.create({
         backgroundColor: "#FFFFFF",
         justifyContent: "center",
         alignItems: "center",
+    },
+
+    statusPickerContainer: {
+        width: 180,
+        height: 50,
+        borderWidth: 1,
+        borderColor: "#D1D5DB",
+        borderRadius: 6,
+        backgroundColor: "#FFFFFF",
+        overflow: "hidden",
+    },
+
+    statusPicker: {
+        width: "100%",
+        height: 50,
+        color: "#0152A8",
     },
 });

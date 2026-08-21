@@ -21,10 +21,16 @@ export default function RecentCases() {
 
   const [cases, setCases] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
 
+  const [page, setPage] = useState(1);
+
+  const [status, setStatus] = useState("");
+  const [deadline, setDeadline] = useState("");
   /* ================= FETCH CASES ================= */
 
-  const fetchCases = async () => {
+  const loadInitialCases = async () => {
     try {
       setLoading(true);
 
@@ -32,21 +38,23 @@ export default function RecentCases() {
         page: 1,
         limit: 10,
         search: "",
-        status: "",
-        deadline: "",
+        status,
+        deadline,
       });
 
-      console.log("ADMIN RECENT CASES:", response);
+      console.log(
+        "ADMIN RECENT CASES:",
+        JSON.stringify(response, null, 2)
+      );
 
-      if (Array.isArray(response)) {
-        setCases(response);
-      } else {
-        setCases(
-          response?.items ||
-          response?.cases ||
-          []
-        );
-      }
+      const newCases = Array.isArray(response?.items)
+        ? response.items
+        : [];
+
+      setCases(newCases);
+      setPage(1);
+
+      setHasMore(newCases.length === 10);
 
     } catch (error: any) {
       console.error(
@@ -60,29 +68,86 @@ export default function RecentCases() {
     }
   };
 
+  const loadMoreCases = async () => {
+    if (loadingMore || !hasMore) {
+      return;
+    }
+
+    try {
+      setLoadingMore(true);
+
+      const nextPage = page + 1;
+
+      console.log(
+        `Loading recent cases page ${nextPage}`
+      );
+
+      const response = await getCases({
+        page: nextPage,
+        limit: 10,
+        search: "",
+        status,
+        deadline,
+      });
+
+      const newCases = Array.isArray(response?.items)
+        ? response.items
+        : [];
+
+      console.log(
+        `Received ${newCases.length} more recent cases`
+      );
+
+      if (newCases.length === 0) {
+        setHasMore(false);
+        return;
+      }
+
+      setCases((previousCases) => [
+        ...previousCases,
+        ...newCases,
+      ]);
+
+      setPage(nextPage);
+
+      if (newCases.length < 10) {
+        setHasMore(false);
+      }
+
+    } catch (error: any) {
+      console.error(
+        "Error loading more recent cases:",
+        error?.response?.data ||
+        error?.message ||
+        error
+      );
+    } finally {
+      setLoadingMore(false);
+    }
+  };
   /* ================= INITIAL LOAD ================= */
 
   useEffect(() => {
-    fetchCases();
-  }, []);
+    loadInitialCases();
+  }, [status, deadline]);
 
   /* ================= FILTER ================= */
 
   const handleApplyFilter = (
-    status: string,
-    deadline: string
+    selectedStatus: string,
+    selectedDeadline: string
   ) => {
     console.log("Recent Cases Filter:", {
-      status,
-      deadline,
+      status: selectedStatus,
+      deadline: selectedDeadline,
     });
 
-    // We will connect these values
-    // to getCases() next.
+    setStatus(selectedStatus);
+    setDeadline(selectedDeadline);
   };
-
   const handleResetFilter = () => {
-    fetchCases();
+    setStatus("");
+    setDeadline("");
   };
 
   /* ================= UI ================= */
@@ -117,10 +182,25 @@ export default function RecentCases() {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={
-          styles.scrollContent
-        }
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        onScroll={({ nativeEvent }) => {
+          const {
+            layoutMeasurement,
+            contentOffset,
+            contentSize,
+          } = nativeEvent;
+
+          const distanceFromBottom =
+            contentSize.height -
+            (layoutMeasurement.height +
+              contentOffset.y);
+
+          if (distanceFromBottom < 300) {
+            loadMoreCases();
+          }
+        }}
+        scrollEventThrottle={400}
       >
 
         <Text style={styles.pageTitle}>
@@ -156,12 +236,33 @@ export default function RecentCases() {
 
         ) : (
 
-          cases.map((caseData) => (
-            <AdminCaseCard
-              key={caseData.id}
-              caseData={caseData}
-            />
-          ))
+          <>
+            {cases.map((caseData) => (
+              <AdminCaseCard
+                key={caseData.id}
+                caseData={caseData}
+              />
+            ))}
+
+            {loadingMore && (
+              <View style={styles.loadingMoreContainer}>
+                <ActivityIndicator
+                  size="small"
+                  color="#0152A8"
+                />
+
+                <Text style={styles.loadingMoreText}>
+                  Loading more cases...
+                </Text>
+              </View>
+            )}
+
+            {!hasMore && cases.length > 0 && (
+              <Text style={styles.endText}>
+                No more cases
+              </Text>
+            )}
+          </>
 
         )}
 
@@ -265,6 +366,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
 
     color: "#6B7280",
+  },
+
+  loadingMoreContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 20,
+  },
+
+  loadingMoreText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: "#6B7280",
+  },
+
+  endText: {
+    textAlign: "center",
+    paddingVertical: 20,
+    fontSize: 14,
+    color: "#9CA3AF",
   },
 
 });

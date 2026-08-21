@@ -12,9 +12,12 @@ import {
     openCaseFile,
     downloadCaseFile,
 } from "@/services/fileService";
+import { Picker } from "@react-native-picker/picker";
 
 import {
     deleteCase,
+    uploadPreviewFile,
+    updateCaseStatus,
 } from "@/services/caseService";
 import * as DocumentPicker from "expo-document-picker";
 
@@ -53,7 +56,64 @@ export default function AdminCaseCard({
     ========================================================= */
 
     const [expanded, setExpanded] = useState(false);
+    const [status, setStatus] = useState(
+        caseData.status || "Submitted"
+    );
+    const STATUS_OPTIONS = [
+        "Submitted",
+        "InProduction",
+        "QualityCheck",
+        "Shipped",
+        "Delivered",
+    ];
+    const handleStatusChange = async (
+        newStatus: string
+    ) => {
+        if (newStatus === status) {
+            return;
+        }
 
+        const previousStatus = status;
+
+        try {
+            // Update UI immediately
+            setStatus(newStatus);
+
+            console.log(
+                "Updating status:",
+                caseData.id,
+                newStatus
+            );
+
+            await updateCaseStatus(
+                caseData.id,
+                newStatus
+            );
+
+            console.log(
+                "Status updated successfully"
+            );
+
+            // Refresh parent list if needed
+            onCaseUpdated?.();
+
+        } catch (error: any) {
+
+            console.error(
+                "Status update failed:",
+                error
+            );
+
+            // Restore previous value
+            setStatus(previousStatus);
+
+            Alert.alert(
+                "Error",
+                error?.response?.data?.detail ||
+                "Failed to update case status."
+            );
+        }
+    };
     /* ================= PREVIEW STATUS ================= */
 
     const [previewStatus, setPreviewStatus] = useState(
@@ -160,6 +220,13 @@ export default function AdminCaseCard({
 
             setUploadingPreview(true);
 
+            console.log("Uploading preview:", file);
+
+            await uploadPreviewFile(
+                caseData.id,
+                file
+            );
+
             Alert.alert(
                 "Success",
                 "Preview uploaded successfully."
@@ -169,7 +236,6 @@ export default function AdminCaseCard({
             onCaseUpdated?.();
 
         } catch (error: any) {
-
             console.error(
                 "Preview upload failed:",
                 error?.response?.data ||
@@ -207,11 +273,13 @@ export default function AdminCaseCard({
                 Submitted
             ================================================= */}
 
+
             <Header
                 caseId={caseData.id}
-                status={caseData.status}
+                status={status}
                 doctorName={caseData.doctor_name}
                 patientName={caseData.patient_name}
+                isEdited={caseData.is_edited}
                 expanded={expanded}
                 onExpandPress={toggleExpanded}
             />
@@ -329,9 +397,11 @@ export default function AdminCaseCard({
 
                     <DeadlineSection
                         deadline={caseData.delivery_deadline}
-                        status={caseData.status}
+                        status={status}
                         deadlinePassed={deadlinePassed}
                         previewStatus={previewStatus}
+                        editableStatus={true}
+                        onStatusChange={handleStatusChange}
                     />
 
                     {/* ================= FOOTER ================= */}

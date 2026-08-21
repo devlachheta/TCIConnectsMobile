@@ -616,6 +616,31 @@ export const uploadTempFile =
     }
   };
 
+
+export const uploadPreviewFile = async (
+  caseId: number | string,
+  file: any
+) => {
+  const formData = new FormData();
+
+  formData.append("file", {
+    uri: file.uri,
+    name: file.name || "preview-file",
+    type: file.mimeType || "application/octet-stream",
+  } as any);
+
+  const response = await api.post(
+    `/cases/${caseId}/upload-preview`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
+  return response.data;
+};
 export const uploadCaseFile =
   async (
     caseId: number,
@@ -695,6 +720,43 @@ export const uploadCaseFile =
       throw error;
     }
   };
+
+export const getCases = async ({
+  page = 1,
+  limit = 10,
+  search = "",
+  status = "",
+  deadline = "",
+}: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+  deadline?: string;
+} = {}) => {
+  try {
+    const response = await api.get("/cases", {
+      params: {
+        page,
+        limit,
+        search,
+        status,
+        deadline,
+      },
+    });
+
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      "Error fetching cases:",
+      error?.response?.data ||
+      error?.message ||
+      error
+    );
+
+    throw error;
+  }
+};
 
 export const getCase =
   async (
@@ -828,28 +890,55 @@ export const approvePreview =
     }
   };
 
-export const rejectPreview =
-  async (
-    caseId:
-      number | string
-  ) => {
-    try {
-      const response =
-        await api.put(
-          `/cases/${caseId}/reject-preview`
-        );
 
-      return response.data;
-    } catch (
-    error: any
-    ) {
-      console.error(
-        "Error rejecting preview:",
-        error?.response?.data ||
-        error?.message ||
-        error
-      );
 
-      throw error;
-    }
-  };
+export const updateCaseStatus = async (
+  caseId: number | string,
+  status: string
+) => {
+  try {
+    const response = await api.put(
+      `/cases/${caseId}/status`,
+      {
+        status,
+      }
+    );
+
+    console.log(
+      "Case status updated:",
+      response.data
+    );
+
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      "Error updating case status:",
+      error?.response?.data ||
+      error?.message ||
+      error
+    );
+
+    throw error;
+  }
+};
+
+export const rejectPreview = async (
+  caseId: number | string
+) => {
+  try {
+    const response = await api.put(
+      `/cases/${caseId}/reject-preview`
+    );
+
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      "Error rejecting preview:",
+      error?.response?.data ||
+      error?.message ||
+      error
+    );
+
+    throw error;
+  }
+};
