@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import {
+  ActivityIndicator,
   Image,
   StyleSheet,
   Text,
@@ -21,57 +22,128 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState("");
   const [cases, setCases] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
 
+  const [page, setPage] = useState(1);
+
+  const [status, setStatus] = useState("");
+  const [deadline, setDeadline] = useState("");
   const handleApplyFilter = (
-    status: string,
-    deadline: string
+    selectedStatus: string,
+    selectedDeadline: string
   ) => {
-    console.log("Admin filter:", {
-      status,
-      deadline,
-    });
+    setStatus(selectedStatus);
+    setDeadline(selectedDeadline);
   };
 
-  const fetchCases = async () => {
+
+  const handleResetFilter = () => {
+    setSearch("");
+    setStatus("");
+    setDeadline("");
+  };
+
+
+  const loadInitialCases = async () => {
     try {
       setLoading(true);
 
       const response = await getCases({
         page: 1,
         limit: 10,
-        search: "",
-        status: "",
-        deadline: "",
+        search,
+        status,
+        deadline,
       });
 
       console.log(
-        "ADMIN CASES:",
+        "ADMIN INITIAL CASES:",
         JSON.stringify(response, null, 2)
       );
 
-      if (Array.isArray(response?.items)) {
-        setCases(response.items);
-      } else {
-        setCases([]);
-      }
+      const newCases = Array.isArray(response?.items)
+        ? response.items
+        : [];
+
+      setCases(newCases);
+      setPage(1);
+
+      // If we received 10, there may be more.
+      // If less than 10, we've reached the end.
+      setHasMore(newCases.length === 10);
 
     } catch (error) {
       console.error(
-        "Failed to fetch admin cases:",
+        "Error loading cases:",
         error
       );
     } finally {
       setLoading(false);
     }
   };
+
   useEffect(() => {
-    fetchCases();
-  }, []);
+    loadInitialCases();
+  }, [search, status, deadline]);
 
-  const handleResetFilter = () => {
-    console.log("Admin filter reset");
+  const loadMoreCases = async () => {
+    if (loadingMore || !hasMore) {
+      return;
+    }
 
-    setSearch("");
+    try {
+      setLoadingMore(true);
+
+      const nextPage = page + 1;
+
+      console.log(
+        `Loading cases page ${nextPage}`
+      );
+
+      const response = await getCases({
+        page: nextPage,
+        limit: 10,
+        search,
+        status,
+        deadline,
+      });
+
+      const newCases = Array.isArray(response?.items)
+        ? response.items
+        : [];
+
+      console.log(
+        `Received ${newCases.length} more cases`
+      );
+
+      if (newCases.length === 0) {
+        setHasMore(false);
+        return;
+      }
+
+      // APPEND instead of replacing
+      setCases((previousCases) => [
+        ...previousCases,
+        ...newCases,
+      ]);
+
+      setPage(nextPage);
+
+      // If less than 10 came back,
+      // there are no more cases.
+      if (newCases.length < 10) {
+        setHasMore(false);
+      }
+
+    } catch (error) {
+      console.error(
+        "Error loading more cases:",
+        error
+      );
+    } finally {
+      setLoadingMore(false);
+    }
   };
 
   return (
@@ -88,6 +160,29 @@ export default function AdminDashboard() {
         <ScrollView
           contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
+          onScroll={({ nativeEvent }) => {
+            const {
+              layoutMeasurement,
+              contentOffset,
+              contentSize,
+            } = nativeEvent;
+
+            const distanceFromBottom =
+              contentSize.height -
+              (layoutMeasurement.height +
+                contentOffset.y);
+
+
+            console.log(
+              "Scroll distance from bottom:",
+              distanceFromBottom
+            );
+
+            if (distanceFromBottom < 300) {
+              loadMoreCases();
+            }
+          }}
+          scrollEventThrottle={400}
         >
 
           {/* ================= GREETING ================= */}
@@ -157,12 +252,29 @@ export default function AdminDashboard() {
               No cases found.
             </Text>
           ) : (
-            cases.map((caseData) => (
-              <AdminCaseCard
-                key={caseData.id}
-                caseData={caseData}
-              />
-            ))
+            <>
+              {cases.map((caseData) => (
+                <AdminCaseCard
+                  key={caseData.id}
+                  caseData={caseData}
+                />
+              ))}
+
+              {loadingMore && (
+                <View style={styles.loadingMoreContainer}>
+                  <ActivityIndicator size="small" />
+                  <Text style={styles.loadingMoreText}>
+                    Loading more cases...
+                  </Text>
+                </View>
+              )}
+
+              {!hasMore && cases.length > 0 && (
+                <Text style={styles.endText}>
+                  No more cases
+                </Text>
+              )}
+            </>
           )}
         </ScrollView>
         {/* ================= DRAWER ================= */}
@@ -249,6 +361,24 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontSize: 16,
     color: "#6B7280",
+  },
+  loadingMoreContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 20,
+  },
+
+  loadingMoreText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: "#6B7280",
+  },
+
+  endText: {
+    textAlign: "center",
+    paddingVertical: 20,
+    fontSize: 14,
+    color: "#9CA3AF",
   },
 
   emptyText: {

@@ -143,6 +143,7 @@ export default function CaseCard({ caseData, onCaseDeleted,
                 caseId={caseData.id}
                 status={caseData.status}
                 patientName={caseData.patient_name}
+                isEdited={caseData.is_edited}
                 expanded={expanded}
                 onExpandPress={toggleExpanded}
             />

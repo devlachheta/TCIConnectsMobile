@@ -27,15 +27,17 @@ import api from "@/services/api";
 // ADMIN CONFIGURATION
 // =====================================================
 
-// Change this if your admin has another ID.
 const ADMIN_ID = 1;
 
 const ADMIN_NAME = "Admin";
 
-// If your admin profile image filename is known,
-// you can put it here.
-// Otherwise leave it null.
 const ADMIN_PROFILE_IMAGE: string | null = null;
+
+// =====================================================
+// PAGINATION
+// =====================================================
+
+const PAGE_SIZE = 30;
 
 // =====================================================
 // MESSAGE TYPE
@@ -56,12 +58,30 @@ interface Message {
 
 export default function Chat() {
 
-    const [messages, setMessages] = useState<Message[]>([]);
-    const [message, setMessage] = useState("");
+    const [messages, setMessages] =
+        useState<Message[]>([]);
 
-    const [loading, setLoading] = useState(true);
-    const [sending, setSending] = useState(false);
+    const [message, setMessage] =
+        useState("");
 
+    const [loading, setLoading] =
+        useState(true);
+
+    const [sending, setSending] =
+        useState(false);
+
+    // Pagination
+    const [loadingOlder, setLoadingOlder] =
+        useState(false);
+
+    const [hasMoreMessages, setHasMoreMessages] =
+        useState(true);
+
+    // Number of messages already loaded
+    const loadedCountRef =
+        useRef(0);
+
+    // Scroll
     const scrollViewRef =
         useRef<ScrollView>(null);
 
@@ -71,52 +91,60 @@ export default function Chat() {
     const isFirstLoad =
         useRef(true);
 
-    // =================================================
+    // WebSocket
+    const websocketRef =
+        useRef<WebSocket | null>(null);
+
+    // =====================================================
     // GET DOCTOR ID
-    // =================================================
+    // =====================================================
 
-    const getDoctorId = async (): Promise<number | null> => {
+    const getDoctorId =
+        async (): Promise<number | null> => {
 
-        try {
+            try {
 
-            const storedUser =
-                await AsyncStorage.getItem("user");
+                const storedUser =
+                    await AsyncStorage.getItem("user");
 
-            if (!storedUser) {
+                if (!storedUser) {
+
+                    console.log(
+                        "Doctor user not found"
+                    );
+
+                    return null;
+                }
+
+                const user =
+                    JSON.parse(storedUser);
 
                 console.log(
-                    "Doctor user not found"
+                    "Logged in Doctor ID:",
+                    user.id
+                );
+
+                return Number(user.id);
+
+            } catch (error) {
+
+                console.log(
+                    "Get doctor ID error:",
+                    error
                 );
 
                 return null;
             }
+        };
 
-            const user =
-                JSON.parse(storedUser);
-
-            console.log(
-                "Logged in Doctor ID:",
-                user.id
-            );
-
-            return Number(user.id);
-
-        } catch (error) {
-
-            console.log(
-                "Get doctor ID error:",
-                error
-            );
-
-            return null;
-        }
-    };
-
-    // =================================================
+    // =====================================================
     // GET MESSAGES
-    // =================================================
+    // =====================================================
 
-    const getMessages = async () => {
+    const getMessages = async (
+        offset = 0,
+        loadOlder = false
+    ) => {
 
         try {
 
@@ -127,17 +155,87 @@ export default function Chat() {
                 return;
             }
 
+            if (loadOlder) {
+                setLoadingOlder(true);
+            } else {
+                setLoading(true);
+            }
+
             const response =
                 await api.get(
-                    `/messages/${doctorId}/${ADMIN_ID}`
+                    `/messages/${doctorId}/${ADMIN_ID}`,
+                    {
+                        params: {
+                            limit: PAGE_SIZE,
+                            offset: offset,
+                        },
+                    }
                 );
 
+            const newMessages: Message[] =
+                response.data;
+
             console.log(
-                "Chat messages:",
-                response.data
+                `Loaded ${newMessages.length} messages`,
+                `offset=${offset}`
             );
 
-            setMessages(response.data);
+            // =========================================
+            // INITIAL LOAD
+            // =========================================
+
+            if (!loadOlder) {
+
+                setMessages(newMessages);
+
+            }
+
+            // =========================================
+            // LOAD OLDER MESSAGES
+            // =========================================
+
+            else {
+
+                setMessages(
+                    (previousMessages) => {
+
+                        const existingIds =
+                            new Set(
+                                previousMessages.map(
+                                    (item) => item.id
+                                )
+                            );
+
+                        const uniqueOlderMessages =
+                            newMessages.filter(
+                                (item) =>
+                                    !existingIds.has(
+                                        item.id
+                                    )
+                            );
+
+                        return [
+                            ...uniqueOlderMessages,
+                            ...previousMessages,
+                        ];
+                    }
+                );
+            }
+
+            // Update loaded count
+            loadedCountRef.current =
+                offset + newMessages.length;
+
+            // If fewer than PAGE_SIZE messages
+            // were returned, there are no more.
+            if (
+                newMessages.length <
+                PAGE_SIZE
+            ) {
+
+                setHasMoreMessages(false);
+
+            }
 
         } catch (error: any) {
 
@@ -151,89 +249,268 @@ export default function Chat() {
         } finally {
 
             setLoading(false);
+
+            setLoadingOlder(false);
         }
     };
 
-    // =================================================
-    // MARK MESSAGES AS READ
-    // =================================================
+    // =====================================================
+    // LOAD OLDER MESSAGES
+    // =====================================================
 
-    const markMessagesAsRead = async () => {
+    const loadOlderMessages =
+        async () => {
 
-        try {
-
-            const doctorId =
-                await getDoctorId();
-
-            if (!doctorId) {
+            if (
+                loadingOlder ||
+                !hasMoreMessages
+            ) {
                 return;
             }
 
-            await api.put(
-                `/messages/read/${ADMIN_ID}/${doctorId}`
-            );
+            const currentOffset =
+                loadedCountRef.current;
 
             console.log(
-                "Admin messages marked as read"
+                "Loading older messages:",
+                currentOffset
             );
 
-        } catch (error: any) {
-
-            console.log(
-                "Mark messages as read error:",
-                error?.response?.data ||
-                error?.message ||
-                error
+            await getMessages(
+                currentOffset,
+                true
             );
-        }
-    };
+        };
 
-    // =================================================
+    // =====================================================
+    // CONNECT WEBSOCKET
+    // =====================================================
+
+    const connectWebSocket =
+        async (doctorId: number) => {
+
+            try {
+
+                const wsUrl =
+                    `wss://tcidentallab.com/ws/chat/${doctorId}`;
+
+                console.log(
+                    "Connecting WebSocket:",
+                    wsUrl
+                );
+
+                const ws =
+                    new WebSocket(wsUrl);
+
+                websocketRef.current =
+                    ws;
+
+                ws.onopen = () => {
+
+                    console.log(
+                        " Doctor WebSocket connected"
+                    );
+                };
+
+
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+
+                        console.log(
+                            "WebSocket event:",
+                            data
+                        );
+
+                        // ==========================================
+                        // CASE STATUS UPDATE
+                        // ==========================================
+
+                        if (data.type === "case_status_updated") {
+
+                            console.log(
+                                "Case status updated:",
+                                data.case_id,
+                                data.status
+                            );
+
+                            // We will handle the case list
+                            // in the Doctor Cases screen.
+
+                            return;
+                        }
+
+                        // ==========================================
+                        // NORMAL CHAT MESSAGE
+                        // ==========================================
+
+                        const incomingMessage: Message = data;
+
+                        setMessages((prevMessages) => {
+
+                            const alreadyExists =
+                                prevMessages.some(
+                                    (item) =>
+                                        item.id ===
+                                        incomingMessage.id
+                                );
+
+                            if (alreadyExists) {
+                                return prevMessages;
+                            }
+
+                            return [
+                                ...prevMessages,
+                                incomingMessage,
+                            ];
+                        });
+
+                    } catch (error) {
+
+                        console.log(
+                            "WebSocket message parse error:",
+                            error
+                        );
+                    }
+                };
+
+
+                ws.onerror = (error) => {
+
+                    console.log(
+                        " WebSocket error:",
+                        error
+                    );
+                };
+
+                ws.onclose = (event) => {
+
+                    console.log(
+                        " WebSocket closed:",
+                        event.code,
+                        event.reason
+                    );
+                };
+
+            } catch (error) {
+
+                console.log(
+                    "WebSocket connection error:",
+                    error
+                );
+            }
+        };
+
+    // =====================================================
+    // MARK MESSAGES AS READ
+    // =====================================================
+
+    const markMessagesAsRead =
+        async () => {
+
+            try {
+
+                const doctorId =
+                    await getDoctorId();
+
+                if (!doctorId) {
+                    return;
+                }
+
+                await api.put(
+                    `/messages/read/${ADMIN_ID}/${doctorId}`
+                );
+
+                console.log(
+                    "Admin messages marked as read"
+                );
+
+            } catch (error: any) {
+
+                console.log(
+                    "Mark messages as read error:",
+                    error?.response?.data ||
+                    error?.message ||
+                    error
+                );
+            }
+        };
+
+    // =====================================================
     // OPEN CHAT
-    // =================================================
+    // =====================================================
 
     useEffect(() => {
 
-        const openChat = async () => {
+        let mounted = true;
 
-            await getMessages();
+        const openChat =
+            async () => {
 
-            await markMessagesAsRead();
-        };
+                const doctorId =
+                    await getDoctorId();
+
+                if (
+                    !doctorId ||
+                    !mounted
+                ) {
+                    return;
+                }
+
+                // Load only latest 30 messages
+                await getMessages(
+                    0,
+                    false
+                );
+
+                // Mark existing admin messages
+                // as read
+                await markMessagesAsRead();
+
+                // Open real-time connection
+                await connectWebSocket(
+                    doctorId
+                );
+            };
 
         openChat();
 
-        isFirstLoad.current = true;
-        isNearBottom.current = true;
+        isFirstLoad.current =
+            true;
 
-    }, []);
-
-    // =================================================
-    // REFRESH MESSAGES
-    // =================================================
-
-    useEffect(() => {
-
-        const interval =
-            setInterval(() => {
-
-                getMessages();
-
-            }, 2000);
+        isNearBottom.current =
+            true;
 
         return () => {
 
-            clearInterval(interval);
+            mounted = false;
+
+            if (
+                websocketRef.current
+            ) {
+
+                console.log(
+                    "Closing Doctor WebSocket"
+                );
+
+                websocketRef.current.close();
+
+                websocketRef.current =
+                    null;
+            }
         };
 
     }, []);
 
-    // =================================================
+    // =====================================================
     // HANDLE SCROLL
-    // =================================================
+    // =====================================================
 
     const handleScroll = (
-        event: NativeSyntheticEvent<NativeScrollEvent>
+        event:
+            NativeSyntheticEvent<
+                NativeScrollEvent
+            >
     ) => {
 
         const {
@@ -241,6 +518,10 @@ export default function Chat() {
             contentOffset,
             contentSize,
         } = event.nativeEvent;
+
+        // ---------------------------------------------
+        // CHECK IF USER IS NEAR BOTTOM
+        // ---------------------------------------------
 
         const distanceFromBottom =
             contentSize.height -
@@ -251,20 +532,37 @@ export default function Chat() {
 
         isNearBottom.current =
             distanceFromBottom < 80;
+
+        // ---------------------------------------------
+        // LOAD OLDER MESSAGES AT TOP
+        // ---------------------------------------------
+
+        if (
+            contentOffset.y <= 50 &&
+            !loadingOlder &&
+            hasMoreMessages
+        ) {
+
+            loadOlderMessages();
+        }
     };
 
-    // =================================================
+    // =====================================================
     // AUTO SCROLL
-    // =================================================
+    // =====================================================
 
     useEffect(() => {
 
-        if (messages.length === 0) {
+        if (
+            messages.length === 0
+        ) {
             return;
         }
 
         // First load
-        if (isFirstLoad.current) {
+        if (
+            isFirstLoad.current
+        ) {
 
             setTimeout(() => {
 
@@ -272,7 +570,8 @@ export default function Chat() {
                     animated: false,
                 });
 
-                isFirstLoad.current = false;
+                isFirstLoad.current =
+                    false;
 
             }, 150);
 
@@ -280,7 +579,10 @@ export default function Chat() {
         }
 
         // New message
-        if (isNearBottom.current) {
+        // Only scroll if already near bottom
+        if (
+            isNearBottom.current
+        ) {
 
             setTimeout(() => {
 
@@ -293,96 +595,107 @@ export default function Chat() {
 
     }, [messages]);
 
-    // =================================================
+    // =====================================================
     // SEND MESSAGE
-    // =================================================
+    // =====================================================
 
-    const sendMessage = async () => {
+    const sendMessage =
+        async () => {
 
-        const trimmedMessage =
-            message.trim();
+            const trimmedMessage =
+                message.trim();
 
-        if (
-            !trimmedMessage ||
-            sending
-        ) {
-            return;
-        }
-
-        try {
-
-            setSending(true);
-
-            const doctorId =
-                await getDoctorId();
-
-            if (!doctorId) {
+            if (
+                !trimmedMessage ||
+                sending
+            ) {
                 return;
             }
 
-            console.log(
-                "Sending message:",
-                {
-                    sender_id: doctorId,
-                    receiver_id: ADMIN_ID,
-                    message: trimmedMessage,
+            try {
+
+                setSending(true);
+
+                const doctorId =
+                    await getDoctorId();
+
+                if (!doctorId) {
+                    return;
                 }
-            );
 
-            await api.post(
-                "/send-message",
-                {
-                    sender_id: doctorId,
-                    receiver_id: ADMIN_ID,
-                    message: trimmedMessage,
+                const ws =
+                    websocketRef.current;
+
+                // Check WebSocket connection
+                if (
+                    !ws ||
+                    ws.readyState !==
+                    WebSocket.OPEN
+                ) {
+
+                    console.log(
+                        "❌ WebSocket is not connected"
+                    );
+
+                    return;
                 }
-            );
 
-            setMessage("");
+                console.log(
+                    "📤 Sending WebSocket message:",
+                    {
+                        receiver_id:
+                            ADMIN_ID,
+                        message:
+                            trimmedMessage,
+                    }
+                );
 
-            isNearBottom.current = true;
+                ws.send(
+                    JSON.stringify({
+                        receiver_id:
+                            ADMIN_ID,
+                        message:
+                            trimmedMessage,
+                    })
+                );
 
-            await getMessages();
+                setMessage("");
 
-            setTimeout(() => {
+                isNearBottom.current =
+                    true;
 
-                scrollViewRef.current?.scrollToEnd({
-                    animated: true,
-                });
+            } catch (error: any) {
 
-            }, 150);
+                console.log(
+                    "Send message error:",
+                    error?.message ||
+                    error
+                );
 
-        } catch (error: any) {
+            } finally {
 
-            console.log(
-                "Send message error:",
-                error?.response?.data ||
-                error?.message ||
-                error
-            );
+                setSending(false);
+            }
+        };
 
-        } finally {
-
-            setSending(false);
-        }
-    };
-
-    // =================================================
+    // =====================================================
     // ADMIN PROFILE IMAGE
-    // =================================================
+    // =====================================================
 
     const profileImageUrl =
         ADMIN_PROFILE_IMAGE
-            ? ADMIN_PROFILE_IMAGE.startsWith("http")
+            ? ADMIN_PROFILE_IMAGE.startsWith(
+                "http"
+            )
                 ? ADMIN_PROFILE_IMAGE
                 : `https://tcidentallab.com/tci-uploads/profile/${encodeURIComponent(
                     ADMIN_PROFILE_IMAGE
                 )}`
             : null;
 
-    // =================================================
+    // =====================================================
     // UI
-    // =================================================
+    // =====================================================
 
     return (
         <KeyboardAvoidingView
@@ -403,6 +716,7 @@ export default function Chat() {
                 style={styles.safeArea}
                 edges={["top"]}
             >
+
                 <View style={styles.header}>
 
                     {/* Admin Profile */}
@@ -413,9 +727,12 @@ export default function Chat() {
 
                             <Image
                                 source={{
-                                    uri: profileImageUrl,
+                                    uri:
+                                        profileImageUrl,
                                 }}
-                                style={styles.profileImage}
+                                style={
+                                    styles.profileImage
+                                }
                             />
 
                         ) : (
@@ -429,31 +746,43 @@ export default function Chat() {
                         )}
 
                     </View>
+
                     {/* Admin Information */}
 
                     <View style={styles.adminInfo}>
 
                         <Text
-                            style={styles.adminName}
+                            style={
+                                styles.adminName
+                            }
                             numberOfLines={1}
                         >
                             {ADMIN_NAME}
                         </Text>
 
-                        <Text style={styles.adminStatus}>
+                        <Text
+                            style={
+                                styles.adminStatus
+                            }
+                        >
                             Admin
                         </Text>
 
                     </View>
 
                 </View>
+
             </SafeAreaView>
 
             {/* =========================================
                 MESSAGES
             ========================================= */}
 
-            <View style={styles.messagesContainer}>
+            <View
+                style={
+                    styles.messagesContainer
+                }
+            >
 
                 {loading ? (
 
@@ -505,7 +834,8 @@ export default function Chat() {
                                 styles.emptySubText
                             }
                         >
-                            Start a conversation with admin
+                            Start a conversation
+                            with admin
                         </Text>
 
                     </View>
@@ -514,7 +844,9 @@ export default function Chat() {
 
                     <ScrollView
                         ref={scrollViewRef}
-                        style={styles.messageList}
+                        style={
+                            styles.messageList
+                        }
                         contentContainerStyle={
                             styles.messageContent
                         }
@@ -522,65 +854,101 @@ export default function Chat() {
                         showsVerticalScrollIndicator={
                             false
                         }
-                        onScroll={handleScroll}
+                        onScroll={
+                            handleScroll
+                        }
                         scrollEventThrottle={16}
                     >
 
-                        {messages.map((item) => {
+                        {/* Loading older messages */}
 
-                            // Admin's message
-                            const isAdminMessage =
-                                String(
-                                    item.sender_id
-                                ) ===
-                                String(ADMIN_ID);
+                        {loadingOlder && (
 
-                            return (
+                            <View
+                                style={
+                                    styles.loadingOlder
+                                }
+                            >
 
-                                <View
-                                    key={item.id}
-                                    style={[
-                                        styles.messageBubble,
+                                <ActivityIndicator
+                                    size="small"
+                                    color="#0864B9"
+                                />
 
-                                        isAdminMessage
-                                            ? styles.adminMessage
-                                            : styles.doctorMessage,
-                                    ]}
+                                <Text
+                                    style={
+                                        styles.loadingOlderText
+                                    }
                                 >
+                                    Loading older messages...
+                                </Text>
 
-                                    <Text
+                            </View>
+                        )}
+
+                        {messages.map(
+                            (item) => {
+
+                                // Admin = LEFT
+                                const isAdminMessage =
+                                    String(
+                                        item.sender_id
+                                    ) ===
+                                    String(
+                                        ADMIN_ID
+                                    );
+
+                                return (
+
+                                    <View
+                                        key={
+                                            item.id
+                                        }
                                         style={[
-                                            styles.messageText,
+                                            styles.messageBubble,
 
-                                            isAdminMessage &&
-                                            styles.adminMessageText,
+                                            isAdminMessage
+                                                ? styles.adminMessage
+                                                : styles.doctorMessage,
                                         ]}
                                     >
-                                        {item.message}
-                                    </Text>
 
-                                    <Text
-                                        style={[
-                                            styles.messageTime,
+                                        <Text
+                                            style={[
+                                                styles.messageText,
 
-                                            isAdminMessage &&
-                                            styles.adminMessageTime,
-                                        ]}
-                                    >
-                                        {new Date(
-                                            item.timestamp
-                                        ).toLocaleTimeString(
-                                            [],
+                                                isAdminMessage &&
+                                                styles.adminMessageText,
+                                            ]}
+                                        >
                                             {
-                                                hour: "2-digit",
-                                                minute: "2-digit",
+                                                item.message
                                             }
-                                        )}
-                                    </Text>
+                                        </Text>
 
-                                </View>
-                            );
-                        })}
+                                        <Text
+                                            style={[
+                                                styles.messageTime,
+
+                                                isAdminMessage &&
+                                                styles.adminMessageTime,
+                                            ]}
+                                        >
+                                            {new Date(
+                                                item.timestamp
+                                            ).toLocaleTimeString(
+                                                [],
+                                                {
+                                                    hour: "2-digit",
+                                                    minute: "2-digit",
+                                                }
+                                            )}
+                                        </Text>
+
+                                    </View>
+                                );
+                            }
+                        )}
 
                     </ScrollView>
                 )}
@@ -591,14 +959,20 @@ export default function Chat() {
                 MESSAGE INPUT
             ========================================= */}
 
-            <View style={styles.inputContainer}>
+            <View
+                style={
+                    styles.inputContainer
+                }
+            >
 
                 <TextInput
                     style={styles.input}
                     placeholder="Type a message..."
                     placeholderTextColor="#888"
                     value={message}
-                    onChangeText={setMessage}
+                    onChangeText={
+                        setMessage
+                    }
                     multiline
                     editable={!sending}
                     textAlignVertical="center"
@@ -607,10 +981,13 @@ export default function Chat() {
                 <TouchableOpacity
                     style={[
                         styles.sendButton,
+
                         sending &&
                         styles.sendButtonDisabled,
                     ]}
-                    onPress={sendMessage}
+                    onPress={
+                        sendMessage
+                    }
                     disabled={sending}
                     activeOpacity={0.7}
                 >
@@ -650,6 +1027,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: "#F7F9FC",
     },
+
     safeArea: {
         backgroundColor: "#FFFFFF",
     },
@@ -737,6 +1115,19 @@ const styles = StyleSheet.create({
     loadingText: {
         marginTop: 8,
         fontSize: 14,
+        color: "#777777",
+    },
+
+    loadingOlder: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        paddingVertical: 10,
+        gap: 8,
+    },
+
+    loadingOlderText: {
+        fontSize: 13,
         color: "#777777",
     },
 

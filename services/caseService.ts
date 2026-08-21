@@ -438,3 +438,33 @@ export const uploadPreviewFile = async (
   }
 };
 
+export const updateCaseStatus = async (
+  caseId: number | string,
+  status: string
+) => {
+  try {
+    const response = await api.put(
+      `/cases/${caseId}/status`,
+      {
+        status,
+      }
+    );
+
+    console.log(
+      "Case status updated:",
+      response.data
+    );
+
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      "Error updating case status:",
+      error?.response?.data ||
+      error?.message ||
+      error
+    );
+
+    throw error;
+  }
+};
+
