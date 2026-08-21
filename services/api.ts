@@ -1,102 +1,3 @@
-// import axios from "axios";
-// import * as SecureStore from "expo-secure-store";
-
-// const api = axios.create({
-//     baseURL: "https://tcidentallab.com/api",
-//     headers: {
-//         "Content-Type": "application/json",
-//     },
-//     timeout: 30000,
-// });
-
-// // Add JWT token to every request
-// api.interceptors.request.use(
-//     async (config) => {
-//         try {
-//             const token = await SecureStore.getItemAsync(
-//                 "access_token"
-//             );
-
-//             console.log("ACCESS TOKEN:", token);
-
-//             if (token) {
-//                 config.headers.Authorization = `Bearer ${token}`;
-//             }
-
-//             return config;
-
-//         } catch (error) {
-//             console.error(
-//                 "Error reading access token:",
-//                 error
-//             );
-
-//             return config;
-//         }
-//     },
-//     (error) => {
-//         console.error(
-//             "Request interceptor error:",
-//             error
-//         );
-
-//         return Promise.reject(error);
-//     }
-// );
-
-// // Handle API responses/errors
-// api.interceptors.response.use(
-//     (response) => {
-//         // Don't log every successful API request
-//         return response;
-//     },
-
-//     async (error) => {
-//         const status = error.response?.status;
-//         const url = error.config?.url;
-
-//         console.error(
-//             "API ERROR:",
-//             error.config?.method?.toUpperCase(),
-//             url,
-//             status
-//         );
-
-//         if (status === 401) {
-//             console.error(
-//                 "401 RESPONSE:",
-//                 error.response?.data
-//             );
-
-//             console.error(
-//                 "401 HEADERS:",
-//                 error.response?.headers
-//             );
-//         }
-
-//         if (status === 403) {
-//             console.error(
-//                 "403 FORBIDDEN:",
-//                 error.response?.data
-//             );
-//         }
-
-//         if (status >= 500) {
-//             console.error(
-//                 "SERVER ERROR:",
-//                 error.response?.data
-//             );
-//         }
-
-//         return Promise.reject(error);
-//     }
-// );
-
-// export default api;
-
-
-
-
 
 import axios, {
     AxiosError,
@@ -109,7 +10,6 @@ const API_URL =
     "https://tcidentallab.com/api";
 
 const api = axios.create({
-<<<<<<< HEAD
     baseURL: API_URL,
     headers: {
         "Content-Type": "application/json",
@@ -139,41 +39,6 @@ api.interceptors.request.use(
                 config.headers.Authorization =
                     `Bearer ${token}`;
 
-=======
-    baseURL: "https://tcidentallab.com/api",
-    timeout: 30000,
-});
-
-// =========================================================
-// REQUEST INTERCEPTOR
-// =========================================================
-
-api.interceptors.request.use(
-    async (config) => {
-        try {
-
-            const token =
-                await SecureStore.getItemAsync(
-                    "access_token"
-                );
-
-            console.log(
-                "ACCESS TOKEN:",
-                token
-            );
-
-            // -------------------------------------------------
-            // JWT
-            // -------------------------------------------------
-
-            if (token) {
-
-                config.headers =
-                    config.headers || {};
-
-                config.headers.Authorization =
-                    `Bearer ${token}`;
->>>>>>> edit/cases
             }
 
             // -------------------------------------------------
@@ -246,79 +111,34 @@ api.interceptors.request.use(
             return config;
         }
     },
-<<<<<<< HEAD
-=======
-
-    (error) => {
-
-        console.error(
-            "Request interceptor error:",
-            error
-        );
->>>>>>> edit/cases
 
     (error) => {
         return Promise.reject(error);
     }
 );
 
-<<<<<<< HEAD
 
 // ==================================================
 // RESPONSE INTERCEPTOR
 // ==================================================
-=======
-// =========================================================
-// RESPONSE INTERCEPTOR
-// =========================================================
->>>>>>> edit/cases
 
 api.interceptors.response.use(
 
     (response) => {
-<<<<<<< HEAD
         return response;
     },
 
     async (error: AxiosError) => {
-=======
-
-        return response;
-    },
-
-    async (error) => {
 
         const status =
             error.response?.status;
 
-        const url =
-            error.config?.url;
->>>>>>> edit/cases
-
-        const status =
-            error.response?.status;
-
-<<<<<<< HEAD
         const originalRequest =
             error.config as
             | (InternalAxiosRequestConfig & {
                 _retry?: boolean;
             })
             | undefined;
-=======
-        // -------------------------------------------------
-        // 401
-        // -------------------------------------------------
-
-        if (
-            status === 401
-        ) {
-
-            console.error(
-                "401 RESPONSE:",
-                error.response?.data
-            );
->>>>>>> edit/cases
 
 
         // ------------------------------------------
@@ -329,7 +149,6 @@ api.interceptors.response.use(
             return Promise.reject(error);
         }
 
-<<<<<<< HEAD
 
         // ------------------------------------------
         // Only handle 401
@@ -350,35 +169,6 @@ api.interceptors.response.use(
 
         if (isAuthRequest) {
             return Promise.reject(error);
-=======
-        // -------------------------------------------------
-        // 403
-        // -------------------------------------------------
-
-        if (
-            status === 403
-        ) {
-
-            console.error(
-                "403 FORBIDDEN:",
-                error.response?.data
-            );
-        }
-
-        // -------------------------------------------------
-        // 500+
-        // -------------------------------------------------
-
-        if (
-            status &&
-            status >= 500
-        ) {
-
-            console.error(
-                "SERVER ERROR:",
-                error.response?.data
-            );
->>>>>>> edit/cases
         }
 
 
