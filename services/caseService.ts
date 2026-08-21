@@ -33,7 +33,6 @@ export const uploadCaseFile = async (
   return response.data;
 };
 
-
 export const getCase = async (
   caseId: number | string
 ) => {
@@ -189,6 +188,8 @@ export const rejectPreview = async (
   }
 };
 
+
+
 export const getCases = async ({
   page = 1,
   limit = 10,
@@ -240,6 +241,22 @@ export const getCases = async ({
     throw error;
   }
 };
+
+
+
+export const doctorEditCase = async (
+  caseId: number,
+  payload: any
+) => {
+  const response = await api.put(
+    `/doctor/cases/${caseId}/edit`,
+    payload
+  );
+
+  return response.data;
+};
+
+
 
 export const uploadPreviewFile = async (
   caseId: number | string,

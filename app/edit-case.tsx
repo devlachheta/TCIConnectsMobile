@@ -715,7 +715,7 @@ export default function EditCases() {
                         {/* HEADER */}
                         <View style={styles.header}>
                             <TouchableOpacity
-                                onPress={() => router.replace("/(tabs)")}
+                                onPress={() => router.replace("/(doctor)")}
                                 activeOpacity={0.7}
                             >
                                 <Ionicons
@@ -849,7 +849,6 @@ export default function EditCases() {
 
                                 </View>
 
-
                                 <View style={styles.halfInput}>
 
                                     <Text style={styles.label}>
@@ -870,8 +869,6 @@ export default function EditCases() {
                                 </View>
 
                             </View>
-
-
 
                             <Text style={styles.label}>
                                 Delivery Deadline
