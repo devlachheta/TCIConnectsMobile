@@ -15,30 +15,47 @@ import Step3Review from "@/components/doctordashboard/newcases/Step3Review";
 import {
     submitCase as submitCaseApi,
     uploadCaseFile,
+    uploadTempFile,
 } from "../../services/caseService";
 
 export default function NewCases() {
     const router = useRouter();
 
-    const [currentStep, setCurrentStep] = useState(1);
+    const [currentStep, setCurrentStep] =
+        useState(1);
 
-    const [patientName, setPatientName] = useState("");
-    const [patientId, setPatientId] = useState("");
-    const [age, setAge] = useState("");
-    const [gender, setGender] = useState("");
+    const [patientName, setPatientName] =
+        useState("");
 
-    const [date, setDate] = useState<Date | null>(null);
-    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [patientId, setPatientId] =
+        useState("");
 
-    const [time, setTime] = useState<Date | null>(null);
-    const [showTimePicker, setShowTimePicker] = useState(false);
+    const [age, setAge] =
+        useState("");
+
+    const [gender, setGender] =
+        useState("");
+
+    const [date, setDate] =
+        useState<Date | null>(null);
+
+    const [showDatePicker, setShowDatePicker] =
+        useState(false);
+
+    const [time, setTime] =
+        useState<Date | null>(null);
+
+    const [showTimePicker, setShowTimePicker] =
+        useState(false);
 
     const [deliveryDate, setDeliveryDate] =
         useState<Date | null>(null);
+
     const [showDeliveryPicker, setShowDeliveryPicker] =
         useState(false);
 
-    const [shadeOpen, setShadeOpen] = useState(false);
+    const [shadeOpen, setShadeOpen] =
+        useState(false);
 
     const [surfaceTexture, setSurfaceTexture] =
         useState<string[]>([]);
@@ -64,7 +81,8 @@ export default function NewCases() {
     const [caseStages, setCaseStages] =
         useState<string[]>([]);
 
-    const [implantOpen, setImplantOpen] = useState(false);
+    const [implantOpen, setImplantOpen] =
+        useState(false);
 
     const [implantInstructions, setImplantInstructions] =
         useState("");
@@ -72,7 +90,8 @@ export default function NewCases() {
     const [additionalRestorations, setAdditionalRestorations] =
         useState<string[]>([]);
 
-    const [designPreview, setDesignPreview] = useState(false);
+    const [designPreview, setDesignPreview] =
+        useState(false);
 
     const [implantTable, setImplantTable] =
         useState<string[][]>(
@@ -83,14 +102,20 @@ export default function NewCases() {
         );
 
     const [uploadedFiles, setUploadedFiles] =
-        useState<DocumentPicker.DocumentPickerAsset[]>(
-            []
-        );
+        useState<
+            DocumentPicker.DocumentPickerAsset[]
+        >([]);
 
     const [caseDocument, setCaseDocument] =
-        useState<DocumentPicker.DocumentPickerAsset | null>(
-            null
-        );
+        useState<
+            DocumentPicker.DocumentPickerAsset | null
+        >(null);
+
+    const [uploadedFilePaths, setUploadedFilePaths] =
+        useState<Record<string, string>>({});
+
+    const [caseDocumentPath, setCaseDocumentPath] =
+        useState("");
 
     const [uploadProgress, setUploadProgress] =
         useState<Record<string, number>>({});
@@ -98,10 +123,14 @@ export default function NewCases() {
     const [caseDocumentProgress, setCaseDocumentProgress] =
         useState(0);
 
-    const [submitting, setSubmitting] = useState(false);
+    const [submitting, setSubmitting] =
+        useState(false);
 
-    const [step1Error, setStep1Error] = useState("");
-    const [step2Error, setStep2Error] = useState("");
+    const [step1Error, setStep1Error] =
+        useState("");
+
+    const [step2Error, setStep2Error] =
+        useState("");
 
     const [caseDetailsOpen, setCaseDetailsOpen] =
         useState(true);
@@ -127,33 +156,49 @@ export default function NewCases() {
     const [confirmCaseInstructions, setConfirmCaseInstructions] =
         useState(false);
 
-    const [gdprError, setGdprError] = useState("");
-    const [agreementError, setAgreementError] = useState("");
-    const [consentError, setConsentError] = useState("");
+    const [gdprError, setGdprError] =
+        useState("");
 
-    const [caseSubmitted, setCaseSubmitted] = useState(false);
+    const [agreementError, setAgreementError] =
+        useState("");
+
+    const [consentError, setConsentError] =
+        useState("");
+
+    const [caseSubmitted, setCaseSubmitted] =
+        useState(false);
 
     const toggleValue = (
         value: string,
-        setter: React.Dispatch<React.SetStateAction<string[]>>
+        setter: React.Dispatch<
+            React.SetStateAction<string[]>
+        >
     ) => {
         setter((previous) =>
             previous.includes(value)
                 ? previous.filter(
-                    (item) => item !== value
+                    (item) =>
+                        item !== value
                 )
-                : [...previous, value]
+                : [
+                    ...previous,
+                    value,
+                ]
         );
     };
 
-    const toggleSurfaceTexture = (value: string) => {
+    const toggleSurfaceTexture = (
+        value: string
+    ) => {
         toggleValue(
             value,
             setSurfaceTexture
         );
     };
 
-    const toggleGlazedPolish = (value: string) => {
+    const toggleGlazedPolish = (
+        value: string
+    ) => {
         toggleValue(
             value,
             setGlazedPolish
@@ -178,7 +223,9 @@ export default function NewCases() {
         );
     };
 
-    const toggleMaterialType = (value: string) => {
+    const toggleMaterialType = (
+        value: string
+    ) => {
         toggleValue(
             value,
             setMaterialTypes
@@ -194,7 +241,9 @@ export default function NewCases() {
         );
     };
 
-    const toggleCaseStage = (value: string) => {
+    const toggleCaseStage = (
+        value: string
+    ) => {
         toggleValue(
             value,
             setCaseStages
@@ -215,20 +264,30 @@ export default function NewCases() {
         columnIndex: number,
         value: string
     ) => {
-        setImplantTable((previous) => {
-            const updated = previous.map(
-                (row) => [...row]
-            );
+        setImplantTable(
+            (previous) => {
+                const updated =
+                    previous.map(
+                        (row) => [
+                            ...row,
+                        ]
+                    );
 
-            updated[rowIndex][columnIndex] =
-                value;
+                updated[
+                    rowIndex
+                ][
+                    columnIndex
+                ] = value;
 
-            return updated;
-        });
+                return updated;
+            }
+        );
     };
 
     const goToStep2 = () => {
-        if (!patientName.trim()) {
+        if (
+            !patientName.trim()
+        ) {
             setStep1Error(
                 "Patient Name is required."
             );
@@ -240,16 +299,37 @@ export default function NewCases() {
     };
 
     const goToStep3 = () => {
-        if (uploadedFiles.length === 0) {
+        if (
+            uploadedFiles.length === 0
+        ) {
             setStep2Error(
                 "Please upload at least one file."
             );
             return;
         }
 
-        if (uploadedFiles.length > 5) {
+        if (
+            uploadedFiles.length > 5
+        ) {
             setStep2Error(
                 "You can upload a maximum of 5 files."
+            );
+            return;
+        }
+
+        const allUploaded =
+            uploadedFiles.every(
+                (file) =>
+                    Boolean(
+                        uploadedFilePaths[
+                        file.uri
+                        ]
+                    )
+            );
+
+        if (!allUploaded) {
+            setStep2Error(
+                "Please wait until all files finish uploading."
             );
             return;
         }
@@ -258,135 +338,344 @@ export default function NewCases() {
         setCurrentStep(3);
     };
 
-    const selectTestFile = async () => {
-        if (uploadedFiles.length >= 5) {
-            setStep2Error(
-                "You can upload a maximum of 5 files."
-            );
-            return;
-        }
-
-        try {
-            const result =
-                await DocumentPicker.getDocumentAsync({
-                    type: "*/*",
-                    multiple: true,
-                    copyToCacheDirectory: false,
-                });
-
-            if (result.canceled) {
-                return;
-            }
-
-            const remainingSlots =
-                5 - uploadedFiles.length;
-
-            const selectedFiles =
-                result.assets.slice(
-                    0,
-                    remainingSlots
-                );
-
-            setUploadedFiles((previous) => [
-                ...previous,
-                ...selectedFiles,
-            ]);
-
-            setUploadProgress((previous) => {
-                const updated = {
-                    ...previous,
-                };
-
-                selectedFiles.forEach((file) => {
-                    updated[file.uri] = 0;
-                });
-
-                return updated;
-            });
-
+    const selectTestFile =
+        async () => {
             if (
-                result.assets.length >
-                remainingSlots
+                uploadedFiles.length >= 5
             ) {
                 setStep2Error(
                     "You can upload a maximum of 5 files."
                 );
-            } else {
-                setStep2Error("");
+                return;
             }
-        } catch (error) {
-            console.error(
-                "FILE PICKER ERROR:",
-                error
-            );
 
-            setStep2Error(
-                "Unable to select files."
-            );
-        }
-    };
+            try {
+                const result =
+                    await DocumentPicker.getDocumentAsync(
+                        {
+                            type: "*/*",
+                            multiple: true,
+                            copyToCacheDirectory:
+                                false,
+                        }
+                    );
+
+                if (
+                    result.canceled
+                ) {
+                    return;
+                }
+
+                const remainingSlots =
+                    5 -
+                    uploadedFiles.length;
+
+                const selectedFiles =
+                    result.assets.slice(
+                        0,
+                        remainingSlots
+                    );
+
+                setUploadedFiles(
+                    (previous) => [
+                        ...previous,
+                        ...selectedFiles,
+                    ]
+                );
+
+                setUploadProgress(
+                    (previous) => {
+                        const updated =
+                        {
+                            ...previous,
+                        };
+
+                        selectedFiles.forEach(
+                            (file) => {
+                                updated[
+                                    file.uri
+                                ] = 0;
+                            }
+                        );
+
+                        return updated;
+                    }
+                );
+
+                setStep2Error("");
+
+                await Promise.all(
+                    selectedFiles.map(
+                        async (
+                            file
+                        ) => {
+                            try {
+                                const uploaded =
+                                    await uploadTempFile(
+                                        file,
+                                        (
+                                            progress
+                                        ) => {
+                                            setUploadProgress(
+                                                (
+                                                    previous
+                                                ) => ({
+                                                    ...previous,
+                                                    [file.uri]:
+                                                        progress,
+                                                })
+                                            );
+                                        }
+                                    );
+
+                                if (
+                                    !uploaded?.file_path
+                                ) {
+                                    throw new Error(
+                                        "Temporary file path was not returned."
+                                    );
+                                }
+
+                                console.log(
+                                    "TEMP FILE READY:",
+                                    file.name,
+                                    uploaded.file_path
+                                );
+
+                                setUploadedFilePaths(
+                                    (
+                                        previous
+                                    ) => ({
+                                        ...previous,
+                                        [file.uri]:
+                                            uploaded.file_path,
+                                    })
+                                );
+
+                                setUploadProgress(
+                                    (
+                                        previous
+                                    ) => ({
+                                        ...previous,
+                                        [file.uri]:
+                                            100,
+                                    })
+                                );
+                            } catch (
+                            error: any
+                            ) {
+                                console.error(
+                                    "DIGITAL FILE UPLOAD ERROR:",
+                                    file.name,
+                                    error?.message ||
+                                    error
+                                );
+
+                                setUploadProgress(
+                                    (
+                                        previous
+                                    ) => ({
+                                        ...previous,
+                                        [file.uri]:
+                                            0,
+                                    })
+                                );
+
+                                setUploadedFilePaths(
+                                    (
+                                        previous
+                                    ) => {
+                                        const updated =
+                                        {
+                                            ...previous,
+                                        };
+
+                                        delete updated[
+                                            file.uri
+                                        ];
+
+                                        return updated;
+                                    }
+                                );
+
+                                setStep2Error(
+                                    `Unable to upload ${file.name}.`
+                                );
+                            }
+                        }
+                    )
+                );
+
+                if (
+                    result.assets.length >
+                    remainingSlots
+                ) {
+                    setStep2Error(
+                        "You can upload a maximum of 5 files."
+                    );
+                }
+            } catch (
+            error
+            ) {
+                console.error(
+                    "FILE PICKER ERROR:",
+                    error
+                );
+
+                setStep2Error(
+                    "Unable to select files."
+                );
+            }
+        };
 
     const removeUploadedFile = (
         uri: string
     ) => {
-        setUploadedFiles((previous) =>
-            previous.filter(
-                (file) =>
-                    file.uri !== uri
-            )
+        setUploadedFiles(
+            (previous) =>
+                previous.filter(
+                    (file) =>
+                        file.uri !== uri
+                )
         );
 
-        setUploadProgress((previous) => {
-            const updated = {
-                ...previous,
-            };
+        setUploadProgress(
+            (previous) => {
+                const updated = {
+                    ...previous,
+                };
 
-            delete updated[uri];
+                delete updated[
+                    uri
+                ];
 
-            return updated;
-        });
+                return updated;
+            }
+        );
+
+        setUploadedFilePaths(
+            (previous) => {
+                const updated = {
+                    ...previous,
+                };
+
+                delete updated[
+                    uri
+                ];
+
+                return updated;
+            }
+        );
     };
 
-    const selectCaseDocument = async () => {
-        try {
-            const result =
-                await DocumentPicker.getDocumentAsync({
-                    type: "*/*",
-                    multiple: false,
-                    copyToCacheDirectory: false,
-                });
+    const selectCaseDocument =
+        async () => {
+            try {
+                const result =
+                    await DocumentPicker.getDocumentAsync(
+                        {
+                            type: "application/pdf",
+                            multiple: false,
+                            copyToCacheDirectory:
+                                false,
+                        }
+                    );
 
-            if (result.canceled) {
-                return;
+                if (
+                    result.canceled
+                ) {
+                    return;
+                }
+
+                const selectedFile =
+                    result.assets[0];
+
+                setCaseDocument(
+                    selectedFile
+                );
+
+                setCaseDocumentPath(
+                    ""
+                );
+
+                setCaseDocumentProgress(
+                    0
+                );
+
+                const uploaded =
+                    await uploadTempFile(
+                        selectedFile,
+                        (
+                            progress
+                        ) => {
+                            setCaseDocumentProgress(
+                                progress
+                            );
+                        }
+                    );
+
+                if (
+                    !uploaded?.file_path
+                ) {
+                    throw new Error(
+                        "Temporary case document path was not returned."
+                    );
+                }
+
+                setCaseDocumentPath(
+                    uploaded.file_path
+                );
+
+                setCaseDocumentProgress(
+                    100
+                );
+
+                console.log(
+                    "CASE DOCUMENT TEMP FILE READY:",
+                    uploaded.file_path
+                );
+            } catch (
+            error: any
+            ) {
+                console.error(
+                    "CASE DOCUMENT UPLOAD ERROR:",
+                    error?.response?.data ||
+                    error?.message ||
+                    error
+                );
+
+                setCaseDocumentPath(
+                    ""
+                );
+
+                setCaseDocumentProgress(
+                    0
+                );
+            }
+        };
+
+    const getDoctorId =
+        async () => {
+            const userData =
+                await AsyncStorage.getItem(
+                    "user"
+                );
+
+            if (
+                !userData
+            ) {
+                throw new Error(
+                    "Doctor information not found."
+                );
             }
 
-            setCaseDocument(
-                result.assets[0]
-            );
+            const user =
+                JSON.parse(
+                    userData
+                );
 
-            setCaseDocumentProgress(0);
-        } catch (error) {
-            console.error(
-                "CASE DOCUMENT PICKER ERROR:",
-                error
-            );
-        }
-    };
-
-    const getDoctorId = async () => {
-        const userData =
-            await AsyncStorage.getItem("user");
-
-        if (!userData) {
-            throw new Error(
-                "Doctor information not found."
-            );
-        }
-
-        const user = JSON.parse(userData);
-
-        return user.id;
-    };
+            return user.id;
+        };
 
     const submitCase = async () => {
         if (submitting) {
@@ -424,81 +713,187 @@ export default function NewCases() {
             return;
         }
 
+        if (uploadedFiles.length === 0) {
+            setStep2Error(
+                "Please upload at least one digital file."
+            );
+            setCurrentStep(2);
+            return;
+        }
+
+        const missingDigitalFile =
+            uploadedFiles.find(
+                (file) =>
+                    !uploadedFilePaths[file.uri]
+            );
+
+        if (missingDigitalFile) {
+            setStep2Error(
+                `Please wait until ${missingDigitalFile.name} finishes uploading.`
+            );
+            setCurrentStep(2);
+            return;
+        }
+
+        if (
+            caseDocument &&
+            !caseDocumentPath
+        ) {
+            setCaseDocumentProgress(0);
+
+            try {
+                const uploaded =
+                    await uploadTempFile(
+                        caseDocument,
+                        (progress) => {
+                            setCaseDocumentProgress(
+                                progress
+                            );
+                        }
+                    );
+
+                if (
+                    !uploaded?.file_path
+                ) {
+                    throw new Error(
+                        "Temporary case document path was not returned."
+                    );
+                }
+
+                setCaseDocumentPath(
+                    uploaded.file_path
+                );
+
+                setCaseDocumentProgress(
+                    100
+                );
+            } catch (error: any) {
+                console.error(
+                    "CASE DOCUMENT TEMP UPLOAD ERROR:",
+                    error?.response?.data ||
+                    error?.message ||
+                    error
+                );
+
+                setConsentError(
+                    "Unable to upload the case document."
+                );
+
+                return;
+            }
+        }
+
         try {
             setSubmitting(true);
-
-            setUploadProgress((previous) => {
-                const updated = {
-                    ...previous,
-                };
-
-                uploadedFiles.forEach((file) => {
-                    updated[file.uri] = 0;
-                });
-
-                return updated;
-            });
-
-            setCaseDocumentProgress(0);
 
             const doctorId =
                 await getDoctorId();
 
             const implantDetails =
-                implantTable.map((row) => ({
-                    implant_type: row[0],
-                    platform_diameter: row[1],
-                    screw_retained: row[2],
-                    screw_retained_hybrid: row[3],
-                    cement_retained_ti_abutment:
-                        row[4],
-                    zr_abutment: row[5],
-                    implant_bar_type: row[6],
-                    attachment_type: row[7],
-                }));
+                implantTable.map(
+                    (row) => ({
+                        implant_type:
+                            row[0],
+
+                        platform_diameter:
+                            row[1],
+
+                        screw_retained:
+                            row[2],
+
+                        screw_retained_hybrid:
+                            row[3],
+
+                        cement_retained_ti_abutment:
+                            row[4],
+
+                        zr_abutment:
+                            row[5],
+
+                        implant_bar_type:
+                            row[6],
+
+                        attachment_type:
+                            row[7],
+                    })
+                );
 
             const payload = {
-                doctor_id: doctorId,
-                patient_name: patientName,
-                gender: gender || null,
-                age: age ? Number(age) : null,
+                doctor_id:
+                    doctorId,
 
-                appointment_date: date
-                    ? date.toISOString().split("T")[0]
-                    : null,
+                patient_name:
+                    patientName,
 
-                appointment_time: time
-                    ? time.toTimeString().slice(0, 5)
-                    : null,
+                gender:
+                    gender || null,
 
-                delivery_deadline: deliveryDate
-                    ? deliveryDate
-                        .toISOString()
-                        .split("T")[0]
-                    : null,
+                age:
+                    age
+                        ? Number(age)
+                        : null,
 
-                preview_status: "-",
-                status: "Submitted",
+                appointment_date:
+                    date
+                        ? date
+                            .toISOString()
+                            .split("T")[0]
+                        : null,
+
+                appointment_time:
+                    time
+                        ? time
+                            .toTimeString()
+                            .slice(0, 5)
+                        : null,
+
+                delivery_deadline:
+                    deliveryDate
+                        ? deliveryDate
+                            .toISOString()
+                            .split("T")[0]
+                        : null,
+
+                preview_status:
+                    "-",
+
+                status:
+                    "Submitted",
 
                 details: {
-                    case_stage: caseStages,
-                    surface_texture: surfaceTexture,
-                    glazed_polish: glazedPolish,
+                    case_stage:
+                        caseStages,
+
+                    surface_texture:
+                        surfaceTexture,
+
+                    glazed_polish:
+                        glazedPolish,
+
                     incisal_translucency:
                         incisalTranslucency,
+
                     prepared_tooth_shade:
                         preparedToothShade,
+
                     shade_guide_color:
                         shadeInstructions,
-                    material_type: materialTypes,
+
+                    material_type:
+                        materialTypes,
+
                     crown_bridge:
                         crownBridgeTypes,
+
                     additional_restorations:
                         additionalRestorations,
+
                     implant_details:
                         implantDetails,
+
                     design_preview:
                         designPreview,
+
                     additional_instructions:
                         implantInstructions,
                 },
@@ -506,45 +901,116 @@ export default function NewCases() {
                 files: [],
             };
 
+            console.log(
+                "CREATING CASE..."
+            );
+
             const response =
-                await submitCaseApi(payload);
+                await submitCaseApi(
+                    payload
+                );
 
-            const caseId = response.id;
+            const caseId =
+                response?.id;
 
-            for (const file of uploadedFiles) {
+            if (!caseId) {
+                throw new Error(
+                    "Case ID was not returned after case creation."
+                );
+            }
+
+            console.log(
+                "CASE CREATED:",
+                caseId
+            );
+
+            const processedFiles =
+                new Set<string>();
+
+            for (
+                const file of uploadedFiles
+            ) {
+                if (
+                    processedFiles.has(
+                        file.uri
+                    )
+                ) {
+                    console.log(
+                        "SKIPPING DUPLICATE DIGITAL FILE:",
+                        file.name
+                    );
+
+                    continue;
+                }
+
+                processedFiles.add(
+                    file.uri
+                );
+
+                const tempPath =
+                    uploadedFilePaths[
+                    file.uri
+                    ];
+
+                if (!tempPath) {
+                    throw new Error(
+                        `Temporary file path not found for ${file.name}.`
+                    );
+                }
+
+                console.log(
+                    "MOVING DIGITAL FILE TO CASE:",
+                    file.name,
+                    tempPath
+                );
+
                 await uploadCaseFile(
                     caseId,
                     file,
                     "digital_file",
-                    (progress: number) => {
-                        setUploadProgress(
-                            (previous: Record<string, number>) => {
-                                return {
-                                    ...previous,
-                                    [file.uri]:
-                                        progress,
-                                };
-                            }
-                        );
-                    }
+                    undefined,
+                    tempPath
+                );
+
+                console.log(
+                    "DIGITAL FILE MOVED SUCCESSFULLY:",
+                    file.name
                 );
             }
 
-            if (caseDocument) {
+            if (
+                caseDocument &&
+                caseDocumentPath
+            ) {
+                console.log(
+                    "MOVING CASE DOCUMENT TO CASE:",
+                    caseDocumentPath
+                );
+
                 await uploadCaseFile(
                     caseId,
                     caseDocument,
                     "case_document",
-                    (progress: number) => {
-                        setCaseDocumentProgress(
-                            progress
-                        );
-                    }
+                    undefined,
+                    caseDocumentPath
+                );
+
+                console.log(
+                    "CASE DOCUMENT MOVED SUCCESSFULLY"
                 );
             }
 
-            setCaseSubmitted(true);
-        } catch (error: any) {
+            console.log(
+                "CASE SUBMISSION COMPLETE:",
+                caseId
+            );
+
+            setCaseSubmitted(
+                true
+            );
+        } catch (
+        error: any
+        ) {
             console.error(
                 "CASE SUBMISSION ERROR:",
                 error?.response?.data ||
@@ -552,105 +1018,202 @@ export default function NewCases() {
                 error
             );
         } finally {
-            setSubmitting(false);
+            setSubmitting(
+                false
+            );
         }
     };
+    const startNewCase =
+        () => {
+            setPatientName("");
+            setPatientId("");
+            setAge("");
+            setGender("");
 
-    const startNewCase = () => {
-        setPatientName("");
-        setPatientId("");
-        setAge("");
-        setGender("");
+            setDate(null);
+            setTime(null);
+            setDeliveryDate(null);
 
-        setDate(null);
-        setTime(null);
-        setDeliveryDate(null);
+            setSurfaceTexture([]);
+            setGlazedPolish([]);
+            setIncisalTranslucency([]);
+            setPreparedToothShade([]);
 
-        setSurfaceTexture([]);
-        setGlazedPolish([]);
-        setIncisalTranslucency([]);
-        setPreparedToothShade([]);
+            setShadeInstructions("");
 
-        setShadeInstructions("");
+            setMaterialTypes([]);
+            setCrownBridgeTypes([]);
+            setCaseStages([]);
 
-        setMaterialTypes([]);
-        setCrownBridgeTypes([]);
-        setCaseStages([]);
+            setImplantInstructions("");
 
-        setImplantInstructions("");
-        setAdditionalRestorations([]);
+            setAdditionalRestorations(
+                []
+            );
 
-        setDesignPreview(false);
+            setDesignPreview(
+                false
+            );
 
-        setImplantTable(
-            Array.from(
-                { length: 3 },
-                () => Array(8).fill("")
-            )
-        );
+            setImplantTable(
+                Array.from(
+                    {
+                        length: 3,
+                    },
+                    () =>
+                        Array(
+                            8
+                        ).fill("")
+                )
+            );
 
-        setUploadedFiles([]);
-        setCaseDocument(null);
+            setUploadedFiles([]);
+            setCaseDocument(
+                null
+            );
 
-        setUploadProgress({});
-        setCaseDocumentProgress(0);
+            setUploadedFilePaths(
+                {}
+            );
 
-        setStep1Error("");
-        setStep2Error("");
+            setCaseDocumentPath(
+                ""
+            );
 
-        setConfirmDigitalMedical(false);
-        setConfirmGdpr(false);
-        setConfirmCaseInstructions(false);
+            setUploadProgress(
+                {}
+            );
 
-        setGdprError("");
-        setAgreementError("");
-        setConsentError("");
+            setCaseDocumentProgress(
+                0
+            );
 
-        setCaseSubmitted(false);
-        setSubmitting(false);
-        setCurrentStep(1);
-    };
+            setStep1Error("");
+            setStep2Error("");
+
+            setConfirmDigitalMedical(
+                false
+            );
+
+            setConfirmGdpr(
+                false
+            );
+
+            setConfirmCaseInstructions(
+                false
+            );
+
+            setGdprError("");
+            setAgreementError("");
+            setConsentError("");
+
+            setCaseSubmitted(
+                false
+            );
+
+            setSubmitting(
+                false
+            );
+
+            setCurrentStep(
+                1
+            );
+        };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.content}>
+        <SafeAreaView
+            style={
+                styles.container
+            }
+        >
+            <View
+                style={
+                    styles.content
+                }
+            >
                 {currentStep === 1 && (
                     <Step1CaseDetails
-                        patientName={patientName}
-                        setPatientName={setPatientName}
-                        patientId={patientId}
-                        setPatientId={setPatientId}
-                        age={age}
-                        setAge={setAge}
-                        gender={gender}
-                        setGender={setGender}
-                        date={date}
-                        setDate={setDate}
-                        time={time}
-                        setTime={setTime}
-                        deliveryDate={deliveryDate}
-                        setDeliveryDate={setDeliveryDate}
-                        showDatePicker={showDatePicker}
-                        setShowDatePicker={setShowDatePicker}
-                        showTimePicker={showTimePicker}
-                        setShowTimePicker={setShowTimePicker}
+                        patientName={
+                            patientName
+                        }
+                        setPatientName={
+                            setPatientName
+                        }
+                        patientId={
+                            patientId
+                        }
+                        setPatientId={
+                            setPatientId
+                        }
+                        age={
+                            age
+                        }
+                        setAge={
+                            setAge
+                        }
+                        gender={
+                            gender
+                        }
+                        setGender={
+                            setGender
+                        }
+                        date={
+                            date
+                        }
+                        setDate={
+                            setDate
+                        }
+                        time={
+                            time
+                        }
+                        setTime={
+                            setTime
+                        }
+                        deliveryDate={
+                            deliveryDate
+                        }
+                        setDeliveryDate={
+                            setDeliveryDate
+                        }
+                        showDatePicker={
+                            showDatePicker
+                        }
+                        setShowDatePicker={
+                            setShowDatePicker
+                        }
+                        showTimePicker={
+                            showTimePicker
+                        }
+                        setShowTimePicker={
+                            setShowTimePicker
+                        }
                         showDeliveryPicker={
                             showDeliveryPicker
                         }
                         setShowDeliveryPicker={
                             setShowDeliveryPicker
                         }
-                        shadeOpen={shadeOpen}
-                        setShadeOpen={setShadeOpen}
-                        implantOpen={implantOpen}
-                        setImplantOpen={setImplantOpen}
+                        shadeOpen={
+                            shadeOpen
+                        }
+                        setShadeOpen={
+                            setShadeOpen
+                        }
+                        implantOpen={
+                            implantOpen
+                        }
+                        setImplantOpen={
+                            setImplantOpen
+                        }
                         surfaceTexture={
                             surfaceTexture
                         }
                         toggleSurfaceTexture={
                             toggleSurfaceTexture
                         }
-                        glazedPolish={glazedPolish}
+                        glazedPolish={
+                            glazedPolish
+                        }
                         toggleGlazedPolish={
                             toggleGlazedPolish
                         }
@@ -666,7 +1229,9 @@ export default function NewCases() {
                         togglePreparedToothShade={
                             togglePreparedToothShade
                         }
-                        materialTypes={materialTypes}
+                        materialTypes={
+                            materialTypes
+                        }
                         toggleMaterialType={
                             toggleMaterialType
                         }
@@ -676,7 +1241,9 @@ export default function NewCases() {
                         toggleCrownBridgeType={
                             toggleCrownBridgeType
                         }
-                        caseStages={caseStages}
+                        caseStages={
+                            caseStages
+                        }
                         toggleCaseStage={
                             toggleCaseStage
                         }
@@ -698,26 +1265,39 @@ export default function NewCases() {
                         toggleAdditionalRestoration={
                             toggleAdditionalRestoration
                         }
-                        designPreview={designPreview}
+                        designPreview={
+                            designPreview
+                        }
                         setDesignPreview={
                             setDesignPreview
                         }
-                        implantTable={implantTable}
+                        implantTable={
+                            implantTable
+                        }
                         updateImplantCell={
                             updateImplantCell
                         }
-                        caseDocument={caseDocument}
+                        caseDocument={
+                            caseDocument
+                        }
                         setCaseDocument={
                             setCaseDocument
                         }
                         selectCaseDocument={
                             selectCaseDocument
                         }
-                        step1Error={step1Error}
-                        onNext={goToStep2}
+                        caseDocumentProgress={
+                            caseDocumentProgress
+                        }
+                        step1Error={
+                            step1Error
+                        }
+                        onNext={
+                            goToStep2
+                        }
                         onBack={() =>
                             router.replace(
-                                "/(tabs)"
+                                "/(doctor)/newcases"
                             )
                         }
                     />
@@ -725,7 +1305,9 @@ export default function NewCases() {
 
                 {currentStep === 2 && (
                     <Step2DigitalFiles
-                        uploadedFiles={uploadedFiles}
+                        uploadedFiles={
+                            uploadedFiles
+                        }
                         setUploadedFiles={
                             setUploadedFiles
                         }
@@ -735,7 +1317,9 @@ export default function NewCases() {
                         setUploadProgress={
                             setUploadProgress
                         }
-                        step2Error={step2Error}
+                        step2Error={
+                            step2Error
+                        }
                         setStep2Error={
                             setStep2Error
                         }
@@ -745,30 +1329,52 @@ export default function NewCases() {
                         removeUploadedFile={
                             removeUploadedFile
                         }
-                        submitting={submitting}
-                        onBack={() =>
-                            setCurrentStep(1)
+                        submitting={
+                            submitting
                         }
-                        onNext={goToStep3}
+                        onBack={() =>
+                            setCurrentStep(
+                                1
+                            )
+                        }
+                        onNext={
+                            goToStep3
+                        }
                     />
                 )}
 
                 {currentStep === 3 && (
                     <Step3Review
-                        patientName={patientName}
-                        patientId={patientId}
-                        age={age}
-                        gender={gender}
-                        date={date}
-                        time={time}
+                        patientName={
+                            patientName
+                        }
+                        patientId={
+                            patientId
+                        }
+                        age={
+                            age
+                        }
+                        gender={
+                            gender
+                        }
+                        date={
+                            date
+                        }
+                        time={
+                            time
+                        }
                         deliveryDate={
                             deliveryDate
                         }
-                        caseStages={caseStages}
+                        caseStages={
+                            caseStages
+                        }
                         surfaceTexture={
                             surfaceTexture
                         }
-                        glazedPolish={glazedPolish}
+                        glazedPolish={
+                            glazedPolish
+                        }
                         incisalTranslucency={
                             incisalTranslucency
                         }
@@ -808,8 +1414,12 @@ export default function NewCases() {
                         setCaseDetailsOpen={
                             setCaseDetailsOpen
                         }
-                        shadeOpen={shadeOpen}
-                        setShadeOpen={setShadeOpen}
+                        shadeOpen={
+                            shadeOpen
+                        }
+                        setShadeOpen={
+                            setShadeOpen
+                        }
                         reviewImplantOpen={
                             reviewImplantOpen
                         }
@@ -840,16 +1450,24 @@ export default function NewCases() {
                         setConfirmDigitalMedical={
                             setConfirmDigitalMedical
                         }
-                        confirmGdpr={confirmGdpr}
-                        setConfirmGdpr={setConfirmGdpr}
+                        confirmGdpr={
+                            confirmGdpr
+                        }
+                        setConfirmGdpr={
+                            setConfirmGdpr
+                        }
                         confirmCaseInstructions={
                             confirmCaseInstructions
                         }
                         setConfirmCaseInstructions={
                             setConfirmCaseInstructions
                         }
-                        gdprError={gdprError}
-                        setGdprError={setGdprError}
+                        gdprError={
+                            gdprError
+                        }
+                        setGdprError={
+                            setGdprError
+                        }
                         agreementError={
                             agreementError
                         }
@@ -862,14 +1480,20 @@ export default function NewCases() {
                         setConsentError={
                             setConsentError
                         }
-                        submitting={submitting}
+                        submitting={
+                            submitting
+                        }
                         caseSubmitted={
                             caseSubmitted
                         }
                         onBack={() =>
-                            setCurrentStep(2)
+                            setCurrentStep(
+                                2
+                            )
                         }
-                        onSubmit={submitCase}
+                        onSubmit={
+                            submitCase
+                        }
                         onSubmitAnother={
                             startNewCase
                         }
@@ -880,13 +1504,15 @@ export default function NewCases() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#F7F9FC",
-    },
+const styles =
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor:
+                "#F7F9FC",
+        },
 
-    content: {
-        flex: 1,
-    },
-});
+        content: {
+            flex: 1,
+        },
+    });

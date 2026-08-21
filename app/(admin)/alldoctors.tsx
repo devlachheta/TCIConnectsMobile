@@ -21,7 +21,7 @@ import {
 
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import AdminFooter from "@/components/admindashboard/AdminFooter";
+
 import api from "../../services/api";
 
 type Doctor = {
@@ -589,7 +589,7 @@ export default function AllDoctors() {
           )}
         </View>
       </ScrollView>
-      <AdminFooter />
+
     </SafeAreaView>
   );
 }

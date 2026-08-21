@@ -170,7 +170,17 @@ export default function Profile() {
         }
     };
 
+    const handleLogout = async () => {
+        try {
+            await AsyncStorage.removeItem("access_token");
+            await AsyncStorage.removeItem("user");
 
+            router.replace("/(auth)/login");
+        } catch (error) {
+            console.log("Logout Error:", error);
+
+        }
+    };
     const handleSaveProfile = async () => {
         if (!fullName.trim()) {
             Alert.alert(
@@ -305,9 +315,6 @@ export default function Profile() {
                 );
             }
 
-            // IMPORTANT:
-            // Do NOT call setProfileImage() here.
-            // Keep the newly selected local image on screen.
 
             Alert.alert(
                 "Success",
@@ -704,6 +711,22 @@ export default function Profile() {
                         )}
                     </TouchableOpacity>
                 </View>
+                <TouchableOpacity
+                    style={styles.logoutButton}
+                    onPress={handleLogout}
+                    activeOpacity={0.8}
+                >
+                    <Ionicons
+                        name="log-out-outline"
+                        size={20}
+                        color="#FFFFFF"
+                    />
+
+                    <Text style={styles.logoutButtonText}>
+                        Logout
+                    </Text>
+
+                </TouchableOpacity>
             </ScrollView>
         </SafeAreaView >
     );
@@ -981,5 +1004,22 @@ const styles = StyleSheet.create({
         width: "100%",
         height: "100%",
         borderRadius: 63,
+    },
+    logoutButton: {
+        height: 48,
+        marginTop: 16,
+        borderRadius: 25,
+
+        backgroundColor: "#DC3545",
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+    },
+
+    logoutButtonText: {
+        color: "#FFFFFF",
+        fontSize: 16,
+        fontWeight: "600",
     },
 });

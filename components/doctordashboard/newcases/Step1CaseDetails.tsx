@@ -69,6 +69,7 @@ type Props = {
     value: DocumentPicker.DocumentPickerAsset | null
   ) => void;
   selectCaseDocument: () => Promise<void>;
+  caseDocumentProgress: number;
   step1Error: string;
   onNext: () => void;
   onBack: () => void;
@@ -622,9 +623,7 @@ export default function Step1CaseDetails(props: Props) {
                 </View>
               </ScrollView>
 
-              <Text
-                style={styles.implantSectionTitle}
-              >
+              <Text style={styles.implantSectionTitle}>
                 Additional Restorations
               </Text>
 
@@ -661,11 +660,7 @@ export default function Step1CaseDetails(props: Props) {
                     }
                   />
 
-                  <Text
-                    style={
-                      styles.implantOptionText
-                    }
-                  >
+                  <Text style={styles.implantOptionText}>
                     {item}
                   </Text>
                 </TouchableOpacity>
@@ -702,11 +697,7 @@ export default function Step1CaseDetails(props: Props) {
                   }
                 />
 
-                <Text
-                  style={
-                    styles.implantOptionText
-                  }
-                >
+                <Text style={styles.implantOptionText}>
                   Request a Design Preview Before
                   Production
                 </Text>
@@ -722,9 +713,7 @@ export default function Step1CaseDetails(props: Props) {
               </Text>
 
               <TextInput
-                style={
-                  styles.additionalInstructionsInput
-                }
+                style={styles.additionalInstructionsInput}
                 multiline
                 textAlignVertical="top"
                 value={props.implantInstructions}
@@ -747,16 +736,8 @@ export default function Step1CaseDetails(props: Props) {
                 style={styles.fileInput}
                 onPress={props.selectCaseDocument}
               >
-                <View
-                  style={
-                    styles.chooseFileButton
-                  }
-                >
-                  <Text
-                    style={
-                      styles.chooseFileText
-                    }
-                  >
+                <View style={styles.chooseFileButton}>
+                  <Text style={styles.chooseFileText}>
                     Choose File
                   </Text>
                 </View>
@@ -771,51 +752,52 @@ export default function Step1CaseDetails(props: Props) {
               </TouchableOpacity>
 
               {props.caseDocument && (
-                <View style={styles.selectedFileRow}>
-                  <View style={styles.selectedFileInfo}>
-                    <Ionicons
-                      name={
-                        props.caseDocument.mimeType?.startsWith(
-                          "video/"
-                        )
-                          ? "videocam-outline"
-                          : props.caseDocument.mimeType?.startsWith(
-                            "image/"
-                          )
-                            ? "image-outline"
-                            : "document-outline"
-                      }
-                      size={20}
-                      color="#0152A8"
-                    />
+                <>
+                  <View style={styles.selectedFileRow}>
+                    <View style={styles.selectedFileInfo}>
+                      <Ionicons
+                        name="document-outline"
+                        size={20}
+                        color="#0152A8"
+                      />
 
-                    <Text
-                      style={
-                        styles.selectedFileName
+                      <Text
+                        style={styles.selectedFileName}
+                        numberOfLines={1}
+                      >
+                        {props.caseDocument.name}
+                      </Text>
+                    </View>
+
+                    <TouchableOpacity
+                      style={styles.removeFileButton}
+                      onPress={() =>
+                        props.setCaseDocument(null)
                       }
-                      numberOfLines={1}
                     >
-                      {props.caseDocument.name}
-                    </Text>
+                      <Text style={styles.removeFileText}>
+                        Remove
+                      </Text>
+                    </TouchableOpacity>
                   </View>
 
-                  <TouchableOpacity
-                    style={
-                      styles.removeFileButton
-                    }
-                    onPress={() =>
-                      props.setCaseDocument(null)
-                    }
-                  >
-                    <Text
-                      style={
-                        styles.removeFileText
-                      }
-                    >
-                      Remove
+                  <View style={styles.fileProgressContainer}>
+                    <View style={styles.fileProgressTrack}>
+                      <View
+                        style={[
+                          styles.fileProgressFill,
+                          {
+                            width: `${props.caseDocumentProgress}%`,
+                          },
+                        ]}
+                      />
+                    </View>
+
+                    <Text style={styles.fileProgressText}>
+                      {String(props.caseDocumentProgress)}%
                     </Text>
-                  </TouchableOpacity>
-                </View>
+                  </View>
+                </>
               )}
             </View>
           )}
@@ -883,11 +865,7 @@ function OptionGroup({
               }
             />
 
-            <Text
-              style={
-                styles.shadeOptionText
-              }
-            >
+            <Text style={styles.shadeOptionText}>
               {item}
             </Text>
           </TouchableOpacity>
@@ -928,11 +906,7 @@ function MaterialGrid({
             }
           />
 
-          <Text
-            style={
-              styles.shadeOptionText
-            }
-          >
+          <Text style={styles.shadeOptionText}>
             {item}
           </Text>
         </TouchableOpacity>
@@ -1368,6 +1342,34 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
+  fileProgressContainer: {
+    marginTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  fileProgressTrack: {
+    flex: 1,
+    height: 8,
+    backgroundColor: "#E5E7EB",
+    borderRadius: 10,
+    overflow: "hidden",
+  },
+
+  fileProgressFill: {
+    height: "100%",
+    backgroundColor: "#0152A8",
+    borderRadius: 10,
+  },
+
+  fileProgressText: {
+    width: 45,
+    marginLeft: 8,
+    textAlign: "right",
+    color: "#000000",
+    fontSize: 14,
+    fontWeight: "700",
+  },
   buttonRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1411,4 +1413,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 8,
   },
-});
+}); 
