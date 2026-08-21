@@ -13,99 +13,51 @@ type Props = {
   patientId: string;
   age: string;
   gender: string;
-
   date: Date | null;
   time: Date | null;
   deliveryDate: Date | null;
-
   caseStages: string[];
-
   surfaceTexture: string[];
   glazedPolish: string[];
   incisalTranslucency: string[];
   preparedToothShade: string[];
-
   shadeInstructions: string;
-
   materialTypes: string[];
   crownBridgeTypes: string[];
-
   implantTable: string[][];
   additionalRestorations: string[];
-
   designPreview: boolean;
   implantInstructions: string;
-
   caseDocument:
   | DocumentPicker.DocumentPickerAsset
   | null;
-
-  uploadedFiles:
-  DocumentPicker.DocumentPickerAsset[];
-
+  uploadedFiles: DocumentPicker.DocumentPickerAsset[];
   caseDetailsOpen: boolean;
-  setCaseDetailsOpen: (
-    value: boolean
-  ) => void;
-
+  setCaseDetailsOpen: (value: boolean) => void;
   shadeOpen: boolean;
-  setShadeOpen: (
-    value: boolean
-  ) => void;
-
+  setShadeOpen: (value: boolean) => void;
   reviewImplantOpen: boolean;
-  setReviewImplantOpen: (
-    value: boolean
-  ) => void;
-
+  setReviewImplantOpen: (value: boolean) => void;
   caseDocumentOpen: boolean;
-  setCaseDocumentOpen: (
-    value: boolean
-  ) => void;
-
+  setCaseDocumentOpen: (value: boolean) => void;
   digitalFilesOpen: boolean;
-  setDigitalFilesOpen: (
-    value: boolean
-  ) => void;
-
+  setDigitalFilesOpen: (value: boolean) => void;
   additionalInfoOpen: boolean;
-  setAdditionalInfoOpen: (
-    value: boolean
-  ) => void;
-
+  setAdditionalInfoOpen: (value: boolean) => void;
   confirmDigitalMedical: boolean;
-  setConfirmDigitalMedical: (
-    value: boolean
-  ) => void;
-
+  setConfirmDigitalMedical: (value: boolean) => void;
   confirmGdpr: boolean;
-  setConfirmGdpr: (
-    value: boolean
-  ) => void;
-
+  setConfirmGdpr: (value: boolean) => void;
   confirmCaseInstructions: boolean;
-  setConfirmCaseInstructions: (
-    value: boolean
-  ) => void;
-
+  setConfirmCaseInstructions: (value: boolean) => void;
   gdprError: string;
-  setGdprError: (
-    value: string
-  ) => void;
-
+  setGdprError: (value: string) => void;
   agreementError: string;
-  setAgreementError: (
-    value: string
-  ) => void;
-
+  setAgreementError: (value: string) => void;
   consentError: string;
-  setConsentError: (
-    value: string
-  ) => void;
-
+  setConsentError: (value: string) => void;
   submitting: boolean;
   caseSubmitted: boolean;
-
   onBack: () => void;
   onSubmit: () => void;
   onSubmitAnother: () => void;
@@ -115,13 +67,9 @@ export default function Step3Review(
   props: Props
 ) {
   const displayValue = (
-    value:
-      | string
-      | null
-      | undefined
+    value: string | null | undefined
   ) => {
-    return value &&
-      value.trim() !== ""
+    return value && value.trim() !== ""
       ? value
       : "NA";
   };
@@ -159,55 +107,33 @@ export default function Step3Review(
       return "00:00";
     }
 
-    return value
-      .toTimeString()
-      .slice(0, 5);
+    return value.toTimeString().slice(0, 5);
   };
 
   if (props.caseSubmitted) {
     return (
-      <View
-        style={
-          styles.successContainer
-        }
-      >
-
+      <View style={styles.successContainer}>
         <View
           style={
             styles.successIconContainer
           }
         >
-
           <View
-            style={
-              styles.successDocument
-            }
+            style={styles.successDocument}
           >
-
             <View
-              style={
-                styles.documentLine
-              }
+              style={styles.documentLine}
             />
-
             <View
-              style={
-                styles.documentLine
-              }
+              style={styles.documentLine}
             />
-
             <View
-              style={
-                styles.documentLine
-              }
+              style={styles.documentLine}
             />
-
           </View>
 
           <View
-            style={
-              styles.successCheckCircle
-            }
+            style={styles.successCheckCircle}
           >
             <Ionicons
               name="checkmark"
@@ -215,22 +141,13 @@ export default function Step3Review(
               color="#FFFFFF"
             />
           </View>
-
         </View>
 
-        <Text
-          style={
-            styles.successTitle
-          }
-        >
+        <Text style={styles.successTitle}>
           Case Submitted Successfully!
         </Text>
 
-        <Text
-          style={
-            styles.successMessage
-          }
-        >
+        <Text style={styles.successMessage}>
           Thank you. We'll review
           and contact{"\n"}
           you soon.
@@ -240,9 +157,7 @@ export default function Step3Review(
           style={
             styles.submitAnotherButton
           }
-          onPress={
-            props.onSubmitAnother
-          }
+          onPress={props.onSubmitAnother}
         >
           <Text
             style={
@@ -252,31 +167,16 @@ export default function Step3Review(
             Submit Another Case
           </Text>
         </TouchableOpacity>
-
       </View>
     );
   }
 
   return (
-    <ScrollView
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={
-        styles.container
-      }
-    >
-
-      {/* HEADER */}
-
-      <View
-        style={
-          styles.header
-        }
-      >
-
+    <View style={styles.screenContainer}>
+      <View style={styles.header}>
         <TouchableOpacity
-          onPress={
-            props.onBack
-          }
+          onPress={props.onBack}
+          activeOpacity={0.7}
         >
           <Ionicons
             name="arrow-back"
@@ -285,32 +185,16 @@ export default function Step3Review(
           />
         </TouchableOpacity>
 
-        <Text
-          style={
-            styles.heading
-          }
-        >
+        <Text style={styles.heading}>
           Submit a Case
         </Text>
 
-        <Text
-          style={
-            styles.stepText
-          }
-        >
+        <Text style={styles.stepText}>
           3 of 3
         </Text>
-
       </View>
 
-      {/* PROGRESS */}
-
-      <View
-        style={
-          styles.progressContainer
-        }
-      >
-
+      <View style={styles.progressContainer}>
         <View
           style={[
             styles.progressCircle,
@@ -345,524 +229,411 @@ export default function Step3Review(
             styles.activeCircle,
           ]}
         />
-
       </View>
 
-      <View
-        style={
-          styles.reviewContainer
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={
+          styles.container
         }
+        style={styles.contentScroll}
       >
+        <View style={styles.reviewContainer}>
+          <Text style={styles.reviewTitle}>
+            3. Review & Confirm
+          </Text>
 
-        <Text
-          style={
-            styles.reviewTitle
-          }
-        >
-          3. Review & Confirm
-        </Text>
-
-        {/* CASE DETAILS */}
-
-        <ReviewCard
-          title="Case Details"
-          open={
-            props.caseDetailsOpen
-          }
-          onPress={() =>
-            props.setCaseDetailsOpen(
-              !props.caseDetailsOpen
-            )
-          }
-        >
-
-          <View
-            style={
-              styles.detailsGrid
+          <ReviewCard
+            title="Case Details"
+            open={props.caseDetailsOpen}
+            onPress={() =>
+              props.setCaseDetailsOpen(
+                !props.caseDetailsOpen
+              )
             }
           >
+            <View
+              style={styles.detailsGrid}
+            >
+              <Detail
+                label="Patient ID"
+                value={props.patientId}
+              />
 
-            <Detail
-              label="Patient ID"
-              value={
-                props.patientId
-              }
-            />
+              <Detail
+                label="Patient Name"
+                value={props.patientName}
+              />
 
-            <Detail
-              label="Patient Name"
-              value={
-                props.patientName
-              }
-            />
+              <Detail
+                label="Gender"
+                value={
+                  props.gender ||
+                  "Not selected"
+                }
+              />
 
-            <Detail
-              label="Gender"
-              value={
-                props.gender ||
-                "Not selected"
-              }
-            />
+              <Detail
+                label="Age"
+                value={props.age}
+              />
 
-            <Detail
-              label="Age"
-              value={
-                props.age
-              }
-            />
+              <Detail
+                label="Next Appointment"
+                value={formatDate(props.date)}
+              />
 
-            <Detail
-              label="Next Appointment"
-              value={
-                props.date
-                  ? `${formatDate(
-                    props.date
-                  )} ${formatTime(
-                    props.time
-                  )}`
-                  : "Not provided"
-              }
-            />
+              <Detail
+                label="Appointment Time"
+                value={formatTime(props.time)}
+              />
 
-            <Detail
-              label="Delivery Deadline"
-              value={formatDate(
-                props.deliveryDate
+              <Detail
+                label="Delivery Deadline"
+                value={formatDate(
+                  props.deliveryDate
+                )}
+              />
+
+              <View
+                style={
+                  styles.detailItemFull
+                }
+              >
+                <Text
+                  style={styles.detailLabel}
+                >
+                  Case Stage
+                </Text>
+
+                <Text
+                  style={styles.detailValue}
+                >
+                  {displayMultiple(
+                    props.caseStages
+                  )}
+                </Text>
+              </View>
+            </View>
+          </ReviewCard>
+
+          <ReviewCard
+            title="Shade Instructions"
+            open={props.shadeOpen}
+            onPress={() =>
+              props.setShadeOpen(
+                !props.shadeOpen
+              )
+            }
+          >
+            <ReviewRow
+              label="Surface Texture"
+              value={displayMultiple(
+                props.surfaceTexture
               )}
             />
 
-            <View
-              style={
-                styles.detailItemFull
-              }
-            >
+            <ReviewRow
+              label="Glazed Polish"
+              value={displayMultiple(
+                props.glazedPolish
+              )}
+            />
 
-              <Text
-                style={
-                  styles.detailLabel
-                }
-              >
-                Case Stage
-              </Text>
+            <ReviewRow
+              label="Incisal Translucency"
+              value={displayMultiple(
+                props.incisalTranslucency
+              )}
+            />
 
-              <Text
-                style={
-                  styles.detailValue
-                }
-              >
-                {displayMultiple(
-                  props.caseStages
-                )}
-              </Text>
+            <ReviewRow
+              label="Prepared Tooth Shade"
+              value={displayMultiple(
+                props.preparedToothShade
+              )}
+            />
 
-            </View>
+            <ReviewRow
+              label="Shade Guide Color"
+              value={displayValue(
+                props.shadeInstructions
+              )}
+            />
 
-          </View>
+            <ReviewRow
+              label="Material Type"
+              value={displayMultiple(
+                props.materialTypes
+              )}
+            />
 
-        </ReviewCard>
+            <ReviewRow
+              label="Crown & Bridge"
+              value={displayMultiple(
+                props.crownBridgeTypes
+              )}
+            />
+          </ReviewCard>
 
-        {/* SHADE */}
-
-        <ReviewCard
-          title="Shade Instructions"
-          open={
-            props.shadeOpen
-          }
-          onPress={() =>
-            props.setShadeOpen(
-              !props.shadeOpen
-            )
-          }
-        >
-
-          <ReviewRow
-            label="Surface Texture"
-            value={displayMultiple(
-              props.surfaceTexture
-            )}
-          />
-
-          <ReviewRow
-            label="Glazed Polish"
-            value={displayMultiple(
-              props.glazedPolish
-            )}
-          />
-
-          <ReviewRow
-            label="Incisal Translucency"
-            value={displayMultiple(
-              props.incisalTranslucency
-            )}
-          />
-
-          <ReviewRow
-            label="Prepared Tooth Shade"
-            value={displayMultiple(
-              props.preparedToothShade
-            )}
-          />
-
-          <ReviewRow
-            label="Shade Guide Color"
-            value={displayValue(
-              props.shadeInstructions
-            )}
-          />
-
-          <ReviewRow
-            label="Material Type"
-            value={displayMultiple(
-              props.materialTypes
-            )}
-          />
-
-          <ReviewRow
-            label="Crown & Bridge"
-            value={displayMultiple(
-              props.crownBridgeTypes
-            )}
-          />
-
-        </ReviewCard>
-
-        {/* IMPLANT */}
-
-        <ReviewCard
-          title="Implant Instructions"
-          open={
-            props.reviewImplantOpen
-          }
-          onPress={() =>
-            props.setReviewImplantOpen(
-              !props.reviewImplantOpen
-            )
-          }
-        >
-
-          {props.implantTable.map(
-            (
-              row,
-              index
-            ) => (
-              <View
-                key={
-                  index
-                }
-                style={
-                  styles.implantReviewRow
-                }
-              >
-
-                {row.map(
-                  (
-                    value,
-                    column
-                  ) => (
-                    <Text
-                      key={
-                        column
-                      }
-                      style={
-                        styles.implantReviewValue
-                      }
-                    >
-                      {
-                        value ||
-                        "NA"
-                      }
-                    </Text>
-                  )
-                )}
-
-              </View>
-            )
-          )}
-
-          <ReviewRow
-            label="Additional Restorations"
-            value={displayMultiple(
-              props.additionalRestorations
-            )}
-          />
-
-          <ReviewRow
-            label="Design Preview"
-            value={
-              props.designPreview
-                ? "Request a Design Preview Before Production"
-                : "NA"
-            }
-          />
-
-          <ReviewRow
-            label="Additional Instructions"
-            value={displayValue(
-              props.implantInstructions
-            )}
-          />
-
-        </ReviewCard>
-
-        {/* CASE DOCUMENT */}
-
-        <ReviewCard
-          title="Case Document"
-          open={
-            props.caseDocumentOpen
-          }
-          onPress={() =>
-            props.setCaseDocumentOpen(
-              !props.caseDocumentOpen
-            )
-          }
-        >
-
-          <Text
-            style={
-              styles.fileReviewName
+          <ReviewCard
+            title="Implant Instructions"
+            open={props.reviewImplantOpen}
+            onPress={() =>
+              props.setReviewImplantOpen(
+                !props.reviewImplantOpen
+              )
             }
           >
-            {
-              props.caseDocument
-                ?.name ||
-              "NA"
-            }
-          </Text>
-
-        </ReviewCard>
-
-        {/* DIGITAL FILES */}
-
-        <ReviewCard
-          title="Digital Files"
-          open={
-            props.digitalFilesOpen
-          }
-          onPress={() =>
-            props.setDigitalFilesOpen(
-              !props.digitalFilesOpen
-            )
-          }
-        >
-
-          {props.uploadedFiles.length >
-            0 ? (
-            props.uploadedFiles.map(
-              (
-                file,
-                index
-              ) => (
+            {props.implantTable.map(
+              (row, index) => (
                 <View
-                  key={`${file.uri}-${index}`}
+                  key={index}
                   style={
-                    styles.fileReviewRow
+                    styles.implantReviewRow
                   }
                 >
-
-                  <Ionicons
-                    name="document-outline"
-                    size={18}
-                    color="#0152A8"
-                  />
-
-                  <Text
-                    style={
-                      styles.fileReviewName
-                    }
-                  >
-                    {
-                      file.name
-                    }
-                  </Text>
-
+                  {row.map(
+                    (
+                      value,
+                      column
+                    ) => (
+                      <Text
+                        key={column}
+                        style={
+                          styles.implantReviewValue
+                        }
+                      >
+                        {value || "NA"}
+                      </Text>
+                    )
+                  )}
                 </View>
               )
-            )
-          ) : (
-            <Text
-              style={
-                styles.naText
+            )}
+
+            <ReviewRow
+              label="Additional Restorations"
+              value={displayMultiple(
+                props.additionalRestorations
+              )}
+            />
+
+            <ReviewRow
+              label="Design Preview"
+              value={
+                props.designPreview
+                  ? "Request a Design Preview Before Production"
+                  : "NA"
               }
-            >
-              NA
-            </Text>
-          )}
+            />
 
-        </ReviewCard>
+            <ReviewRow
+              label="Additional Instructions"
+              value={displayValue(
+                props.implantInstructions
+              )}
+            />
+          </ReviewCard>
 
-        {/* ADDITIONAL INFORMATION */}
-
-        <View
-          style={
-            styles.additionalInfoCard
-          }
-        >
-
-          <Text
-            style={
-              styles.additionalInfoTitle
+          <ReviewCard
+            title="Case Document"
+            open={props.caseDocumentOpen}
+            onPress={() =>
+              props.setCaseDocumentOpen(
+                !props.caseDocumentOpen
+              )
             }
           >
-            Additional Instructions
-          </Text>
+            <Text
+              style={styles.fileReviewName}
+            >
+              {props.caseDocument?.name ||
+                "NA"}
+            </Text>
+          </ReviewCard>
+
+          <ReviewCard
+            title="Digital Files"
+            open={props.digitalFilesOpen}
+            onPress={() =>
+              props.setDigitalFilesOpen(
+                !props.digitalFilesOpen
+              )
+            }
+          >
+            {props.uploadedFiles.length >
+              0 ? (
+              props.uploadedFiles.map(
+                (file, index) => (
+                  <View
+                    key={`${file.uri}-${index}`}
+                    style={
+                      styles.fileReviewRow
+                    }
+                  >
+                    <Ionicons
+                      name={
+                        file.mimeType?.startsWith(
+                          "video/"
+                        )
+                          ? "videocam-outline"
+                          : file.mimeType?.startsWith(
+                            "image/"
+                          )
+                            ? "image-outline"
+                            : "document-outline"
+                      }
+                      size={18}
+                      color="#0152A8"
+                    />
+
+                    <Text
+                      style={
+                        styles.fileReviewName
+                      }
+                    >
+                      {file.name}
+                    </Text>
+                  </View>
+                )
+              )
+            ) : (
+              <Text style={styles.naText}>
+                NA
+              </Text>
+            )}
+          </ReviewCard>
 
           <View
             style={
-              styles.additionalInfoBox
+              styles.additionalInfoCard
             }
           >
-
-            <Ionicons
-              name="information-circle-outline"
-              size={18}
-              color="#0152A8"
-            />
-
             <Text
               style={
-                styles.additionalInfoText
+                styles.additionalInfoTitle
               }
             >
-              Please ensure proper
-              contact points and natural
-              anatomical contours. Match
-              shade with adjacent teeth.
-              Check and adjust occlusion
-              carefully before finalizing.
-              Kindly send design preview
-              before proceeding to
-              production.
+              Additional Instructions
             </Text>
 
+            <View
+              style={
+                styles.additionalInfoBox
+              }
+            >
+              <Ionicons
+                name="information-circle-outline"
+                size={18}
+                color="#0152A8"
+              />
+
+              <Text
+                style={
+                  styles.additionalInfoText
+                }
+              >
+                Please ensure proper
+                contact points and natural
+                anatomical contours. Match
+                shade with adjacent teeth.
+                Check and adjust occlusion
+                carefully before finalizing.
+                Kindly send design preview
+                before proceeding to
+                production.
+              </Text>
+            </View>
           </View>
 
-        </View>
-
-        {/* CONFIRMATIONS */}
-
-        <View
-          style={
-            styles.confirmationSection
-          }
-        >
-
-          <Confirmation
-            checked={
-              props.confirmDigitalMedical
-            }
-            text="I confirm that all uploaded files are digital medical files and comply with applicable medical data regulations (GDPR)."
-            onPress={() => {
-              props.setConfirmDigitalMedical(
-                !props.confirmDigitalMedical
-              );
-              props.setGdprError("");
-            }}
-            error={
-              props.gdprError
-            }
-          />
-
-          <Confirmation
-            checked={
-              props.confirmGdpr
-            }
-            text="I have reviewed, understood and accept the Data Processing & Confidentiality Agreement."
-            onPress={() => {
-              props.setConfirmGdpr(
-                !props.confirmGdpr
-              );
-              props.setAgreementError(
-                ""
-              );
-            }}
-            error={
-              props.agreementError
-            }
-          />
-
-          <Confirmation
-            checked={
-              props.confirmCaseInstructions
-            }
-            text="I confirm that the patient has consented to sending these medical files (scans, photos) to the lab."
-            onPress={() => {
-              props.setConfirmCaseInstructions(
-                !props.confirmCaseInstructions
-              );
-              props.setConsentError(
-                ""
-              );
-            }}
-            error={
-              props.consentError
-            }
-          />
-
-        </View>
-
-        {/* BUTTONS */}
-
-        <View
-          style={
-            styles.reviewButtonRow
-          }
-        >
-
-          <TouchableOpacity
+          <View
             style={
-              styles.reviewBackButton
-            }
-            onPress={
-              props.onBack
+              styles.confirmationSection
             }
           >
-
-            <Text
-              style={
-                styles.reviewBackText
+            <Confirmation
+              checked={
+                props.confirmDigitalMedical
               }
-            >
-              Back
-            </Text>
+              text="I confirm that all uploaded files are digital medical files and comply with applicable medical data regulations (GDPR)."
+              onPress={() => {
+                props.setConfirmDigitalMedical(
+                  !props.confirmDigitalMedical
+                );
+                props.setGdprError("");
+              }}
+              error={props.gdprError}
+            />
 
-          </TouchableOpacity>
+            <Confirmation
+              checked={props.confirmGdpr}
+              text="I have reviewed, understood and accept the Data Processing & Confidentiality Agreement."
+              onPress={() => {
+                props.setConfirmGdpr(
+                  !props.confirmGdpr
+                );
+                props.setAgreementError("");
+              }}
+              error={props.agreementError}
+            />
 
-          <TouchableOpacity
+            <Confirmation
+              checked={
+                props.confirmCaseInstructions
+              }
+              text="I confirm that the patient has consented to sending these medical files (scans, photos) to the lab."
+              onPress={() => {
+                props.setConfirmCaseInstructions(
+                  !props.confirmCaseInstructions
+                );
+                props.setConsentError("");
+              }}
+              error={props.consentError}
+            />
+          </View>
+
+          <View
             style={
-              styles.submitButton
-            }
-            onPress={
-              props.onSubmit
-            }
-            disabled={
-              props.submitting
+              styles.reviewButtonRow
             }
           >
-
-            <Text
+            <TouchableOpacity
               style={
-                styles.submitButtonText
+                styles.reviewBackButton
               }
+              onPress={props.onBack}
             >
-              {props.submitting
-                ? "Submitting..."
-                : "Submit Case"}
-            </Text>
+              <Text
+                style={
+                  styles.reviewBackText
+                }
+              >
+                Back
+              </Text>
+            </TouchableOpacity>
 
-          </TouchableOpacity>
-
+            <TouchableOpacity
+              style={styles.submitButton}
+              onPress={props.onSubmit}
+              disabled={props.submitting}
+            >
+              <Text
+                style={
+                  styles.submitButtonText
+                }
+              >
+                {props.submitting
+                  ? "Submitting..."
+                  : "Submit Case"}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
-
-      </View>
-
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
-
-/* =====================================================
-   HELPERS
-===================================================== */
 
 function ReviewCard({
   title,
@@ -876,23 +647,13 @@ function ReviewCard({
   children: React.ReactNode;
 }) {
   return (
-    <View
-      style={
-        styles.reviewCard
-      }
-    >
-
+    <View style={styles.reviewCard}>
       <TouchableOpacity
-        style={
-          styles.reviewCardHeader
-        }
+        style={styles.reviewCardHeader}
         onPress={onPress}
       >
-
         <Text
-          style={
-            styles.reviewCardTitle
-          }
+          style={styles.reviewCardTitle}
         >
           {title}
         </Text>
@@ -906,19 +667,15 @@ function ReviewCard({
           size={20}
           color="#1F2937"
         />
-
       </TouchableOpacity>
 
       {open && (
         <View
-          style={
-            styles.reviewCardBody
-          }
+          style={styles.reviewCardBody}
         >
           {children}
         </View>
       )}
-
     </View>
   );
 }
@@ -932,27 +689,19 @@ function ReviewRow({
 }) {
   return (
     <View
-      style={
-        styles.reviewDetailRow
-      }
+      style={styles.reviewDetailRow}
     >
-
       <Text
-        style={
-          styles.reviewDetailLabel
-        }
+        style={styles.reviewDetailLabel}
       >
         {label}
       </Text>
 
       <Text
-        style={
-          styles.reviewDetailValue
-        }
+        style={styles.reviewDetailValue}
       >
         {value}
       </Text>
-
     </View>
   );
 }
@@ -965,28 +714,14 @@ function Detail({
   value: string;
 }) {
   return (
-    <View
-      style={
-        styles.detailItem
-      }
-    >
-
-      <Text
-        style={
-          styles.detailLabel
-        }
-      >
+    <View style={styles.detailItem}>
+      <Text style={styles.detailLabel}>
         {label}
       </Text>
 
-      <Text
-        style={
-          styles.detailValue
-        }
-      >
+      <Text style={styles.detailValue}>
         {value || "NA"}
       </Text>
-
     </View>
   );
 }
@@ -1004,14 +739,10 @@ function Confirmation({
 }) {
   return (
     <>
-
       <TouchableOpacity
-        style={
-          styles.confirmationRow
-        }
+        style={styles.confirmationRow}
         onPress={onPress}
       >
-
         <Ionicons
           name={
             checked
@@ -1033,7 +764,6 @@ function Confirmation({
         >
           {text}
         </Text>
-
       </TouchableOpacity>
 
       {error !== "" && (
@@ -1045,12 +775,19 @@ function Confirmation({
           {error}
         </Text>
       )}
-
     </>
   );
 }
 
 const styles = StyleSheet.create({
+  screenContainer: {
+    flex: 1,
+  },
+
+  contentScroll: {
+    flex: 1,
+  },
+
   container: {
     paddingBottom: 30,
   },
@@ -1060,7 +797,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginHorizontal: 20,
-    marginTop: 20,
+    marginTop: 35,
   },
 
   heading: {
