@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as DocumentPicker from "expo-document-picker";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import React, { useState } from "react";
 import {
     SafeAreaView,
     StyleSheet,
@@ -20,15 +20,7 @@ import {
 export default function NewCases() {
     const router = useRouter();
 
-    // =====================================================
-    // STEP
-    // =====================================================
-
     const [currentStep, setCurrentStep] = useState(1);
-
-    // =====================================================
-    // PATIENT DETAILS
-    // =====================================================
 
     const [patientName, setPatientName] = useState("");
     const [patientId, setPatientId] = useState("");
@@ -36,22 +28,15 @@ export default function NewCases() {
     const [gender, setGender] = useState("");
 
     const [date, setDate] = useState<Date | null>(null);
-    const [showDatePicker, setShowDatePicker] =
-        useState(false);
+    const [showDatePicker, setShowDatePicker] = useState(false);
 
     const [time, setTime] = useState<Date | null>(null);
-    const [showTimePicker, setShowTimePicker] =
-        useState(false);
+    const [showTimePicker, setShowTimePicker] = useState(false);
 
     const [deliveryDate, setDeliveryDate] =
         useState<Date | null>(null);
-
     const [showDeliveryPicker, setShowDeliveryPicker] =
         useState(false);
-
-    // =====================================================
-    // SHADE
-    // =====================================================
 
     const [shadeOpen, setShadeOpen] = useState(false);
 
@@ -76,19 +61,10 @@ export default function NewCases() {
     const [crownBridgeTypes, setCrownBridgeTypes] =
         useState<string[]>([]);
 
-    // =====================================================
-    // CASE STAGE
-    // =====================================================
-
     const [caseStages, setCaseStages] =
         useState<string[]>([]);
 
-    // =====================================================
-    // IMPLANT
-    // =====================================================
-
-    const [implantOpen, setImplantOpen] =
-        useState(false);
+    const [implantOpen, setImplantOpen] = useState(false);
 
     const [implantInstructions, setImplantInstructions] =
         useState("");
@@ -96,8 +72,7 @@ export default function NewCases() {
     const [additionalRestorations, setAdditionalRestorations] =
         useState<string[]>([]);
 
-    const [designPreview, setDesignPreview] =
-        useState(false);
+    const [designPreview, setDesignPreview] = useState(false);
 
     const [implantTable, setImplantTable] =
         useState<string[][]>(
@@ -107,33 +82,26 @@ export default function NewCases() {
             )
         );
 
-    // =====================================================
-    // FILES
-    // =====================================================
-
     const [uploadedFiles, setUploadedFiles] =
-        useState<
-            DocumentPicker.DocumentPickerAsset[]
-        >([]);
+        useState<DocumentPicker.DocumentPickerAsset[]>(
+            []
+        );
 
     const [caseDocument, setCaseDocument] =
-        useState<
-            DocumentPicker.DocumentPickerAsset | null
-        >(null);
+        useState<DocumentPicker.DocumentPickerAsset | null>(
+            null
+        );
 
-    // =====================================================
-    // STEP ERRORS
-    // =====================================================
+    const [uploadProgress, setUploadProgress] =
+        useState<Record<string, number>>({});
 
-    const [step1Error, setStep1Error] =
-        useState("");
+    const [caseDocumentProgress, setCaseDocumentProgress] =
+        useState(0);
 
-    const [step2Error, setStep2Error] =
-        useState("");
+    const [submitting, setSubmitting] = useState(false);
 
-    // =====================================================
-    // REVIEW STATE
-    // =====================================================
+    const [step1Error, setStep1Error] = useState("");
+    const [step2Error, setStep2Error] = useState("");
 
     const [caseDetailsOpen, setCaseDetailsOpen] =
         useState(true);
@@ -150,10 +118,6 @@ export default function NewCases() {
     const [additionalInfoOpen, setAdditionalInfoOpen] =
         useState(true);
 
-    // =====================================================
-    // CONFIRMATIONS
-    // =====================================================
-
     const [confirmDigitalMedical, setConfirmDigitalMedical] =
         useState(false);
 
@@ -163,31 +127,15 @@ export default function NewCases() {
     const [confirmCaseInstructions, setConfirmCaseInstructions] =
         useState(false);
 
-    const [gdprError, setGdprError] =
-        useState("");
+    const [gdprError, setGdprError] = useState("");
+    const [agreementError, setAgreementError] = useState("");
+    const [consentError, setConsentError] = useState("");
 
-    const [agreementError, setAgreementError] =
-        useState("");
-
-    const [consentError, setConsentError] =
-        useState("");
-
-    // =====================================================
-    // SUBMISSION
-    // =====================================================
-
-    const [caseSubmitted, setCaseSubmitted] =
-        useState(false);
-
-    // =====================================================
-    // TOGGLE HELPERS
-    // =====================================================
+    const [caseSubmitted, setCaseSubmitted] = useState(false);
 
     const toggleValue = (
         value: string,
-        setter: React.Dispatch<
-            React.SetStateAction<string[]>
-        >
+        setter: React.Dispatch<React.SetStateAction<string[]>>
     ) => {
         setter((previous) =>
             previous.includes(value)
@@ -198,18 +146,14 @@ export default function NewCases() {
         );
     };
 
-    const toggleSurfaceTexture = (
-        value: string
-    ) => {
+    const toggleSurfaceTexture = (value: string) => {
         toggleValue(
             value,
             setSurfaceTexture
         );
     };
 
-    const toggleGlazedPolish = (
-        value: string
-    ) => {
+    const toggleGlazedPolish = (value: string) => {
         toggleValue(
             value,
             setGlazedPolish
@@ -234,9 +178,7 @@ export default function NewCases() {
         );
     };
 
-    const toggleMaterialType = (
-        value: string
-    ) => {
+    const toggleMaterialType = (value: string) => {
         toggleValue(
             value,
             setMaterialTypes
@@ -252,9 +194,7 @@ export default function NewCases() {
         );
     };
 
-    const toggleCaseStage = (
-        value: string
-    ) => {
+    const toggleCaseStage = (value: string) => {
         toggleValue(
             value,
             setCaseStages
@@ -269,10 +209,6 @@ export default function NewCases() {
             setAdditionalRestorations
         );
     };
-
-    // =====================================================
-    // IMPLANT TABLE
-    // =====================================================
 
     const updateImplantCell = (
         rowIndex: number,
@@ -291,12 +227,8 @@ export default function NewCases() {
         });
     };
 
-    // =====================================================
-    // STEP 1 -> STEP 2
-    // =====================================================
-
     const goToStep2 = () => {
-        if (patientName.trim() === "") {
+        if (!patientName.trim()) {
             setStep1Error(
                 "Patient Name is required."
             );
@@ -306,10 +238,6 @@ export default function NewCases() {
         setStep1Error("");
         setCurrentStep(2);
     };
-
-    // =====================================================
-    // STEP 2 -> STEP 3
-    // =====================================================
 
     const goToStep3 = () => {
         if (uploadedFiles.length === 0) {
@@ -330,10 +258,6 @@ export default function NewCases() {
         setCurrentStep(3);
     };
 
-    // =====================================================
-    // DIGITAL FILE PICKER
-    // =====================================================
-
     const selectTestFile = async () => {
         if (uploadedFiles.length >= 5) {
             setStep2Error(
@@ -345,15 +269,9 @@ export default function NewCases() {
         try {
             const result =
                 await DocumentPicker.getDocumentAsync({
-                    type: [
-                        "model/stl",
-                        "model/obj",
-                        "application/zip",
-                        "image/jpeg",
-                        "image/png",
-                    ],
+                    type: "*/*",
                     multiple: true,
-                    copyToCacheDirectory: true,
+                    copyToCacheDirectory: false,
                 });
 
             if (result.canceled) {
@@ -369,12 +287,22 @@ export default function NewCases() {
                     remainingSlots
                 );
 
-            setUploadedFiles(
-                (previous) => [
+            setUploadedFiles((previous) => [
+                ...previous,
+                ...selectedFiles,
+            ]);
+
+            setUploadProgress((previous) => {
+                const updated = {
                     ...previous,
-                    ...selectedFiles,
-                ]
-            );
+                };
+
+                selectedFiles.forEach((file) => {
+                    updated[file.uri] = 0;
+                });
+
+                return updated;
+            });
 
             if (
                 result.assets.length >
@@ -387,7 +315,7 @@ export default function NewCases() {
                 setStep2Error("");
             }
         } catch (error) {
-            console.log(
+            console.error(
                 "FILE PICKER ERROR:",
                 error
             );
@@ -398,9 +326,26 @@ export default function NewCases() {
         }
     };
 
-    // =====================================================
-    // CASE DOCUMENT PICKER
-    // =====================================================
+    const removeUploadedFile = (
+        uri: string
+    ) => {
+        setUploadedFiles((previous) =>
+            previous.filter(
+                (file) =>
+                    file.uri !== uri
+            )
+        );
+
+        setUploadProgress((previous) => {
+            const updated = {
+                ...previous,
+            };
+
+            delete updated[uri];
+
+            return updated;
+        });
+    };
 
     const selectCaseDocument = async () => {
         try {
@@ -408,7 +353,7 @@ export default function NewCases() {
                 await DocumentPicker.getDocumentAsync({
                     type: "*/*",
                     multiple: false,
-                    copyToCacheDirectory: true,
+                    copyToCacheDirectory: false,
                 });
 
             if (result.canceled) {
@@ -418,23 +363,19 @@ export default function NewCases() {
             setCaseDocument(
                 result.assets[0]
             );
+
+            setCaseDocumentProgress(0);
         } catch (error) {
-            console.log(
+            console.error(
                 "CASE DOCUMENT PICKER ERROR:",
                 error
             );
         }
     };
 
-    // =====================================================
-    // DOCTOR ID
-    // =====================================================
-
     const getDoctorId = async () => {
         const userData =
-            await AsyncStorage.getItem(
-                "user"
-            );
+            await AsyncStorage.getItem("user");
 
         if (!userData) {
             throw new Error(
@@ -442,17 +383,16 @@ export default function NewCases() {
             );
         }
 
-        const user =
-            JSON.parse(userData);
+        const user = JSON.parse(userData);
 
         return user.id;
     };
 
-    // =====================================================
-    // SUBMIT CASE
-    // =====================================================
-
     const submitCase = async () => {
+        if (submitting) {
+            return;
+        }
+
         setGdprError("");
         setAgreementError("");
         setConsentError("");
@@ -463,7 +403,6 @@ export default function NewCases() {
             setGdprError(
                 "You must confirm GDPR compliance."
             );
-
             hasError = true;
         }
 
@@ -471,7 +410,6 @@ export default function NewCases() {
             setAgreementError(
                 "You must confirm Data Processing & Confidentiality Agreement."
             );
-
             hasError = true;
         }
 
@@ -479,7 +417,6 @@ export default function NewCases() {
             setConsentError(
                 "Patient consent is required."
             );
-
             hasError = true;
         }
 
@@ -488,105 +425,80 @@ export default function NewCases() {
         }
 
         try {
+            setSubmitting(true);
+
+            setUploadProgress((previous) => {
+                const updated = {
+                    ...previous,
+                };
+
+                uploadedFiles.forEach((file) => {
+                    updated[file.uri] = 0;
+                });
+
+                return updated;
+            });
+
+            setCaseDocumentProgress(0);
+
             const doctorId =
                 await getDoctorId();
 
             const implantDetails =
-                implantTable.map(
-                    (row) => ({
-                        implant_type:
-                            row[0],
-                        platform_diameter:
-                            row[1],
-                        screw_retained:
-                            row[2],
-                        screw_retained_hybrid:
-                            row[3],
-                        cement_retained_ti_abutment:
-                            row[4],
-                        zr_abutment:
-                            row[5],
-                        implant_bar_type:
-                            row[6],
-                        attachment_type:
-                            row[7],
-                    })
-                );
+                implantTable.map((row) => ({
+                    implant_type: row[0],
+                    platform_diameter: row[1],
+                    screw_retained: row[2],
+                    screw_retained_hybrid: row[3],
+                    cement_retained_ti_abutment:
+                        row[4],
+                    zr_abutment: row[5],
+                    implant_bar_type: row[6],
+                    attachment_type: row[7],
+                }));
 
             const payload = {
-                doctor_id:
-                    doctorId,
+                doctor_id: doctorId,
+                patient_name: patientName,
+                gender: gender || null,
+                age: age ? Number(age) : null,
 
-                patient_name:
-                    patientName,
+                appointment_date: date
+                    ? date.toISOString().split("T")[0]
+                    : null,
 
-                gender:
-                    gender || null,
+                appointment_time: time
+                    ? time.toTimeString().slice(0, 5)
+                    : null,
 
-                age:
-                    age
-                        ? Number(age)
-                        : null,
-
-                appointment_date:
-                    date
-                        ? date
-                            .toISOString()
-                            .split("T")[0]
-                        : null,
-
-                appointment_time:
-                    time
-                        ? time
-                            .toTimeString()
-                            .slice(0, 5)
-                        : null,
-
-                delivery_deadline:
-                    deliveryDate
-                        ? deliveryDate
-                            .toISOString()
-                            .split("T")[0]
-                        : null,
+                delivery_deadline: deliveryDate
+                    ? deliveryDate
+                        .toISOString()
+                        .split("T")[0]
+                    : null,
 
                 preview_status: "-",
-
                 status: "Submitted",
 
                 details: {
-                    case_stage:
-                        caseStages,
-
-                    surface_texture:
-                        surfaceTexture,
-
-                    glazed_polish:
-                        glazedPolish,
-
+                    case_stage: caseStages,
+                    surface_texture: surfaceTexture,
+                    glazed_polish: glazedPolish,
                     incisal_translucency:
                         incisalTranslucency,
-
                     prepared_tooth_shade:
                         preparedToothShade,
-
                     shade_guide_color:
                         shadeInstructions,
-
-                    material_type:
-                        materialTypes,
-
+                    material_type: materialTypes,
                     crown_bridge:
                         crownBridgeTypes,
-
                     additional_restorations:
                         additionalRestorations,
-
                     implant_details:
                         implantDetails,
-
                     design_preview:
                         designPreview,
-
                     additional_instructions:
                         implantInstructions,
                 },
@@ -594,69 +506,55 @@ export default function NewCases() {
                 files: [],
             };
 
-            console.log(
-                "CASE PAYLOAD:",
-                payload
-            );
-
             const response =
-                await submitCaseApi(
-                    payload
-                );
+                await submitCaseApi(payload);
 
-            console.log(
-                "CASE RESPONSE:",
-                response
-            );
+            const caseId = response.id;
 
-            const caseId =
-                response.id;
-
-            // Upload digital files
-            for (
-                const file of uploadedFiles
-            ) {
-                const fileResponse =
-                    await uploadCaseFile(
-                        caseId,
-                        file,
-                        "digital_file"
-                    );
-
-                console.log(
-                    "FILE UPLOAD RESPONSE:",
-                    fileResponse
+            for (const file of uploadedFiles) {
+                await uploadCaseFile(
+                    caseId,
+                    file,
+                    "digital_file",
+                    (progress: number) => {
+                        setUploadProgress(
+                            (previous: Record<string, number>) => {
+                                return {
+                                    ...previous,
+                                    [file.uri]:
+                                        progress,
+                                };
+                            }
+                        );
+                    }
                 );
             }
 
-            // Upload case document if selected
             if (caseDocument) {
-                const documentResponse =
-                    await uploadCaseFile(
-                        caseId,
-                        caseDocument,
-                        "case_document"
-                    );
-
-                console.log(
-                    "CASE DOCUMENT RESPONSE:",
-                    documentResponse
+                await uploadCaseFile(
+                    caseId,
+                    caseDocument,
+                    "case_document",
+                    (progress: number) => {
+                        setCaseDocumentProgress(
+                            progress
+                        );
+                    }
                 );
             }
 
             setCaseSubmitted(true);
         } catch (error: any) {
-            console.log(
+            console.error(
                 "CASE SUBMISSION ERROR:",
                 error?.response?.data ||
+                error?.message ||
                 error
             );
+        } finally {
+            setSubmitting(false);
         }
     };
-
-    // =====================================================
-    // NEW CASE RESET
-    // =====================================================
 
     const startNewCase = () => {
         setPatientName("");
@@ -694,6 +592,9 @@ export default function NewCases() {
         setUploadedFiles([]);
         setCaseDocument(null);
 
+        setUploadProgress({});
+        setCaseDocumentProgress(0);
+
         setStep1Error("");
         setStep2Error("");
 
@@ -706,195 +607,114 @@ export default function NewCases() {
         setConsentError("");
 
         setCaseSubmitted(false);
+        setSubmitting(false);
         setCurrentStep(1);
     };
 
-    // =====================================================
-    // RENDER
-    // =====================================================
-
     return (
-        <SafeAreaView
-            style={styles.container}
-        >
-
+        <SafeAreaView style={styles.container}>
             <View style={styles.content}>
-
                 {currentStep === 1 && (
                     <Step1CaseDetails
-                        patientName={
-                            patientName
-                        }
-                        setPatientName={
-                            setPatientName
-                        }
-
-                        patientId={
-                            patientId
-                        }
-                        setPatientId={
-                            setPatientId
-                        }
-
+                        patientName={patientName}
+                        setPatientName={setPatientName}
+                        patientId={patientId}
+                        setPatientId={setPatientId}
                         age={age}
                         setAge={setAge}
-
                         gender={gender}
-                        setGender={
-                            setGender
-                        }
-
+                        setGender={setGender}
                         date={date}
                         setDate={setDate}
-
                         time={time}
                         setTime={setTime}
-
-                        deliveryDate={
-                            deliveryDate
-                        }
-                        setDeliveryDate={
-                            setDeliveryDate
-                        }
-
-                        showDatePicker={
-                            showDatePicker
-                        }
-                        setShowDatePicker={
-                            setShowDatePicker
-                        }
-
-                        showTimePicker={
-                            showTimePicker
-                        }
-                        setShowTimePicker={
-                            setShowTimePicker
-                        }
-
+                        deliveryDate={deliveryDate}
+                        setDeliveryDate={setDeliveryDate}
+                        showDatePicker={showDatePicker}
+                        setShowDatePicker={setShowDatePicker}
+                        showTimePicker={showTimePicker}
+                        setShowTimePicker={setShowTimePicker}
                         showDeliveryPicker={
                             showDeliveryPicker
                         }
                         setShowDeliveryPicker={
                             setShowDeliveryPicker
                         }
-
-                        shadeOpen={
-                            shadeOpen
-                        }
-                        setShadeOpen={
-                            setShadeOpen
-                        }
-
-                        implantOpen={
-                            implantOpen
-                        }
-                        setImplantOpen={
-                            setImplantOpen
-                        }
-
+                        shadeOpen={shadeOpen}
+                        setShadeOpen={setShadeOpen}
+                        implantOpen={implantOpen}
+                        setImplantOpen={setImplantOpen}
                         surfaceTexture={
                             surfaceTexture
                         }
                         toggleSurfaceTexture={
                             toggleSurfaceTexture
                         }
-
-                        glazedPolish={
-                            glazedPolish
-                        }
+                        glazedPolish={glazedPolish}
                         toggleGlazedPolish={
                             toggleGlazedPolish
                         }
-
                         incisalTranslucency={
                             incisalTranslucency
                         }
                         toggleIncisalTranslucency={
                             toggleIncisalTranslucency
                         }
-
                         preparedToothShade={
                             preparedToothShade
                         }
                         togglePreparedToothShade={
                             togglePreparedToothShade
                         }
-
-                        materialTypes={
-                            materialTypes
-                        }
+                        materialTypes={materialTypes}
                         toggleMaterialType={
                             toggleMaterialType
                         }
-
                         crownBridgeTypes={
                             crownBridgeTypes
                         }
                         toggleCrownBridgeType={
                             toggleCrownBridgeType
                         }
-
-                        caseStages={
-                            caseStages
-                        }
+                        caseStages={caseStages}
                         toggleCaseStage={
                             toggleCaseStage
                         }
-
                         shadeInstructions={
                             shadeInstructions
                         }
                         setShadeInstructions={
                             setShadeInstructions
                         }
-
                         implantInstructions={
                             implantInstructions
                         }
                         setImplantInstructions={
                             setImplantInstructions
                         }
-
                         additionalRestorations={
                             additionalRestorations
                         }
                         toggleAdditionalRestoration={
                             toggleAdditionalRestoration
                         }
-
-                        designPreview={
-                            designPreview
-                        }
+                        designPreview={designPreview}
                         setDesignPreview={
                             setDesignPreview
                         }
-
-                        implantTable={
-                            implantTable
-                        }
+                        implantTable={implantTable}
                         updateImplantCell={
                             updateImplantCell
                         }
-
-                        caseDocument={
-                            caseDocument
-                        }
+                        caseDocument={caseDocument}
                         setCaseDocument={
                             setCaseDocument
                         }
-
                         selectCaseDocument={
                             selectCaseDocument
                         }
-
-                        step1Error={
-                            step1Error
-                        }
-
-                        onNext={
-                            goToStep2
-                        }
-
+                        step1Error={step1Error}
+                        onNext={goToStep2}
                         onBack={() =>
                             router.replace(
                                 "/(tabs)"
@@ -905,214 +725,157 @@ export default function NewCases() {
 
                 {currentStep === 2 && (
                     <Step2DigitalFiles
-                        uploadedFiles={
-                            uploadedFiles
-                        }
-
+                        uploadedFiles={uploadedFiles}
                         setUploadedFiles={
                             setUploadedFiles
                         }
-
-                        step2Error={
-                            step2Error
+                        uploadProgress={
+                            uploadProgress
                         }
-
+                        setUploadProgress={
+                            setUploadProgress
+                        }
+                        step2Error={step2Error}
                         setStep2Error={
                             setStep2Error
                         }
-
                         selectTestFile={
                             selectTestFile
                         }
-
+                        removeUploadedFile={
+                            removeUploadedFile
+                        }
+                        submitting={submitting}
                         onBack={() =>
                             setCurrentStep(1)
                         }
-
-                        onNext={
-                            goToStep3
-                        }
+                        onNext={goToStep3}
                     />
                 )}
 
                 {currentStep === 3 && (
                     <Step3Review
-                        patientName={
-                            patientName
-                        }
-                        patientId={
-                            patientId
-                        }
+                        patientName={patientName}
+                        patientId={patientId}
                         age={age}
                         gender={gender}
-
                         date={date}
                         time={time}
                         deliveryDate={
                             deliveryDate
                         }
-
-                        caseStages={
-                            caseStages
-                        }
-
+                        caseStages={caseStages}
                         surfaceTexture={
                             surfaceTexture
                         }
-                        glazedPolish={
-                            glazedPolish
-                        }
+                        glazedPolish={glazedPolish}
                         incisalTranslucency={
                             incisalTranslucency
                         }
                         preparedToothShade={
                             preparedToothShade
                         }
-
                         shadeInstructions={
                             shadeInstructions
                         }
-
                         materialTypes={
                             materialTypes
                         }
-
                         crownBridgeTypes={
                             crownBridgeTypes
                         }
-
                         implantTable={
                             implantTable
                         }
-
                         additionalRestorations={
                             additionalRestorations
                         }
-
                         designPreview={
                             designPreview
                         }
-
                         implantInstructions={
                             implantInstructions
                         }
-
                         caseDocument={
                             caseDocument
                         }
-
                         uploadedFiles={
                             uploadedFiles
                         }
-
                         caseDetailsOpen={
                             caseDetailsOpen
                         }
                         setCaseDetailsOpen={
                             setCaseDetailsOpen
                         }
-
-                        shadeOpen={
-                            shadeOpen
-                        }
-                        setShadeOpen={
-                            setShadeOpen
-                        }
-
+                        shadeOpen={shadeOpen}
+                        setShadeOpen={setShadeOpen}
                         reviewImplantOpen={
                             reviewImplantOpen
                         }
                         setReviewImplantOpen={
                             setReviewImplantOpen
                         }
-
                         caseDocumentOpen={
                             caseDocumentOpen
                         }
                         setCaseDocumentOpen={
                             setCaseDocumentOpen
                         }
-
                         digitalFilesOpen={
                             digitalFilesOpen
                         }
                         setDigitalFilesOpen={
                             setDigitalFilesOpen
                         }
-
                         additionalInfoOpen={
                             additionalInfoOpen
                         }
                         setAdditionalInfoOpen={
                             setAdditionalInfoOpen
                         }
-
                         confirmDigitalMedical={
                             confirmDigitalMedical
                         }
                         setConfirmDigitalMedical={
                             setConfirmDigitalMedical
                         }
-
-                        confirmGdpr={
-                            confirmGdpr
-                        }
-                        setConfirmGdpr={
-                            setConfirmGdpr
-                        }
-
+                        confirmGdpr={confirmGdpr}
+                        setConfirmGdpr={setConfirmGdpr}
                         confirmCaseInstructions={
                             confirmCaseInstructions
                         }
                         setConfirmCaseInstructions={
                             setConfirmCaseInstructions
                         }
-
-                        gdprError={
-                            gdprError
-                        }
-                        setGdprError={
-                            setGdprError
-                        }
-
+                        gdprError={gdprError}
+                        setGdprError={setGdprError}
                         agreementError={
                             agreementError
                         }
                         setAgreementError={
                             setAgreementError
                         }
-
                         consentError={
                             consentError
                         }
                         setConsentError={
                             setConsentError
                         }
-
-                        submitting={
-                            false
-                        }
-
+                        submitting={submitting}
                         caseSubmitted={
                             caseSubmitted
                         }
-
                         onBack={() =>
                             setCurrentStep(2)
                         }
-
-                        onSubmit={
-                            submitCase
-                        }
-
+                        onSubmit={submitCase}
                         onSubmitAnother={
                             startNewCase
                         }
                     />
                 )}
-
             </View>
-
         </SafeAreaView>
     );
 }
@@ -1127,14 +890,3 @@ const styles = StyleSheet.create({
         flex: 1,
     },
 });
-
-
-
-
-
-
-
-
-
-
-

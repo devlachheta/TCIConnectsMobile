@@ -3,38 +3,113 @@ import * as SecureStore from "expo-secure-store";
 
 const api = axios.create({
     baseURL: "https://tcidentallab.com/api",
-    headers: {
-        "Content-Type": "application/json",
-    },
     timeout: 30000,
 });
 
-// Add JWT token to every request
+// =========================================================
+// REQUEST INTERCEPTOR
+// =========================================================
+
 api.interceptors.request.use(
     async (config) => {
         try {
-            const token = await SecureStore.getItemAsync(
-                "access_token"
+
+            const token =
+                await SecureStore.getItemAsync(
+                    "access_token"
+                );
+
+            console.log(
+                "ACCESS TOKEN:",
+                token
             );
 
-            console.log("ACCESS TOKEN:", token);
+            // -------------------------------------------------
+            // JWT
+            // -------------------------------------------------
 
             if (token) {
-                config.headers.Authorization = `Bearer ${token}`;
+
+                config.headers =
+                    config.headers || {};
+
+                config.headers.Authorization =
+                    `Bearer ${token}`;
             }
+
+            // -------------------------------------------------
+            // IMPORTANT:
+            // Handle FormData differently from JSON
+            // -------------------------------------------------
+
+            if (
+                config.data instanceof FormData
+            ) {
+
+                console.log(
+                    "REQUEST TYPE: FormData"
+                );
+
+                /*
+                 * DO NOT set:
+                 *
+                 * Content-Type:
+                 * multipart/form-data
+                 *
+                 * manually.
+                 *
+                 * Axios / React Native needs to create
+                 * the multipart boundary automatically.
+                 */
+
+                if (
+                    config.headers
+                ) {
+
+                    delete config.headers[
+                        "Content-Type"
+                    ];
+
+                    delete config.headers[
+                        "content-type"
+                    ];
+                }
+
+            } else {
+
+                // -------------------------------------------------
+                // NORMAL JSON REQUEST
+                // -------------------------------------------------
+
+                config.headers =
+                    config.headers || {};
+
+                config.headers[
+                    "Content-Type"
+                ] = "application/json";
+            }
+
+            console.log(
+                "REQUEST:",
+                config.method?.toUpperCase(),
+                config.url
+            );
 
             return config;
 
         } catch (error) {
+
             console.error(
-                "Error reading access token:",
+                "Request interceptor error:",
                 error
             );
 
             return config;
         }
     },
+
     (error) => {
+
         console.error(
             "Request interceptor error:",
             error
@@ -44,16 +119,24 @@ api.interceptors.request.use(
     }
 );
 
-// Handle API responses/errors
+// =========================================================
+// RESPONSE INTERCEPTOR
+// =========================================================
+
 api.interceptors.response.use(
+
     (response) => {
-        // Don't log every successful API request
+
         return response;
     },
 
     async (error) => {
-        const status = error.response?.status;
-        const url = error.config?.url;
+
+        const status =
+            error.response?.status;
+
+        const url =
+            error.config?.url;
 
         console.error(
             "API ERROR:",
@@ -62,7 +145,14 @@ api.interceptors.response.use(
             status
         );
 
-        if (status === 401) {
+        // -------------------------------------------------
+        // 401
+        // -------------------------------------------------
+
+        if (
+            status === 401
+        ) {
+
             console.error(
                 "401 RESPONSE:",
                 error.response?.data
@@ -74,14 +164,29 @@ api.interceptors.response.use(
             );
         }
 
-        if (status === 403) {
+        // -------------------------------------------------
+        // 403
+        // -------------------------------------------------
+
+        if (
+            status === 403
+        ) {
+
             console.error(
                 "403 FORBIDDEN:",
                 error.response?.data
             );
         }
 
-        if (status >= 500) {
+        // -------------------------------------------------
+        // 500+
+        // -------------------------------------------------
+
+        if (
+            status &&
+            status >= 500
+        ) {
+
             console.error(
                 "SERVER ERROR:",
                 error.response?.data

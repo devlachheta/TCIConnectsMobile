@@ -18,6 +18,17 @@ type Props = {
     >
   >;
 
+  uploadProgress: Record<
+    string,
+    number
+  >;
+
+  setUploadProgress: React.Dispatch<
+    React.SetStateAction<
+      Record<string, number>
+    >
+  >;
+
   step2Error: string;
 
   setStep2Error: (
@@ -25,6 +36,12 @@ type Props = {
   ) => void;
 
   selectTestFile: () => Promise<void>;
+
+  removeUploadedFile: (
+    uri: string
+  ) => void;
+
+  submitting: boolean;
 
   onBack: () => void;
 
@@ -34,36 +51,34 @@ type Props = {
 export default function Step2DigitalFiles(
   props: Props
 ) {
-  const removeFile = (
-    index: number
+  const getFileIcon = (
+    file: DocumentPicker.DocumentPickerAsset
   ) => {
-    props.setUploadedFiles(
-      (previous) =>
-        previous.filter(
-          (_, fileIndex) =>
-            fileIndex !== index
-        )
-    );
+    if (
+      file.mimeType?.startsWith(
+        "video/"
+      )
+    ) {
+      return "videocam-outline";
+    }
 
-    props.setStep2Error("");
+    if (
+      file.mimeType?.startsWith(
+        "image/"
+      )
+    ) {
+      return "image-outline";
+    }
+
+    return "document-outline";
   };
 
   return (
-    <ScrollView
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={
-        styles.container
-      }
-    >
-
-      {/* HEADER */}
-
+    <View style={styles.screenContainer}>
       <View style={styles.header}>
-
         <TouchableOpacity
-          onPress={
-            props.onBack
-          }
+          onPress={props.onBack}
+          activeOpacity={0.7}
         >
           <Ionicons
             name="arrow-back"
@@ -79,17 +94,9 @@ export default function Step2DigitalFiles(
         <Text style={styles.stepText}>
           2 of 3
         </Text>
-
       </View>
 
-      {/* PROGRESS */}
-
-      <View
-        style={
-          styles.progressContainer
-        }
-      >
-
+      <View style={styles.progressContainer}>
         <View
           style={[
             styles.progressCircle,
@@ -111,284 +118,319 @@ export default function Step2DigitalFiles(
           ]}
         />
 
-        <View
-          style={
-            styles.progressLine
-          }
-        />
+        <View style={styles.progressLine} />
 
         <View
-          style={
-            styles.inactiveCircle
-          }
+          style={styles.inactiveCircle}
         />
-
       </View>
 
-      {/* CARD */}
-
-      <View
-        style={
-          styles.uploadCard
+      <ScrollView
+        showsVerticalScrollIndicator={
+          false
         }
+        contentContainerStyle={
+          styles.container
+        }
+        style={styles.contentScroll}
+        keyboardShouldPersistTaps="handled"
       >
-
-        <View
-          style={
-            styles.uploadTitleRow
-          }
-        >
-
-          <Text
-            style={
-              styles.uploadTitle
-            }
-          >
-            2. Upload Digital Files
-            (Max 5)
-          </Text>
-
-          <Text
-            style={
-              styles.requiredStar
-            }
-          >
-            *
-          </Text>
-
-        </View>
-
-        <Text
-          style={
-            styles.acceptedFormats
-          }
-        >
-          Accepted formats: STL,
-          OBJ, ZIP, JPG, JPEG, PNG
-        </Text>
-
-        {/* CHOOSE */}
-
-        <TouchableOpacity
-          style={
-            styles.chooseFilesRow
-          }
-          onPress={
-            props.selectTestFile
-          }
-          activeOpacity={0.7}
-        >
-
+        <View style={styles.uploadCard}>
           <View
             style={
-              styles.chooseFilesButton
+              styles.uploadTitleRow
             }
           >
+            <Text
+              style={
+                styles.uploadTitle
+              }
+            >
+              2. Upload Digital Files
+              (Max 5)
+            </Text>
 
             <Text
               style={
-                styles.chooseFilesText
+                styles.requiredStar
               }
             >
-              Choose Files
+              *
             </Text>
-
           </View>
 
           <Text
             style={
-              styles.noFileChosenText
+              styles.acceptedFormats
             }
           >
-            {props.uploadedFiles
-              .length > 0
-              ? `${props.uploadedFiles.length} file${props.uploadedFiles.length >
-                1
-                ? "s"
-                : ""
-              } selected`
-              : "No file chosen"}
+            Accepted formats: STL, OBJ,
+            ZIP, JPG, JPEG, PNG, MP4,
+            MOV, AVI, MKV, WEBM
           </Text>
 
-        </TouchableOpacity>
-
-        {/* FILE LIST */}
-
-        {props.uploadedFiles.map(
-          (
-            file,
-            index
-          ) => (
+          <TouchableOpacity
+            style={
+              styles.chooseFilesRow
+            }
+            onPress={
+              props.selectTestFile
+            }
+            activeOpacity={0.7}
+            disabled={
+              props.submitting
+            }
+          >
             <View
-              key={`${file.uri}-${index}`}
               style={
-                styles.selectedFileRow
+                styles.chooseFilesButton
               }
             >
-
-              <View
+              <Text
                 style={
-                  styles.fileInfo
+                  styles.chooseFilesText
                 }
               >
-
-                <Ionicons
-                  name="document-outline"
-                  size={18}
-                  color="#0152A8"
-                />
-
-                <Text
-                  style={
-                    styles.selectedFileName
-                  }
-                  numberOfLines={1}
-                >
-                  {
-                    file.name
-                  }
-                </Text>
-
-              </View>
-
-              <TouchableOpacity
-                style={
-                  styles.removeFileButton
-                }
-                onPress={() =>
-                  removeFile(
-                    index
-                  )
-                }
-              >
-
-                <Text
-                  style={
-                    styles.removeFileText
-                  }
-                >
-                  Remove
-                </Text>
-
-              </TouchableOpacity>
-
+                Choose Files
+              </Text>
             </View>
-          )
-        )}
-
-        {props.step2Error !== "" && (
-          <Text
-            style={
-              styles.errorText
-            }
-          >
-            {
-              props.step2Error
-            }
-          </Text>
-        )}
-
-        {/* DROP AREA */}
-
-        <TouchableOpacity
-          style={
-            styles.uploadDropArea
-          }
-          onPress={
-            props.selectTestFile
-          }
-          activeOpacity={0.7}
-        >
-
-          <Ionicons
-            name="cloud-upload-outline"
-            size={34}
-            color="#7B8494"
-          />
-
-          <Text
-            style={
-              styles.dropTitle
-            }
-          >
-            Drag and drop files here
-          </Text>
-
-          <Text
-            style={
-              styles.dropSubtitle
-            }
-          >
-            or tap to browse
-          </Text>
-
-        </TouchableOpacity>
-
-        {/* BUTTONS */}
-
-        <View
-          style={
-            styles.stepButtonRow
-          }
-        >
-
-          <TouchableOpacity
-            style={
-              styles.stepBackButton
-            }
-            onPress={
-              props.onBack
-            }
-          >
 
             <Text
               style={
-                styles.stepBackText
+                styles.noFileChosenText
               }
             >
-              Back
+              {props.uploadedFiles
+                .length > 0
+                ? `${props.uploadedFiles
+                  .length
+                } file${props.uploadedFiles
+                  .length > 1
+                  ? "s"
+                  : ""
+                } selected`
+                : "No file chosen"}
             </Text>
-
           </TouchableOpacity>
+
+          {props.uploadedFiles.map(
+            (file, index) => {
+              const progress =
+                Math.round(
+                  props.uploadProgress[
+                  file.uri
+                  ] ?? 0
+                );
+
+              return (
+                <View
+                  key={`${file.uri}-${index}`}
+                  style={
+                    styles.selectedFileCard
+                  }
+                >
+                  <View
+                    style={
+                      styles.fileTopRow
+                    }
+                  >
+                    <View
+                      style={
+                        styles.fileInfo
+                      }
+                    >
+                      <Ionicons
+                        name={
+                          getFileIcon(
+                            file
+                          ) as any
+                        }
+                        size={22}
+                        color="#0152A8"
+                      />
+
+                      <Text
+                        style={
+                          styles.selectedFileName
+                        }
+                        numberOfLines={1}
+                      >
+                        {file.name}
+                      </Text>
+                    </View>
+
+                    <TouchableOpacity
+                      style={
+                        styles.removeFileButton
+                      }
+                      onPress={() =>
+                        props.removeUploadedFile(
+                          file.uri
+                        )
+                      }
+                      disabled={
+                        props.submitting
+                      }
+                    >
+                      <Text
+                        style={
+                          styles.removeFileText
+                        }
+                      >
+                        Remove
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <View
+                    style={
+                      styles.fileProgressRow
+                    }
+                  >
+                    <View
+                      style={
+                        styles.fileProgressBackground
+                      }
+                    >
+                      <View
+                        style={[
+                          styles.fileProgressFill,
+                          {
+                            width: `${progress}%`,
+                          },
+                        ]}
+                      />
+                    </View>
+
+                    <Text
+                      style={
+                        styles.fileProgressText
+                      }
+                    >
+                      {progress}%
+                    </Text>
+                  </View>
+                </View>
+              );
+            }
+          )}
+
+          {props.step2Error !== "" && (
+            <Text
+              style={
+                styles.errorText
+              }
+            >
+              {props.step2Error}
+            </Text>
+          )}
 
           <TouchableOpacity
             style={
-              styles.stepNextButton
+              styles.uploadDropArea
             }
             onPress={
-              props.onNext
+              props.selectTestFile
+            }
+            activeOpacity={0.7}
+            disabled={
+              props.submitting
             }
           >
+            <Ionicons
+              name="cloud-upload-outline"
+              size={34}
+              color="#7B8494"
+            />
 
             <Text
               style={
-                styles.stepNextText
+                styles.dropTitle
               }
             >
-              Next
+              Drag and drop files here
             </Text>
 
+            <Text
+              style={
+                styles.dropSubtitle
+              }
+            >
+              or tap to browse
+            </Text>
           </TouchableOpacity>
 
+          <View
+            style={
+              styles.stepButtonRow
+            }
+          >
+            <TouchableOpacity
+              style={
+                styles.stepBackButton
+              }
+              onPress={
+                props.onBack
+              }
+              disabled={
+                props.submitting
+              }
+            >
+              <Text
+                style={
+                  styles.stepBackText
+                }
+              >
+                Back
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={
+                styles.stepNextButton
+              }
+              onPress={
+                props.onNext
+              }
+              disabled={
+                props.submitting
+              }
+            >
+              <Text
+                style={
+                  styles.stepNextText
+                }
+              >
+                Next
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
-
-      </View>
-
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screenContainer: {
+    flex: 1,
+  },
+
+  contentScroll: {
+    flex: 1,
+  },
+
   container: {
-    paddingBottom: 20,
+    paddingBottom: 30,
   },
 
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent:
+      "space-between",
     alignItems: "center",
     marginHorizontal: 20,
-    marginTop: 20,
+    marginTop: 35,
   },
 
   heading: {
@@ -406,8 +448,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginHorizontal: 20,
-    marginTop: 20,
-    marginBottom: 20,
+    marginTop: 12,
+    marginBottom: 16,
   },
 
   progressCircle: {
@@ -422,6 +464,9 @@ const styles = StyleSheet.create({
 
   inactiveCircle: {
     backgroundColor: "#D1D5DB",
+    width: 12,
+    height: 12,
+    borderRadius: 6,
   },
 
   progressLine: {
@@ -495,16 +540,20 @@ const styles = StyleSheet.create({
     color: "#6B7280",
   },
 
-  selectedFileRow: {
-    minHeight: 48,
+  selectedFileCard: {
     marginTop: 10,
-    paddingHorizontal: 10,
+    padding: 12,
     borderWidth: 1,
     borderColor: "#D9D9D9",
     borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+  },
+
+  fileTopRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent:
+      "space-between",
   },
 
   fileInfo: {
@@ -516,7 +565,7 @@ const styles = StyleSheet.create({
 
   selectedFileName: {
     flex: 1,
-    marginLeft: 8,
+    marginLeft: 10,
     fontSize: 13,
     color: "#374151",
   },
@@ -532,6 +581,34 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 11,
     fontWeight: "600",
+  },
+
+  fileProgressRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 12,
+  },
+
+  fileProgressBackground: {
+    flex: 1,
+    height: 8,
+    backgroundColor: "#E5E7EB",
+    borderRadius: 5,
+    overflow: "hidden",
+  },
+
+  fileProgressFill: {
+    height: "100%",
+    backgroundColor: "#0152A8",
+    borderRadius: 5,
+  },
+
+  fileProgressText: {
+    width: 42,
+    marginLeft: 8,
+    fontSize: 11,
+    color: "#374151",
+    textAlign: "right",
   },
 
   errorText: {
@@ -565,8 +642,9 @@ const styles = StyleSheet.create({
 
   stepButtonRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 145,
+    justifyContent:
+      "space-between",
+    marginTop: 30,
     marginBottom: 20,
   },
 
