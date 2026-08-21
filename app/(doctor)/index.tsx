@@ -4,7 +4,7 @@ import DashboardHeader from "@/components/doctordashboard/DashboardHeader";
 import FilterSection from "@/components/shared/FilterSection";
 import api from "@/services/api";
 import { Image } from "expo-image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import StatCard from "@/components/shared/StatCard";
@@ -147,6 +147,115 @@ export default function Index() {
     };
 
     loadDoctorName();
+  }, []);
+
+  useEffect(() => {
+    let ws: WebSocket | null = null;
+
+    const connectWebSocket = async () => {
+      try {
+        const storedUser =
+          await AsyncStorage.getItem("user");
+
+        if (!storedUser) {
+          console.log("No logged-in user found");
+          return;
+        }
+
+        const user = JSON.parse(storedUser);
+
+        if (!user?.id) {
+          console.log("User ID not found");
+          return;
+        }
+
+        const wsUrl =
+          `wss://tcidentallab.com/ws/cases/${user.id}`;
+
+        console.log(
+          "Connecting Doctor WebSocket:",
+          wsUrl
+        );
+
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+          console.log(
+            "Doctor WebSocket connected:",
+            user.id
+          );
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const message =
+              JSON.parse(event.data);
+
+            console.log(
+              "Doctor WebSocket message:",
+              message
+            );
+
+            if (
+              message.type ===
+              "case_status_updated"
+            ) {
+              console.log(
+                "REAL-TIME STATUS UPDATE:",
+                message.case_id,
+                message.status
+              );
+
+              setCases((previousCases) =>
+                previousCases.map(
+                  (caseItem) =>
+                    caseItem.id ===
+                      message.case_id
+                      ? {
+                        ...caseItem,
+                        status:
+                          message.status,
+                      }
+                      : caseItem
+                )
+              );
+            }
+          } catch (error) {
+            console.error(
+              "WebSocket message parse error:",
+              error
+            );
+          }
+        };
+
+        ws.onerror = (error) => {
+          console.error(
+            "Doctor WebSocket error:",
+            error
+          );
+        };
+
+        ws.onclose = () => {
+          console.log(
+            "Doctor WebSocket disconnected"
+          );
+        };
+
+      } catch (error) {
+        console.error(
+          "WebSocket connection error:",
+          error
+        );
+      }
+    };
+
+    connectWebSocket();
+
+    return () => {
+      if (ws) {
+        ws.close();
+      }
+    };
   }, []);
 
   return (

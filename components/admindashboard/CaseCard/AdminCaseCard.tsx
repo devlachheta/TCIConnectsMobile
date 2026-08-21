@@ -252,6 +252,7 @@ export default function AdminCaseCard({
             setUploadingPreview(false);
         }
     };
+    console.log("CASE STATUS:", caseData.status);
 
     /* =========================================================
        UI
@@ -272,9 +273,10 @@ export default function AdminCaseCard({
                 Submitted
             ================================================= */}
 
+
             <Header
                 caseId={caseData.id}
-                status={caseData.status}
+                status={status}
                 doctorName={caseData.doctor_name}
                 patientName={caseData.patient_name}
                 isEdited={caseData.is_edited}
