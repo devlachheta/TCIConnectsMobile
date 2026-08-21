@@ -15,7 +15,6 @@ import {
 
 import {
     deleteCase,
-    uploadPreviewFile,
 } from "@/services/caseService";
 import * as DocumentPicker from "expo-document-picker";
 
@@ -160,11 +159,6 @@ export default function AdminCaseCard({
             const file = result.assets[0];
 
             setUploadingPreview(true);
-
-            await uploadPreviewFile(
-                caseData.id,
-                file
-            );
 
             Alert.alert(
                 "Success",
