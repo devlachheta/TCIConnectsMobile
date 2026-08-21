@@ -1,63 +1,81 @@
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Image } from "expo-image";
-import { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
-interface HeaderProps {
-    caseId: string;
-    status: string;
-    onMenuPress: () => void;
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
+interface HeaderProps {
+    caseId: string | number;
+    status: string;
+    patientName?: string;
+    doctorName?: string;
+    expanded: boolean;
+    isEdited?: boolean;
+    onExpandPress: () => void;
 }
+
 export default function Header({
     caseId,
     status,
-    onMenuPress,
-
+    patientName,
+    doctorName,
+    expanded,
+    isEdited = false,
+    onExpandPress,
 }: HeaderProps) {
-    const [profileImage, setProfileImage] = useState<string | null>(null);
-    useEffect(() => {
-        const loadProfileImage = async () => {
-            try {
-                const storedUser = await AsyncStorage.getItem("user");
-
-                if (storedUser) {
-                    const user = JSON.parse(storedUser);
-
-                    if (user.profile_image) {
-                        const imageUrl = user.profile_image.startsWith("http")
-                            ? `${user.profile_image}?t=${Date.now()}`
-                            : `https://tcidentallab.com/tci-uploads/profile/${encodeURIComponent(
-                                user.profile_image
-                            )}?t=${Date.now()}`;
-
-                        setProfileImage(imageUrl);
-                    } else {
-                        setProfileImage(null);
-                    }
-                }
-            } catch (error) {
-                console.log("Profile Image Error:", error);
-            }
-        };
-
-        loadProfileImage();
-    }, []);
-
     return (
-        <View style={styles.container}>
+        <TouchableOpacity
+            style={styles.container}
+            onPress={onExpandPress}
+            activeOpacity={0.75}
+        >
+            {/* LEFT SECTION */}
             <View style={styles.leftSection}>
+
+                {/* PDF ICON */}
                 <View style={styles.iconContainer}>
-                    <Image
-                        source={require("@/assets/images/pdfsvg.png")}
-                        style={styles.icon}
+                    <Ionicons
+                        name="document-text-outline"
+                        size={28}
+                        color="#1F2937"
                     />
                 </View>
 
+                {/* CASE INFORMATION */}
                 <View style={styles.textContainer}>
-                    <Text style={styles.caseTitle}>
+                    <Text
+                        style={styles.caseTitle}
+                        numberOfLines={1}
+                    >
                         Case #{caseId}
                     </Text>
+                    {doctorName && (
+                        <Text
+                            style={styles.infoText}
+                            numberOfLines={1}
+                        >
+                            Doctor: {doctorName}
+                        </Text>
+                    )}
+
+                    {/* PATIENT NAME - DOCTOR + ADMIN */}
+                    <Text
+                        style={styles.infoText}
+                        numberOfLines={1}
+                    >
+                        Patient: {patientName || "-"}
+                    </Text>
+
+                    {isEdited && (
+                        <View style={styles.editedBadge}>
+                            <Ionicons
+                                name="create-outline"
+                                size={13}
+                                color="#D97706"
+                            />
+
+                            <Text style={styles.editedText}>
+                                Edited
+                            </Text>
+                        </View>
+                    )}
 
                     <View style={styles.statusBadge}>
                         <Text style={styles.statusText}>
@@ -67,21 +85,19 @@ export default function Header({
                 </View>
             </View>
 
-            <View style={styles.profileImage}>
-                {profileImage ? (
-                    <Image
-                        source={{ uri: profileImage }}
-                        style={styles.profileImagePhoto}
-                    />
-                ) : (
-                    <Ionicons
-                        name="person"
-                        size={28}
-                        color="#0152A8"
-                    />
-                )}
+            {/* RIGHT SECTION - ONLY DROPDOWN */}
+            <View style={styles.expandIconContainer}>
+                <Ionicons
+                    name={
+                        expanded
+                            ? "chevron-up-outline"
+                            : "chevron-down-outline"
+                    }
+                    size={24}
+                    color="#1F2937"
+                />
             </View>
-        </View>
+        </TouchableOpacity>
     );
 }
 
@@ -89,14 +105,16 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: "row",
         justifyContent: "space-between",
-        alignItems: "flex-start",
+        alignItems: "center",
         padding: 18,
-        zIndex: 1,
+        backgroundColor: "#FFFFFF",
+        width: "100%",
     },
 
     leftSection: {
         flexDirection: "row",
         alignItems: "center",
+        flex: 1,
     },
 
     iconContainer: {
@@ -108,18 +126,39 @@ const styles = StyleSheet.create({
         alignItems: "center",
         marginRight: 14,
     },
+    infoText: {
+        fontSize: 14,
+        fontWeight: "500",
+        color: "#4B5563",
+        marginBottom: 3,
+    },
 
-    icon: {
-        width: 16.67,
-        height: 13.33,
+    editedBadge: {
+        flexDirection: "row",
+        alignItems: "center",
+        alignSelf: "flex-start",
+        backgroundColor: "#FFF7ED",
+        borderRadius: 12,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        marginTop: 2,
+        marginBottom: 3,
+    },
+
+    editedText: {
+        fontSize: 12,
+        fontWeight: "600",
+        color: "#D97706",
+        marginLeft: 4,
     },
 
     textContainer: {
         justifyContent: "center",
+        flex: 1,
     },
 
     caseTitle: {
-        fontSize: 28,
+        fontSize: 22,
         fontWeight: "700",
         color: "#1F2937",
     },
@@ -135,25 +174,15 @@ const styles = StyleSheet.create({
 
     statusText: {
         fontSize: 15,
-        fontFamily: "roboto",
         fontWeight: "500",
         color: "#808080",
     },
-    profileImage: {
-        width: 46,
-        height: 46,
-        borderRadius: 23,
-        backgroundColor: "#E8EEF6",
-        borderWidth: 1,
-        borderColor: "#D4DDE8",
+
+    expandIconContainer: {
+        width: 40,
+        height: 40,
         alignItems: "center",
         justifyContent: "center",
-        overflow: "hidden",
-    },
-
-    profileImagePhoto: {
-        width: "100%",
-        height: "100%",
-        borderRadius: 23,
+        marginLeft: 10,
     },
 });

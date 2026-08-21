@@ -248,58 +248,193 @@ export const confirmPreviewFiles =
     }
   };
 
-export const approvePreview =
-  async (
-    caseId: number | string
-  ) => {
-    try {
-      const response =
-        await api.put(
-          `/cases/${caseId}/approve-preview`
-        );
 
-      console.log(
-        "Preview approved:",
-        response.data
-      );
+export const approvePreview = async (
+  caseId: number | string
+) => {
+  try {
+    const response = await api.put(
+      `/cases/${caseId}/approve-preview`
+    );
 
-      return response.data;
-    } catch (error: any) {
-      console.error(
-        "Error approving preview:",
-        error?.response?.data ||
-        error?.message ||
-        error
-      );
+    console.log(
+      " Preview approved:",
+      response.data
+    );
 
-      throw error;
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      "Error approving preview:",
+      error?.response?.data ||
+      error?.message ||
+      error
+    );
+
+    throw error;
+  }
+};
+
+
+export const rejectPreview = async (
+  caseId: number | string
+) => {
+  try {
+    const response = await api.put(
+      `/cases/${caseId}/reject-preview`
+    );
+
+    console.log(
+      " Preview rejected:",
+      response.data
+    );
+
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      "Error rejecting preview:",
+      error?.response?.data ||
+      error?.message ||
+      error
+    );
+
+    throw error;
+  }
+};
+
+
+export const getCases = async ({
+  page = 1,
+  limit = 10,
+  search = "",
+  status = "",
+  deadline = "",
+}: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+  deadline?: string;
+} = {}) => {
+  try {
+    const params: any = {
+      page,
+      limit,
+    };
+
+    if (search.trim()) {
+      params.search = search.trim();
     }
-  };
 
-export const rejectPreview =
-  async (
-    caseId: number | string
-  ) => {
-    try {
-      const response =
-        await api.put(
-          `/cases/${caseId}/reject-preview`
-        );
-
-      console.log(
-        "Preview rejected:",
-        response.data
-      );
-
-      return response.data;
-    } catch (error: any) {
-      console.error(
-        "Error rejecting preview:",
-        error?.response?.data ||
-        error?.message ||
-        error
-      );
-
-      throw error;
+    if (status) {
+      params.status = status;
     }
-  };
+
+    if (deadline) {
+      params.deadline = deadline;
+    }
+
+    console.log(
+      "Fetching cases with params:",
+      params
+    );
+
+    const response = await api.get(
+      "/cases",
+      {
+        params,
+      }
+    );
+
+    console.log(
+      "Cases API response:",
+      response.data
+    );
+
+    return response.data;
+
+  } catch (error: any) {
+    console.error(
+      "Error fetching cases:",
+      error?.response?.data ||
+      error?.message ||
+      error
+    );
+
+    throw error;
+  }
+};
+
+
+export const doctorEditCase = async (
+  caseId: number | string,
+  payload: any
+) => {
+  try {
+    const response = await api.put(
+      `/doctor/cases/${caseId}/edit`,
+      payload
+    );
+
+    console.log(
+      "Doctor case edited:",
+      response.data
+    );
+
+    return response.data;
+
+  } catch (error: any) {
+    console.error(
+      "Error editing doctor case:",
+      error?.response?.data ||
+      error?.message ||
+      error
+    );
+
+    throw error;
+  }
+};
+
+
+export const uploadPreviewFile = async (
+  caseId: number | string,
+  file: any
+) => {
+  try {
+    // Step 1: Upload preview file
+    const uploadResponse =
+      await uploadCaseFile(
+        Number(caseId),
+        file,
+        "preview_file"
+      );
+
+    console.log(
+      "Preview uploaded:",
+      uploadResponse
+    );
+
+    // Step 2: Confirm preview files
+    // Changes preview_status to "Waiting User"
+    const confirmResponse =
+      await confirmPreviewFiles(caseId);
+
+    console.log(
+      "Preview confirmed:",
+      confirmResponse
+    );
+
+    return confirmResponse;
+
+  } catch (error: any) {
+    console.error(
+      "Error uploading preview:",
+      error?.response?.data ||
+      error?.message ||
+      error
+    );
+
+    throw error;
+  }
+};
+

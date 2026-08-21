@@ -1,5 +1,5 @@
 
-import CaseCard from "@/components/doctordashboard/CaseCard";
+import CaseCard from "@/components/doctordashboard/CaseCard/DoctorCaseCard";
 import DashboardHeader from "@/components/doctordashboard/DashboardHeader";
 import FilterSection from "@/components/shared/FilterSection";
 import api from "@/services/api";
