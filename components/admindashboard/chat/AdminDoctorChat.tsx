@@ -587,7 +587,6 @@ export default function AdminDoctorChat({
               />
             )}
           </View>
-
           {/* Doctor Name */}
           <View style={styles.doctorInfo}>
             <Text
