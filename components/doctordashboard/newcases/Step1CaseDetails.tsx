@@ -105,11 +105,6 @@ export default function Step1CaseDetails(props: Props) {
           onPress={props.onBack}
           activeOpacity={0.7}
         >
-          <Ionicons
-            name="arrow-back"
-            size={24}
-            color="#021E48"
-          />
         </TouchableOpacity>
 
         <Text style={styles.heading}>
@@ -933,7 +928,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginHorizontal: 20,
-    marginTop: 35,
+    marginTop: 5,
   },
 
   heading: {

@@ -3,7 +3,6 @@ import * as DocumentPicker from "expo-document-picker";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-    SafeAreaView,
     StyleSheet,
     View,
 } from "react-native";
@@ -11,6 +10,7 @@ import {
 import Step1CaseDetails from "@/components/doctordashboard/newcases/Step1CaseDetails";
 import Step2DigitalFiles from "@/components/doctordashboard/newcases/Step2DigitalFiles";
 import Step3Review from "@/components/doctordashboard/newcases/Step3Review";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
     submitCase as submitCaseApi,

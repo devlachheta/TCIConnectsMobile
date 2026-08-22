@@ -131,7 +131,7 @@ export default function DashboardDrawer({
                 <TouchableOpacity
                   onPress={() => {
                     onClose();
-                    router.push("/(tabs)/profile");
+                    router.push("/(doctor)/profile");
                   }}>
                   <Text style={styles.viewProfile}>
                     View Profile
@@ -144,7 +144,7 @@ export default function DashboardDrawer({
                 style={styles.activeMenu}
                 onPress={() => {
                   onClose();
-                  router.push("/(tabs)");
+                  router.push("/(doctor)");
                 }}
               >
 
@@ -156,7 +156,7 @@ export default function DashboardDrawer({
                 style={styles.menuItem}
                 onPress={() => {
                   onClose();
-                  router.push("/(tabs)/cases");
+                  router.push("/(doctor)/cases");
                 }}
               >
                 <Ionicons name="folder-open-outline" size={22} color="#4B5563" />
@@ -166,7 +166,7 @@ export default function DashboardDrawer({
               <TouchableOpacity style={styles.menuItem}
                 onPress={() => {
                   onClose();
-                  router.push("/(tabs)/newcases")
+                  router.push("/(doctor)/newcases")
                 }}
               >
                 <Ionicons name="add-circle-outline" size={22} color="#4B5563" />
@@ -176,7 +176,7 @@ export default function DashboardDrawer({
               <TouchableOpacity style={styles.menuItem}
                 onPress={() => {
                   onClose();
-                  router.push("/(tabs)/chat")
+                  router.push("/(doctor)/chat")
                 }
                 }>
                 <Ionicons name="chatbubble-outline" size={22} color="#4B5563" />
@@ -186,7 +186,7 @@ export default function DashboardDrawer({
               <TouchableOpacity style={styles.menuItem}
                 onPress={() => {
                   onClose();
-                  router.push("/(tabs)/pricing");
+                  router.push("/(doctor)/pricing");
                 }}>
                 <Ionicons
                   name="pricetag-outline"
@@ -201,7 +201,7 @@ export default function DashboardDrawer({
               <TouchableOpacity style={styles.menuItem}
                 onPress={() => {
                   onClose();
-                  router.push("/(tabs)/profile")
+                  router.push("/(doctor)/profile")
                 }}
               >
                 <Ionicons
@@ -217,7 +217,7 @@ export default function DashboardDrawer({
               <TouchableOpacity style={styles.menuItem}
                 onPress={() => {
                   onClose();
-                  router.push("/(tabs)/qa");
+                  router.push("/(doctor)/qa");
                 }}>
                 <Ionicons
                   name="help-circle-outline"
@@ -232,7 +232,7 @@ export default function DashboardDrawer({
               <TouchableOpacity style={styles.menuItem}
                 onPress={() => {
                   onClose();
-                  router.push("/(tabs)/gdpr");
+                  router.push("/(doctor)/gdpr");
                 }}>
                 <Ionicons
                   name="shield-checkmark-outline"
@@ -247,7 +247,7 @@ export default function DashboardDrawer({
               <TouchableOpacity style={styles.menuItem}
                 onPress={() => {
                   onClose();
-                  router.push("/(tabs)/helpfaq");
+                  router.push("/(doctor)/helpfaq");
                 }}>
                 <Ionicons
                   name="headset-outline"

@@ -797,7 +797,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginHorizontal: 20,
-    marginTop: 35,
+    marginTop: 5,
   },
 
   heading: {
