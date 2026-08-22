@@ -9,11 +9,13 @@ import {
     ActivityIndicator,
     Image,
     Keyboard,
+    KeyboardAvoidingView,
     NativeScrollEvent,
     NativeSyntheticEvent,
     ScrollView,
     StyleSheet,
     Text,
+    Platform,
     TextInput,
     TouchableOpacity,
     View,
@@ -701,7 +703,11 @@ export default function Chat() {
     // =====================================================
 
     return (
-        <View style={styles.container}>
+        <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+        >
 
             {/* =====================================================
           HEADER
@@ -980,7 +986,7 @@ export default function Chat() {
                     )}
                 </TouchableOpacity>
             </View>
-        </View>
+        </KeyboardAvoidingView>
     );
 }
 
