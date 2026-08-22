@@ -8,10 +8,9 @@ import React, {
 import {
     ActivityIndicator,
     Image,
-    KeyboardAvoidingView,
+    Keyboard,
     NativeScrollEvent,
     NativeSyntheticEvent,
-    Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -57,41 +56,54 @@ interface Message {
 // =====================================================
 
 export default function Chat() {
+    // =====================================================
+    // STATE
+    // =====================================================
 
-    const [messages, setMessages] =
-        useState<Message[]>([]);
+    const [messages, setMessages] = useState<Message[]>(
+        []
+    );
 
-    const [message, setMessage] =
-        useState("");
+    const [message, setMessage] = useState("");
 
-    const [loading, setLoading] =
-        useState(true);
+    const [loading, setLoading] = useState(true);
 
-    const [sending, setSending] =
+    const [sending, setSending] = useState(false);
+
+    // =====================================================
+    // KEYBOARD
+    // =====================================================
+
+    const [keyboardVisible, setKeyboardVisible] =
         useState(false);
 
-    // Pagination
+    // =====================================================
+    // PAGINATION
+    // =====================================================
+
     const [loadingOlder, setLoadingOlder] =
         useState(false);
 
     const [hasMoreMessages, setHasMoreMessages] =
         useState(true);
 
-    // Number of messages already loaded
-    const loadedCountRef =
-        useRef(0);
+    const loadedCountRef = useRef(0);
 
-    // Scroll
+    // =====================================================
+    // SCROLL
+    // =====================================================
+
     const scrollViewRef =
         useRef<ScrollView>(null);
 
-    const isNearBottom =
-        useRef(true);
+    const isNearBottom = useRef(true);
 
-    const isFirstLoad =
-        useRef(true);
+    const isFirstLoad = useRef(true);
 
-    // WebSocket
+    // =====================================================
+    // WEBSOCKET
+    // =====================================================
+
     const websocketRef =
         useRef<WebSocket | null>(null);
 
@@ -101,14 +113,11 @@ export default function Chat() {
 
     const getDoctorId =
         async (): Promise<number | null> => {
-
             try {
-
                 const storedUser =
                     await AsyncStorage.getItem("user");
 
                 if (!storedUser) {
-
                     console.log(
                         "Doctor user not found"
                     );
@@ -125,9 +134,7 @@ export default function Chat() {
                 );
 
                 return Number(user.id);
-
             } catch (error) {
-
                 console.log(
                     "Get doctor ID error:",
                     error
@@ -138,6 +145,49 @@ export default function Chat() {
         };
 
     // =====================================================
+    // KEYBOARD LISTENERS
+    // =====================================================
+
+    useEffect(() => {
+        const keyboardShowListener =
+            Keyboard.addListener(
+                "keyboardDidShow",
+                () => {
+                    setKeyboardVisible(true);
+
+                    // Keep latest messages visible
+                    // after keyboard opens.
+                    setTimeout(() => {
+                        scrollViewRef.current?.scrollToEnd({
+                            animated: true,
+                        });
+                    }, 100);
+                }
+            );
+
+        const keyboardHideListener =
+            Keyboard.addListener(
+                "keyboardDidHide",
+                () => {
+                    setKeyboardVisible(false);
+
+                    setTimeout(() => {
+                        if (isNearBottom.current) {
+                            scrollViewRef.current?.scrollToEnd({
+                                animated: false,
+                            });
+                        }
+                    }, 100);
+                }
+            );
+
+        return () => {
+            keyboardShowListener.remove();
+            keyboardHideListener.remove();
+        };
+    }, []);
+
+    // =====================================================
     // GET MESSAGES
     // =====================================================
 
@@ -145,9 +195,7 @@ export default function Chat() {
         offset = 0,
         loadOlder = false
     ) => {
-
         try {
-
             const doctorId =
                 await getDoctorId();
 
@@ -180,25 +228,21 @@ export default function Chat() {
                 `offset=${offset}`
             );
 
-            // =========================================
+            // =====================================================
             // INITIAL LOAD
-            // =========================================
+            // =====================================================
 
             if (!loadOlder) {
-
                 setMessages(newMessages);
-
             }
 
-            // =========================================
+            // =====================================================
             // LOAD OLDER MESSAGES
-            // =========================================
+            // =====================================================
 
             else {
-
                 setMessages(
                     (previousMessages) => {
-
                         const existingIds =
                             new Set(
                                 previousMessages.map(
@@ -222,34 +266,32 @@ export default function Chat() {
                 );
             }
 
-            // Update loaded count
+            // =====================================================
+            // UPDATE LOADED COUNT
+            // =====================================================
+
             loadedCountRef.current =
                 offset + newMessages.length;
 
-            // If fewer than PAGE_SIZE messages
-            // were returned, there are no more.
+            // =====================================================
+            // CHECK MORE
+            // =====================================================
+
             if (
                 newMessages.length <
                 PAGE_SIZE
             ) {
-
                 setHasMoreMessages(false);
-
             }
-
         } catch (error: any) {
-
             console.log(
                 "Get messages error:",
                 error?.response?.data ||
                 error?.message ||
                 error
             );
-
         } finally {
-
             setLoading(false);
-
             setLoadingOlder(false);
         }
     };
@@ -260,7 +302,6 @@ export default function Chat() {
 
     const loadOlderMessages =
         async () => {
-
             if (
                 loadingOlder ||
                 !hasMoreMessages
@@ -288,9 +329,7 @@ export default function Chat() {
 
     const connectWebSocket =
         async (doctorId: number) => {
-
             try {
-
                 const wsUrl =
                     `wss://tcidentallab.com/ws/chat/${doctorId}`;
 
@@ -302,71 +341,68 @@ export default function Chat() {
                 const ws =
                     new WebSocket(wsUrl);
 
-                websocketRef.current =
-                    ws;
+                websocketRef.current = ws;
 
                 ws.onopen = () => {
-
                     console.log(
-                        " Doctor WebSocket connected"
+                        "Doctor WebSocket connected"
                     );
                 };
 
-
                 ws.onmessage = (event) => {
                     try {
-                        const data = JSON.parse(event.data);
+                        const data =
+                            JSON.parse(event.data);
 
                         console.log(
                             "WebSocket event:",
                             data
                         );
 
-                        // ==========================================
+                        // =====================================================
                         // CASE STATUS UPDATE
-                        // ==========================================
+                        // =====================================================
 
-                        if (data.type === "case_status_updated") {
-
+                        if (
+                            data.type ===
+                            "case_status_updated"
+                        ) {
                             console.log(
                                 "Case status updated:",
                                 data.case_id,
                                 data.status
                             );
 
-                            // We will handle the case list
-                            // in the Doctor Cases screen.
-
                             return;
                         }
 
-                        // ==========================================
+                        // =====================================================
                         // NORMAL CHAT MESSAGE
-                        // ==========================================
+                        // =====================================================
 
-                        const incomingMessage: Message = data;
+                        const incomingMessage: Message =
+                            data;
 
-                        setMessages((prevMessages) => {
+                        setMessages(
+                            (prevMessages) => {
+                                const alreadyExists =
+                                    prevMessages.some(
+                                        (item) =>
+                                            item.id ===
+                                            incomingMessage.id
+                                    );
 
-                            const alreadyExists =
-                                prevMessages.some(
-                                    (item) =>
-                                        item.id ===
-                                        incomingMessage.id
-                                );
+                                if (alreadyExists) {
+                                    return prevMessages;
+                                }
 
-                            if (alreadyExists) {
-                                return prevMessages;
+                                return [
+                                    ...prevMessages,
+                                    incomingMessage,
+                                ];
                             }
-
-                            return [
-                                ...prevMessages,
-                                incomingMessage,
-                            ];
-                        });
-
+                        );
                     } catch (error) {
-
                         console.log(
                             "WebSocket message parse error:",
                             error
@@ -374,26 +410,21 @@ export default function Chat() {
                     }
                 };
 
-
                 ws.onerror = (error) => {
-
                     console.log(
-                        " WebSocket error:",
+                        "WebSocket error:",
                         error
                     );
                 };
 
                 ws.onclose = (event) => {
-
                     console.log(
-                        " WebSocket closed:",
+                        "WebSocket closed:",
                         event.code,
                         event.reason
                     );
                 };
-
             } catch (error) {
-
                 console.log(
                     "WebSocket connection error:",
                     error
@@ -407,9 +438,7 @@ export default function Chat() {
 
     const markMessagesAsRead =
         async () => {
-
             try {
-
                 const doctorId =
                     await getDoctorId();
 
@@ -424,9 +453,7 @@ export default function Chat() {
                 console.log(
                     "Admin messages marked as read"
                 );
-
             } catch (error: any) {
-
                 console.log(
                     "Mark messages as read error:",
                     error?.response?.data ||
@@ -441,12 +468,10 @@ export default function Chat() {
     // =====================================================
 
     useEffect(() => {
-
         let mounted = true;
 
         const openChat =
             async () => {
-
                 const doctorId =
                     await getDoctorId();
 
@@ -457,17 +482,16 @@ export default function Chat() {
                     return;
                 }
 
-                // Load only latest 30 messages
+                // Load latest messages
                 await getMessages(
                     0,
                     false
                 );
 
-                // Mark existing admin messages
-                // as read
+                // Mark admin messages read
                 await markMessagesAsRead();
 
-                // Open real-time connection
+                // Connect real-time
                 await connectWebSocket(
                     doctorId
                 );
@@ -475,31 +499,24 @@ export default function Chat() {
 
         openChat();
 
-        isFirstLoad.current =
-            true;
-
-        isNearBottom.current =
-            true;
+        isFirstLoad.current = true;
+        isNearBottom.current = true;
 
         return () => {
-
             mounted = false;
 
             if (
                 websocketRef.current
             ) {
-
                 console.log(
                     "Closing Doctor WebSocket"
                 );
 
                 websocketRef.current.close();
 
-                websocketRef.current =
-                    null;
+                websocketRef.current = null;
             }
         };
-
     }, []);
 
     // =====================================================
@@ -507,21 +524,17 @@ export default function Chat() {
     // =====================================================
 
     const handleScroll = (
-        event:
-            NativeSyntheticEvent<
-                NativeScrollEvent
-            >
+        event: NativeSyntheticEvent<NativeScrollEvent>
     ) => {
-
         const {
             layoutMeasurement,
             contentOffset,
             contentSize,
         } = event.nativeEvent;
 
-        // ---------------------------------------------
-        // CHECK IF USER IS NEAR BOTTOM
-        // ---------------------------------------------
+        // =====================================================
+        // CHECK BOTTOM
+        // =====================================================
 
         const distanceFromBottom =
             contentSize.height -
@@ -533,16 +546,15 @@ export default function Chat() {
         isNearBottom.current =
             distanceFromBottom < 80;
 
-        // ---------------------------------------------
-        // LOAD OLDER MESSAGES AT TOP
-        // ---------------------------------------------
+        // =====================================================
+        // LOAD OLDER
+        // =====================================================
 
         if (
             contentOffset.y <= 50 &&
             !loadingOlder &&
             hasMoreMessages
         ) {
-
             loadOlderMessages();
         }
     };
@@ -552,7 +564,6 @@ export default function Chat() {
     // =====================================================
 
     useEffect(() => {
-
         if (
             messages.length === 0
         ) {
@@ -563,36 +574,32 @@ export default function Chat() {
         if (
             isFirstLoad.current
         ) {
-
             setTimeout(() => {
-
-                scrollViewRef.current?.scrollToEnd({
-                    animated: false,
-                });
+                scrollViewRef.current?.scrollToEnd(
+                    {
+                        animated: false,
+                    }
+                );
 
                 isFirstLoad.current =
                     false;
-
             }, 150);
 
             return;
         }
 
         // New message
-        // Only scroll if already near bottom
         if (
             isNearBottom.current
         ) {
-
             setTimeout(() => {
-
-                scrollViewRef.current?.scrollToEnd({
-                    animated: true,
-                });
-
+                scrollViewRef.current?.scrollToEnd(
+                    {
+                        animated: true,
+                    }
+                );
             }, 100);
         }
-
     }, [messages]);
 
     // =====================================================
@@ -601,7 +608,6 @@ export default function Chat() {
 
     const sendMessage =
         async () => {
-
             const trimmedMessage =
                 message.trim();
 
@@ -613,7 +619,6 @@ export default function Chat() {
             }
 
             try {
-
                 setSending(true);
 
                 const doctorId =
@@ -626,22 +631,24 @@ export default function Chat() {
                 const ws =
                     websocketRef.current;
 
-                // Check WebSocket connection
+                // =====================================================
+                // CHECK WEBSOCKET
+                // =====================================================
+
                 if (
                     !ws ||
                     ws.readyState !==
                     WebSocket.OPEN
                 ) {
-
                     console.log(
-                        "❌ WebSocket is not connected"
+                        "WebSocket is not connected"
                     );
 
                     return;
                 }
 
                 console.log(
-                    "📤 Sending WebSocket message:",
+                    "Sending WebSocket message:",
                     {
                         receiver_id:
                             ADMIN_ID,
@@ -663,17 +670,13 @@ export default function Chat() {
 
                 isNearBottom.current =
                     true;
-
             } catch (error: any) {
-
                 console.log(
                     "Send message error:",
                     error?.message ||
                     error
                 );
-
             } finally {
-
                 setSending(false);
             }
         };
@@ -698,59 +701,42 @@ export default function Chat() {
     // =====================================================
 
     return (
-        <KeyboardAvoidingView
-            style={styles.container}
-            behavior={
-                Platform.OS === "ios"
-                    ? "padding"
-                    : "height"
-            }
-            keyboardVerticalOffset={0}
-        >
+        <View style={styles.container}>
 
-            {/* =========================================
-                HEADER
-            ========================================= */}
+            {/* =====================================================
+          HEADER
+      ===================================================== */}
 
             <SafeAreaView
                 style={styles.safeArea}
                 edges={["top"]}
             >
-
                 <View style={styles.header}>
 
                     {/* Admin Profile */}
 
                     <View style={styles.profile}>
-
                         {profileImageUrl ? (
-
                             <Image
                                 source={{
-                                    uri:
-                                        profileImageUrl,
+                                    uri: profileImageUrl,
                                 }}
                                 style={
                                     styles.profileImage
                                 }
                             />
-
                         ) : (
-
                             <Ionicons
                                 name="person"
                                 size={22}
                                 color="#777"
                             />
-
                         )}
-
                     </View>
 
                     {/* Admin Information */}
 
                     <View style={styles.adminInfo}>
-
                         <Text
                             style={
                                 styles.adminName
@@ -767,31 +753,25 @@ export default function Chat() {
                         >
                             Admin
                         </Text>
-
                     </View>
-
                 </View>
-
             </SafeAreaView>
 
-            {/* =========================================
-                MESSAGES
-            ========================================= */}
+            {/* =====================================================
+          MESSAGES
+      ===================================================== */}
 
             <View
                 style={
                     styles.messagesContainer
                 }
             >
-
                 {loading ? (
-
                     <View
                         style={
                             styles.loadingContainer
                         }
                     >
-
                         <ActivityIndicator
                             size="small"
                             color="#0864B9"
@@ -804,17 +784,13 @@ export default function Chat() {
                         >
                             Loading messages...
                         </Text>
-
                     </View>
-
                 ) : messages.length === 0 ? (
-
                     <View
                         style={
                             styles.emptyContainer
                         }
                     >
-
                         <Ionicons
                             name="chatbubble-outline"
                             size={48}
@@ -837,20 +813,27 @@ export default function Chat() {
                             Start a conversation
                             with admin
                         </Text>
-
                     </View>
-
                 ) : (
-
                     <ScrollView
                         ref={scrollViewRef}
                         style={
                             styles.messageList
                         }
-                        contentContainerStyle={
-                            styles.messageContent
-                        }
+                        contentContainerStyle={[
+                            styles.messageContent,
+
+                            // Give the last message
+                            // enough space above input.
+                            {
+                                paddingBottom:
+                                    keyboardVisible
+                                        ? 85
+                                        : 85,
+                            },
+                        ]}
                         keyboardShouldPersistTaps="handled"
+                        keyboardDismissMode="none"
                         showsVerticalScrollIndicator={
                             false
                         }
@@ -863,13 +846,11 @@ export default function Chat() {
                         {/* Loading older messages */}
 
                         {loadingOlder && (
-
                             <View
                                 style={
                                     styles.loadingOlder
                                 }
                             >
-
                                 <ActivityIndicator
                                     size="small"
                                     color="#0864B9"
@@ -882,13 +863,13 @@ export default function Chat() {
                                 >
                                     Loading older messages...
                                 </Text>
-
                             </View>
                         )}
 
+                        {/* Messages */}
+
                         {messages.map(
                             (item) => {
-
                                 // Admin = LEFT
                                 const isAdminMessage =
                                     String(
@@ -899,11 +880,8 @@ export default function Chat() {
                                     );
 
                                 return (
-
                                     <View
-                                        key={
-                                            item.id
-                                        }
+                                        key={item.id}
                                         style={[
                                             styles.messageBubble,
 
@@ -912,7 +890,6 @@ export default function Chat() {
                                                 : styles.doctorMessage,
                                         ]}
                                     >
-
                                         <Text
                                             style={[
                                                 styles.messageText,
@@ -940,31 +917,28 @@ export default function Chat() {
                                                 [],
                                                 {
                                                     hour: "2-digit",
-                                                    minute: "2-digit",
+                                                    minute:
+                                                        "2-digit",
                                                 }
                                             )}
                                         </Text>
-
                                     </View>
                                 );
                             }
                         )}
-
                     </ScrollView>
                 )}
-
             </View>
 
-            {/* =========================================
-                MESSAGE INPUT
-            ========================================= */}
+            {/* =====================================================
+          MESSAGE INPUT
+      ===================================================== */}
 
             <View
                 style={
                     styles.inputContainer
                 }
             >
-
                 <TextInput
                     style={styles.input}
                     placeholder="Type a message..."
@@ -976,6 +950,7 @@ export default function Chat() {
                     multiline
                     editable={!sending}
                     textAlignVertical="center"
+                    returnKeyType="default"
                 />
 
                 <TouchableOpacity
@@ -991,29 +966,21 @@ export default function Chat() {
                     disabled={sending}
                     activeOpacity={0.7}
                 >
-
                     {sending ? (
-
                         <ActivityIndicator
                             size="small"
                             color="#FFFFFF"
                         />
-
                     ) : (
-
                         <Ionicons
                             name="send"
                             size={20}
                             color="#FFFFFF"
                         />
-
                     )}
-
                 </TouchableOpacity>
-
             </View>
-
-        </KeyboardAvoidingView>
+        </View>
     );
 }
 
@@ -1022,39 +989,57 @@ export default function Chat() {
 // =====================================================
 
 const styles = StyleSheet.create({
+    // =====================================================
+    // MAIN CONTAINER
+    // =====================================================
 
     container: {
         flex: 1,
+
         backgroundColor: "#F7F9FC",
     },
+
+    // =====================================================
+    // SAFE AREA
+    // =====================================================
 
     safeArea: {
         backgroundColor: "#FFFFFF",
     },
 
-    // ================================================
+    // =====================================================
     // HEADER
-    // ================================================
+    // =====================================================
 
     header: {
         height: 70,
+
         flexDirection: "row",
         alignItems: "center",
+
         backgroundColor: "#FFFFFF",
+
         borderBottomWidth: 1,
         borderBottomColor: "#E5E5E5",
+
         paddingHorizontal: 18,
     },
 
     profile: {
         width: 44,
         height: 44,
+
         borderRadius: 22,
+
         backgroundColor: "#F1F3F5",
+
         alignItems: "center",
         justifyContent: "center",
+
         marginRight: 12,
+
         overflow: "hidden",
+
         borderWidth: 1,
         borderColor: "#E1E5EA",
     },
@@ -1062,32 +1047,39 @@ const styles = StyleSheet.create({
     profileImage: {
         width: "100%",
         height: "100%",
+
         borderRadius: 22,
     },
 
     adminInfo: {
         flex: 1,
+
         justifyContent: "center",
     },
 
     adminName: {
         fontSize: 18,
+
         fontWeight: "600",
+
         color: "#000000",
     },
 
     adminStatus: {
         fontSize: 12,
+
         color: "#777777",
+
         marginTop: 2,
     },
 
-    // ================================================
+    // =====================================================
     // MESSAGES
-    // ================================================
+    // =====================================================
 
     messagesContainer: {
         flex: 1,
+
         paddingHorizontal: 16,
     },
 
@@ -1097,72 +1089,93 @@ const styles = StyleSheet.create({
 
     messageContent: {
         flexGrow: 1,
+
         justifyContent: "flex-end",
+
         paddingTop: 12,
-        paddingBottom: 12,
+
+        paddingBottom: 85,
     },
 
-    // ================================================
+    // =====================================================
     // LOADING
-    // ================================================
+    // =====================================================
 
     loadingContainer: {
         flex: 1,
+
         alignItems: "center",
         justifyContent: "center",
     },
 
     loadingText: {
         marginTop: 8,
+
         fontSize: 14,
+
         color: "#777777",
     },
 
     loadingOlder: {
         flexDirection: "row",
+
         alignItems: "center",
+
         justifyContent: "center",
+
         paddingVertical: 10,
+
         gap: 8,
     },
 
     loadingOlderText: {
         fontSize: 13,
+
         color: "#777777",
     },
 
-    // ================================================
+    // =====================================================
     // EMPTY
-    // ================================================
+    // =====================================================
 
     emptyContainer: {
         flex: 1,
+
         alignItems: "center",
         justifyContent: "center",
     },
 
     emptyText: {
         marginTop: 10,
+
         fontSize: 16,
+
         color: "#777777",
+
         fontWeight: "600",
     },
 
     emptySubText: {
         marginTop: 5,
+
         fontSize: 13,
+
         color: "#999999",
     },
 
-    // ================================================
+    // =====================================================
     // MESSAGE BUBBLE
-    // ================================================
+    // =====================================================
 
     messageBubble: {
         maxWidth: "78%",
+
         paddingHorizontal: 14,
+
         paddingVertical: 9,
+
         borderRadius: 16,
+
         marginBottom: 10,
     },
 
@@ -1170,9 +1183,13 @@ const styles = StyleSheet.create({
 
     adminMessage: {
         alignSelf: "flex-start",
+
         backgroundColor: "#FFFFFF",
+
         borderWidth: 1,
+
         borderColor: "#E5E5E5",
+
         borderBottomLeftRadius: 4,
     },
 
@@ -1180,13 +1197,16 @@ const styles = StyleSheet.create({
 
     doctorMessage: {
         alignSelf: "flex-end",
+
         backgroundColor: "#0864B9",
+
         borderBottomRightRadius: 4,
     },
 
     messageText: {
         fontSize: 15,
-        color: "#111111",
+
+        color: "#fff",
     },
 
     adminMessageText: {
@@ -1195,8 +1215,11 @@ const styles = StyleSheet.create({
 
     messageTime: {
         fontSize: 10,
-        color: "#777777",
+
+        color: "#fff",
+
         marginTop: 4,
+
         alignSelf: "flex-end",
     },
 
@@ -1204,39 +1227,71 @@ const styles = StyleSheet.create({
         color: "#777777",
     },
 
-    // ================================================
+    // =====================================================
     // INPUT
-    // ================================================
+    // =====================================================
 
     inputContainer: {
+        position: "absolute",
+
+        left: 0,
+
+        right: 0,
+
+        bottom: 0,
+
         flexDirection: "row",
+
         alignItems: "flex-end",
+
         backgroundColor: "#FFFFFF",
+
         borderTopWidth: 1,
+
         borderTopColor: "#E5E5E5",
+
         paddingHorizontal: 12,
+
         paddingVertical: 10,
     },
 
     input: {
         flex: 1,
+
         minHeight: 45,
+
         maxHeight: 110,
+
         backgroundColor: "#F1F3F5",
+
         borderRadius: 22,
+
         paddingHorizontal: 18,
+
         paddingVertical: 10,
+
         fontSize: 15,
+
         color: "#000000",
+
         marginRight: 8,
     },
 
+    // =====================================================
+    // SEND BUTTON
+    // =====================================================
+
     sendButton: {
         width: 45,
+
         height: 45,
+
         borderRadius: 23,
+
         backgroundColor: "#0864B9",
+
         alignItems: "center",
+
         justifyContent: "center",
     },
 

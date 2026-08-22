@@ -621,26 +621,65 @@ export const uploadPreviewFile = async (
   caseId: number | string,
   file: any
 ) => {
-  const formData = new FormData();
+  try {
+    const formData = new FormData();
 
-  formData.append("file", {
-    uri: file.uri,
-    name: file.name || "preview-file",
-    type: file.mimeType || "application/octet-stream",
-  } as any);
+    formData.append(
+      "category",
+      "preview_file"
+    );
 
-  const response = await api.post(
-    `/cases/${caseId}/upload-preview`,
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
-  );
+    formData.append(
+      "file",
+      {
+        uri: file.uri,
+        name: file.name || "preview-file",
+        type:
+          file.mimeType ||
+          file.type ||
+          "application/octet-stream",
+      } as any
+    );
 
-  return response.data;
+    console.log(
+      "UPLOADING PREVIEW:",
+      {
+        caseId,
+        fileName: file.name,
+      }
+    );
+
+    const response = await api.post(
+      `/cases/${caseId}/upload`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    console.log(
+      "PREVIEW UPLOAD RESPONSE:",
+      response.data
+    );
+
+    return response.data;
+
+  } catch (error: any) {
+
+    console.error(
+      "PREVIEW UPLOAD ERROR:",
+      error?.response?.data ||
+      error?.message ||
+      error
+    );
+
+    throw error;
+  }
 };
+
+
 export const uploadCaseFile =
   async (
     caseId: number,
@@ -721,6 +760,7 @@ export const uploadCaseFile =
     }
   };
 
+
 export const getCases = async ({
   page = 1,
   limit = 10,
@@ -735,14 +775,24 @@ export const getCases = async ({
   deadline?: string;
 } = {}) => {
   try {
+    const params: any = {
+      page,
+      limit,
+    };
+
+    if (search) {
+      params.search = search;
+    }
+
+    if (status) {
+      params.status = status;
+    }
+    if (deadline) {
+      params.deadline = deadline;
+    }
+
     const response = await api.get("/cases", {
-      params: {
-        page,
-        limit,
-        search,
-        status,
-        deadline,
-      },
+      params,
     });
 
     return response.data;

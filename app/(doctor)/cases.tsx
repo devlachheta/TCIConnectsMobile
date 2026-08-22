@@ -1,6 +1,7 @@
 import CaseCard from "@/components/doctordashboard/CaseCard/DoctorCaseCard";
 import DashboardHeader from "@/components/doctordashboard/DashboardHeader";
 import FilterSection from "@/components/shared/FilterSection";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "@/services/api";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -142,6 +143,266 @@ export default function Cases() {
         }, 500);
         return () => clearTimeout(timer);
     }, [statusFilter, deadlineFilter, searchTerm]);
+
+    // =========================================================
+    // DOCTOR CASE WEBSOCKET
+    // =========================================================
+
+    useEffect(() => {
+
+        let ws: WebSocket | null = null;
+
+        const connectWebSocket = async () => {
+
+            try {
+
+                const storedUser =
+                    await AsyncStorage.getItem("user");
+
+                if (!storedUser) {
+
+                    console.log(
+                        "Doctor user not found in storage"
+                    );
+
+                    return;
+                }
+
+                const user =
+                    JSON.parse(storedUser);
+
+                if (!user?.id) {
+
+                    console.log(
+                        "Doctor user ID not found"
+                    );
+
+                    return;
+                }
+
+                const wsUrl =
+                    `wss://tcidentallab.com/ws/cases/${user.id}`;
+
+                console.log(
+                    "===================================="
+                );
+
+                console.log(
+                    "CONNECTING DOCTOR CASE WEBSOCKET"
+                );
+
+                console.log(
+                    "DOCTOR WS URL:",
+                    wsUrl
+                );
+
+                console.log(
+                    "===================================="
+                );
+
+                ws = new WebSocket(wsUrl);
+
+                // =========================================
+                // CONNECTED
+                // =========================================
+
+                ws.onopen = () => {
+
+                    console.log(
+                        "DOCTOR CASE WEBSOCKET CONNECTED"
+                    );
+
+                };
+
+                // =========================================
+                // MESSAGE
+                // =========================================
+
+                ws.onmessage = (event) => {
+
+                    try {
+
+                        console.log(
+                            "DOCTOR CASE WEBSOCKET MESSAGE:",
+                            event.data
+                        );
+
+                        const message =
+                            JSON.parse(event.data);
+
+                        console.log(
+                            "PARSED DOCTOR CASE EVENT:",
+                            message
+                        );
+
+                        // =========================================
+                        // PREVIEW UPLOADED BY ADMIN
+                        // =========================================
+
+                        if (
+                            message.type ===
+                            "preview_uploaded"
+                        ) {
+
+                            console.log(
+                                "PREVIEW UPLOADED FOR CASE:",
+                                message.case_id
+                            );
+
+                            setCases(
+                                (previousCases) =>
+                                    previousCases.map(
+                                        (caseItem) => {
+
+                                            // Not this case
+                                            if (
+                                                caseItem.id !==
+                                                message.case_id
+                                            ) {
+                                                return caseItem;
+                                            }
+
+                                            console.log(
+                                                "UPDATING CASE:",
+                                                caseItem.id
+                                            );
+
+                                            return {
+                                                ...caseItem,
+
+                                                // Update status
+                                                preview_status:
+                                                    message.preview_status,
+
+                                                // Update preview file
+                                                files: [
+                                                    ...(caseItem.files || [])
+                                                        .filter(
+                                                            (existingFile: any) =>
+                                                                existingFile.file_category !==
+                                                                "preview_file"
+                                                        ),
+
+                                                    {
+                                                        id:
+                                                            message.file_id,
+
+                                                        file_name:
+                                                            message.file_name,
+
+                                                        file_path:
+                                                            message.file_path,
+
+                                                        file_type:
+                                                            message.file_type,
+
+                                                        file_category:
+                                                            "preview_file",
+                                                    },
+                                                ],
+                                            };
+                                        }
+                                    )
+                            );
+                        }
+
+                        // =========================================
+                        // CASE STATUS UPDATED
+                        // =========================================
+
+                        if (
+                            message.type ===
+                            "case_status_updated"
+                        ) {
+
+                            console.log(
+                                "CASE STATUS UPDATED:",
+                                message.case_id,
+                                message.status
+                            );
+
+                            setCases(
+                                (previousCases) =>
+                                    previousCases.map(
+                                        (caseItem) =>
+                                            caseItem.id ===
+                                                message.case_id
+                                                ? {
+                                                    ...caseItem,
+                                                    status:
+                                                        message.status,
+                                                }
+                                                : caseItem
+                                    )
+                            );
+                        }
+
+                    } catch (error) {
+
+                        console.error(
+                            "DOCTOR CASE WEBSOCKET PARSE ERROR:",
+                            error
+                        );
+
+                    }
+
+                };
+
+                // =========================================
+                // ERROR
+                // =========================================
+
+                ws.onerror = (error) => {
+
+                    console.error(
+                        "DOCTOR CASE WEBSOCKET ERROR:",
+                        error
+                    );
+
+                };
+
+                // =========================================
+                // CLOSED
+                // =========================================
+
+                ws.onclose = () => {
+
+                    console.log(
+                        "DOCTOR CASE WEBSOCKET CLOSED"
+                    );
+
+                };
+
+            } catch (error) {
+
+                console.error(
+                    "DOCTOR WEBSOCKET CONNECTION ERROR:",
+                    error
+                );
+
+            }
+
+        };
+
+        connectWebSocket();
+
+        // =========================================
+        // CLEANUP
+        // =========================================
+
+        return () => {
+
+            console.log(
+                "CLOSING DOCTOR CASE WEBSOCKET"
+            );
+
+            if (ws) {
+                ws.close();
+            }
+
+        };
+
+    }, []);
 
     // =========================================================
     // EDIT CASE

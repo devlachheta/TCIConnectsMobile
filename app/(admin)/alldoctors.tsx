@@ -166,7 +166,11 @@ export default function AllDoctors() {
       return null;
     }
 
-    return `https://tcidentallab.com/uploads/profile/${encodeURIComponent(
+    if (profileImage.startsWith("http")) {
+      return profileImage;
+    }
+
+    return `https://tcidentallab.com/tci-uploads/profile/${encodeURIComponent(
       profileImage
     )}`;
   };

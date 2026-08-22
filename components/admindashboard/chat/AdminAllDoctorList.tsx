@@ -9,6 +9,10 @@ import {
   View,
 } from "react-native";
 
+// =====================================================
+// DOCTOR TYPE
+// =====================================================
+
 type Doctor = {
   id: number | string;
   name: string;
@@ -17,96 +21,227 @@ type Doctor = {
   unread_count?: number;
 };
 
+// =====================================================
+// COMPONENT PROPS
+// =====================================================
+
 type AdminAllDoctorListProps = {
   doctors: Doctor[];
   onDoctorPress: (doctor: Doctor) => void;
 };
 
+// =====================================================
+// ADMIN ALL DOCTOR LIST
+// =====================================================
+
 export default function AdminAllDoctorList({
   doctors,
   onDoctorPress,
 }: AdminAllDoctorListProps) {
+  // =====================================================
+  // PROFILE IMAGE URL
+  // =====================================================
+
+  const getProfileImageUrl = (
+    profileImage?: string | null
+  ): string | null => {
+    if (!profileImage) {
+      return null;
+    }
+
+    // Already a complete URL
+    if (
+      profileImage.startsWith("http://") ||
+      profileImage.startsWith("https://")
+    ) {
+      return profileImage;
+    }
+
+    // Already contains the profile upload path
+    if (
+      profileImage.includes(
+        "/tci-uploads/profile/"
+      )
+    ) {
+      return `https://tcidentallab.com${profileImage.startsWith("/")
+          ? ""
+          : "/"
+        }${profileImage}`;
+    }
+
+    // Only filename
+    return `https://tcidentallab.com/tci-uploads/profile/${encodeURIComponent(
+      profileImage
+    )}`;
+  };
+
+  // =====================================================
+  // RENDER
+  // =====================================================
+
   return (
     <View style={styles.card}>
-      {/* Title */}
+      {/* =====================================================
+          TITLE
+      ===================================================== */}
+
       <Text style={styles.title}>
         Active Users
       </Text>
 
-      {/* Divider */}
+      {/* =====================================================
+          DIVIDER
+      ===================================================== */}
+
       <View style={styles.divider} />
 
+      {/* =====================================================
+          DOCTOR LIST
+      ===================================================== */}
 
-      {/* Doctor List */}
       <ScrollView
         style={styles.doctorList}
         showsVerticalScrollIndicator={false}
         nestedScrollEnabled
       >
-        {doctors.map((doctor) => (
-          <TouchableOpacity
-            key={doctor.id}
-            style={styles.doctorItem}
-            onPress={() => onDoctorPress(doctor)}
-            activeOpacity={0.7}
-          >
-            {/* Profile */}
-            <View style={styles.profileContainer}>
-              {doctor.profile_image ? (
-                <Image
-                  source={{
-                    uri: `https://tcidentallab.com/uploads/profile/${encodeURIComponent(
-                      doctor.profile_image
-                    )}`,
-                  }}
-                  style={styles.profileImage}
-                />
-              ) : (
-                <View style={styles.profilePlaceholder}>
-                  <Ionicons
-                    name="person-outline"
-                    size={22}
-                    color="#777"
-                  />
-                </View>
-              )}
-            </View>
+        {doctors.map((doctor) => {
+          // =====================================================
+          // PROFILE IMAGE
+          // =====================================================
 
-            {/* Doctor Name + Unread Count */}
-            <View style={styles.nameContainer}>
-              <Text
-                style={styles.doctorName}
-                numberOfLines={1}
+          const imageUrl =
+            getProfileImageUrl(
+              doctor.profile_image
+            );
+
+          return (
+            <TouchableOpacity
+              key={doctor.id}
+              style={styles.doctorItem}
+              onPress={() =>
+                onDoctorPress(doctor)
+              }
+              activeOpacity={0.7}
+            >
+              {/* =====================================================
+                  PROFILE
+              ===================================================== */}
+
+              <View
+                style={
+                  styles.profileContainer
+                }
               >
-                {doctor.name}
+                {imageUrl ? (
+                  <Image
+                    source={{
+                      uri: imageUrl,
+                    }}
+                    style={
+                      styles.profileImage
+                    }
+                    onError={(error) => {
+                      console.log(
+                        "PROFILE IMAGE ERROR:",
+                        doctor.name
+                      );
+
+                      console.log(
+                        "Original profile_image:",
+                        doctor.profile_image
+                      );
+
+                      console.log(
+                        "Generated image URL:",
+                        imageUrl
+                      );
+
+                      console.log(
+                        "Image error:",
+                        error.nativeEvent
+                      );
+                    }}
+                  />
+                ) : (
+                  <View
+                    style={
+                      styles.profilePlaceholder
+                    }
+                  >
+                    <Ionicons
+                      name="person-outline"
+                      size={22}
+                      color="#777"
+                    />
+                  </View>
+                )}
+              </View>
+
+              {/* =====================================================
+                  DOCTOR NAME + UNREAD COUNT
+              ===================================================== */}
+
+              <View
+                style={
+                  styles.nameContainer
+                }
+              >
+                <Text
+                  style={styles.doctorName}
+                  numberOfLines={1}
+                >
+                  {doctor.name}
+                </Text>
+
+                {Number(
+                  doctor.unread_count
+                ) > 0 ? (
+                  <View
+                    style={
+                      styles.unreadBadge
+                    }
+                  >
+                    <Text
+                      style={
+                        styles.unreadText
+                      }
+                    >
+                      {doctor.unread_count}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+
+              {/* =====================================================
+                  LAST ACTIVE
+              ===================================================== */}
+
+              <Text
+                style={styles.lastActive}
+              >
+                {doctor.timestamp
+                  ? new Date(
+                    doctor.timestamp
+                  ).toLocaleString()
+                  : ""}
               </Text>
-
-              {Number(doctor.unread_count) > 0 ? (
-                <View style={styles.unreadBadge}>
-                  <Text style={styles.unreadText}>
-                    {doctor.unread_count}
-                  </Text>
-                </View>
-              ) : null}
-            </View>
-
-            {/* Last Active */}
-            <Text style={styles.lastActive}>
-              {doctor.timestamp
-                ? new Date(
-                  doctor.timestamp
-                ).toLocaleString()
-                : ""}
-            </Text>
-          </TouchableOpacity>
-        ))}
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
     </View>
-
   );
 }
 
+// =====================================================
+// STYLES
+// =====================================================
+
 const styles = StyleSheet.create({
+  // =====================================================
+  // CARD
+  // =====================================================
+
   card: {
     flex: 1,
 
@@ -135,19 +270,32 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
 
+  // =====================================================
+  // TITLE
+  // =====================================================
+
   title: {
     fontSize: 28,
     fontWeight: "500",
+
     color: "#111",
 
     marginBottom: 20,
   },
+
+  // =====================================================
+  // DIVIDER
+  // =====================================================
 
   divider: {
     height: 1,
 
     backgroundColor: "#CFCFCF",
   },
+
+  // =====================================================
+  // DOCTOR ITEM
+  // =====================================================
 
   doctorItem: {
     minHeight: 68,
@@ -160,6 +308,10 @@ const styles = StyleSheet.create({
 
     paddingVertical: 10,
   },
+
+  // =====================================================
+  // PROFILE
+  // =====================================================
 
   profileContainer: {
     width: 52,
@@ -189,6 +341,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
+  // =====================================================
+  // NAME CONTAINER
+  // =====================================================
+
   nameContainer: {
     flex: 1,
 
@@ -206,6 +362,10 @@ const styles = StyleSheet.create({
 
     color: "#111",
   },
+
+  // =====================================================
+  // UNREAD BADGE
+  // =====================================================
 
   unreadBadge: {
     minWidth: 22,
@@ -230,6 +390,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
+  // =====================================================
+  // LAST ACTIVE
+  // =====================================================
+
   lastActive: {
     width: 125,
 
@@ -239,7 +403,12 @@ const styles = StyleSheet.create({
 
     textAlign: "right",
   },
+
+  // =====================================================
+  // DOCTOR LIST
+  // =====================================================
+
   doctorList: {
-    flex: 1
+    flex: 1,
   },
 });
