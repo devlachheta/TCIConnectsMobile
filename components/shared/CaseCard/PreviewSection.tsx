@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import {
+    ActivityIndicator,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -19,7 +20,6 @@ interface PreviewSectionProps {
     // Upload state
     uploading?: boolean;
 
-
     role: "admin" | "doctor";
 }
 
@@ -28,6 +28,7 @@ export default function PreviewSection({
     previewStatus,
     onDownload,
     onUpload,
+    uploading = false,
     role,
 }: PreviewSectionProps) {
 
@@ -35,7 +36,7 @@ export default function PreviewSection({
     const isDoctor = role === "doctor";
 
     const hasPreview =
-        fileName &&
+        !!fileName &&
         fileName !== "No Preview File";
 
     const doctorCanSeePreview =
@@ -60,17 +61,23 @@ export default function PreviewSection({
 
             {/* =====================================================
                 ADMIN
-                ===================================================== */}
+            ===================================================== */}
 
             {isAdmin && (
                 <TouchableOpacity
-                    style={styles.fileContainer}
+                    style={[
+                        styles.fileContainer,
+                        uploading && styles.disabledContainer,
+                    ]}
                     onPress={
-                        hasPreview
-                            ? onDownload
-                            : onUpload
+                        uploading
+                            ? undefined
+                            : hasPreview
+                                ? onDownload
+                                : onUpload
                     }
-                    activeOpacity={0.8}
+                    activeOpacity={uploading ? 1 : 0.8}
+                    disabled={uploading}
                 >
 
                     <View style={styles.leftSection}>
@@ -89,29 +96,38 @@ export default function PreviewSection({
                             style={styles.fileName}
                             numberOfLines={1}
                         >
-                            {hasPreview
-                                ? fileName
-                                : "Upload Preview"}
+                            {uploading
+                                ? "Uploading preview..."
+                                : hasPreview
+                                    ? fileName
+                                    : "Upload Preview"}
                         </Text>
 
                     </View>
 
-                    <Ionicons
-                        name={
-                            hasPreview
-                                ? "download-outline"
-                                : "cloud-upload-outline"
-                        }
-                        size={22}
-                        color="#0152A8"
-                    />
+                    {uploading ? (
+                        <ActivityIndicator
+                            size="small"
+                            color="#0152A8"
+                        />
+                    ) : (
+                        <Ionicons
+                            name={
+                                hasPreview
+                                    ? "download-outline"
+                                    : "cloud-upload-outline"
+                            }
+                            size={22}
+                            color="#0152A8"
+                        />
+                    )}
 
                 </TouchableOpacity>
             )}
 
             {/* =====================================================
                 DOCTOR
-                ===================================================== */}
+            ===================================================== */}
 
             {isDoctor && (
 
@@ -132,6 +148,7 @@ export default function PreviewSection({
                             ? 0.8
                             : 1
                     }
+                    disabled={!canOpenPreview}
                 >
 
                     <View style={styles.leftSection}>
@@ -159,7 +176,6 @@ export default function PreviewSection({
                             ]}
                             numberOfLines={1}
                         >
-
                             {previewStatus === "Waiting User"
                                 ? "Preview waiting for approval"
                                 : previewStatus === "Rejected"
@@ -167,7 +183,6 @@ export default function PreviewSection({
                                     : previewStatus === "Approved"
                                         ? fileName
                                         : "No Preview Available"}
-
                         </Text>
 
                     </View>
@@ -240,5 +255,4 @@ const styles = StyleSheet.create({
     disabledText: {
         color: "#9CA3AF",
     },
-
 });

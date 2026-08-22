@@ -201,6 +201,19 @@ export default function AdminCaseCard({
     };
 
     const handleUploadPreview = async () => {
+        console.log(
+            "================================"
+        );
+        console.log(
+            "UPLOAD PREVIEW CLICKED"
+        );
+        console.log(
+            "CASE ID:",
+            caseData.id
+        );
+        console.log(
+            "================================"
+        );
         try {
             const result =
                 await DocumentPicker.getDocumentAsync({
@@ -373,14 +386,18 @@ export default function AdminCaseCard({
                         previewStatus={previewStatus}
                         fileName={
                             previewFile?.file_name ||
-                            "No Preview Uploaded"
+                            "No Preview File"
                         }
+                        uploading={uploadingPreview}
                         onUpload={() => {
-                            console.log("UPLOAD PREVIEW CLICKED", caseData.id);
+                            console.log(
+                                "UPLOAD PREVIEW CLICKED",
+                                caseData.id
+                            );
+
                             handleUploadPreview();
                         }}
                         onDownload={() => {
-
                             if (!previewFile) {
                                 return;
                             }
@@ -389,9 +406,7 @@ export default function AdminCaseCard({
                                 previewFile.file_path,
                                 previewFile.file_name
                             );
-
                         }}
-                        uploading={uploadingPreview}
                     />
                     {/* ================= DEADLINE ================= */}
 

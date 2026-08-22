@@ -430,7 +430,7 @@ const styles = StyleSheet.create({
       "space-between",
     alignItems: "center",
     marginHorizontal: 20,
-    marginTop: 35,
+    marginTop: 5,
   },
 
   heading: {

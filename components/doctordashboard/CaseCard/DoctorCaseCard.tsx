@@ -1,6 +1,6 @@
 import { openCaseFile, downloadCaseFile } from "@/services/fileService";
 import { StyleSheet, View } from "react-native";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AppointmentInfo from "@/components/shared/CaseCard/AppointmentInfo";
 import DeadlineSection from "@/components/shared/CaseCard/DeadlineSection";
 import DigitalFileSection from "@/components/shared/CaseCard/DigitalFileSection";
@@ -29,9 +29,14 @@ interface CaseCardProps {
 
 export default function CaseCard({ caseData, onCaseDeleted,
     onEdit, }: CaseCardProps) {
+
+
     const [previewStatus, setPreviewStatus] = useState(
         caseData.preview_status
     );
+    useEffect(() => {
+        setPreviewStatus(caseData.preview_status);
+    }, [caseData.preview_status]);
     const [expanded, setExpanded] = useState(false);
 
     const deadlinePassed = caseData.delivery_deadline
@@ -121,13 +126,15 @@ export default function CaseCard({ caseData, onCaseDeleted,
         try {
             await rejectPreview(caseData.id);
 
-            setPreviewStatus("Preview Rejected");
+            setPreviewStatus("Rejected");
 
             Alert.alert(
                 "Success",
                 "Preview rejected."
             );
+
         } catch (error: any) {
+
             Alert.alert(
                 "Error",
                 error?.response?.data?.detail ||

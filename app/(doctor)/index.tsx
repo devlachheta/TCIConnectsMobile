@@ -188,13 +188,16 @@ export default function Index() {
 
         ws.onmessage = (event) => {
           try {
-            const message =
-              JSON.parse(event.data);
+            const message = JSON.parse(event.data);
 
             console.log(
               "Doctor WebSocket message:",
               message
             );
+
+            // =====================================================
+            // CASE STATUS UPDATED
+            // =====================================================
 
             if (
               message.type ===
@@ -207,19 +210,71 @@ export default function Index() {
               );
 
               setCases((previousCases) =>
-                previousCases.map(
-                  (caseItem) =>
-                    caseItem.id ===
-                      message.case_id
-                      ? {
-                        ...caseItem,
-                        status:
-                          message.status,
-                      }
-                      : caseItem
+                previousCases.map((caseItem) =>
+                  caseItem.id === message.case_id
+                    ? {
+                      ...caseItem,
+                      status: message.status,
+                    }
+                    : caseItem
                 )
               );
             }
+
+            // =====================================================
+            // PREVIEW UPLOADED BY ADMIN
+            // =====================================================
+
+            if (
+              message.type ===
+              "preview_uploaded"
+            ) {
+              console.log(
+                "REAL-TIME PREVIEW UPLOADED:",
+                message.case_id,
+                message.file_name
+              );
+
+              setCases((previousCases) =>
+                previousCases.map((caseItem) => {
+
+                  if (
+                    caseItem.id !==
+                    message.case_id
+                  ) {
+                    return caseItem;
+                  }
+
+                  return {
+                    ...caseItem,
+
+                    preview_status:
+                      message.preview_status,
+
+                    files: [
+                      ...(caseItem.files || []).filter(
+                        (file: any) =>
+                          file.file_category !==
+                          "preview_file"
+                      ),
+
+                      {
+                        id: message.file_id,
+                        file_name:
+                          message.file_name,
+                        file_path:
+                          message.file_path,
+                        file_type:
+                          message.file_type,
+                        file_category:
+                          "preview_file",
+                      },
+                    ],
+                  };
+                })
+              );
+            }
+
           } catch (error) {
             console.error(
               "WebSocket message parse error:",
@@ -227,7 +282,6 @@ export default function Index() {
             );
           }
         };
-
         ws.onerror = (error) => {
           console.error(
             "Doctor WebSocket error:",
