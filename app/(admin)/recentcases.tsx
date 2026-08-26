@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -11,8 +11,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import FilterSection from "@/components/shared/FilterSection";
 import AdminCaseCard from "@/components/admindashboard/CaseCard/AdminCaseCard";
+import FilterSection from "@/components/shared/FilterSection";
 import { getCases } from "@/services/caseService";
 
 export default function RecentCases() {
@@ -28,6 +28,7 @@ export default function RecentCases() {
   const [status, setStatus] = useState("");
   const [deadline, setDeadline] = useState("");
   const wsRef = useRef<WebSocket | null>(null);
+  const realtimeCasesRef = useRef<any[]>([]);
 
   // =====================================================
   // LOAD INITIAL CASES
@@ -50,13 +51,48 @@ export default function RecentCases() {
         JSON.stringify(response, null, 2)
       );
 
-      const newCases = Array.isArray(response?.items)
+      const apiCases = Array.isArray(response?.items)
         ? response.items
         : [];
 
-      setCases(newCases);
+      const realtimeCases =
+        realtimeCasesRef.current;
+
+      const mergedCases = [
+        ...realtimeCases,
+        ...apiCases,
+      ];
+
+      const uniqueCases = Array.from(
+        new Map(
+          mergedCases.map((item) => [
+            item.id,
+            item,
+          ])
+        ).values()
+      );
+
+      uniqueCases.sort((a, b) => {
+        const dateA = a.created_at
+          ? new Date(a.created_at).getTime()
+          : 0;
+
+        const dateB = b.created_at
+          ? new Date(b.created_at).getTime()
+          : 0;
+
+        return dateB - dateA;
+      });
+
+      setCases(
+        uniqueCases.slice(0, 10)
+      );
+
       setPage(1);
-      setHasMore(newCases.length === 10);
+
+      setHasMore(
+        apiCases.length === 10
+      );
 
     } catch (error: any) {
       console.error(
@@ -120,9 +156,60 @@ export default function RecentCases() {
             data.case_id
           );
 
-          loadInitialCases();
-        }
+          const newCase = {
+            id: data.case_id,
+            doctor_id: data.doctor_id,
+            doctor_name: data.doctor_name,
+            patient_name: data.patient_name,
+            patient_phone: data.patient_phone,
+            gender: data.gender,
+            age: data.age,
+            appointment_date:
+              data.appointment_date,
+            appointment_time:
+              data.appointment_time,
+            delivery_deadline:
+              data.delivery_deadline,
+            preview_status:
+              data.preview_status,
+            status: data.status,
+            is_edited: data.is_edited,
+            created_at: data.created_at,
+            files: data.files || [],
+            details: data.details || {},
+          };
 
+          setCases((previousCases) => {
+            const alreadyExists =
+              previousCases.some(
+                (item) =>
+                  item.id === newCase.id
+              );
+
+            if (alreadyExists) {
+              console.log(
+                "CASE ALREADY EXISTS:",
+                newCase.id
+              );
+
+              return previousCases;
+            }
+
+            const updatedCases = [
+              newCase,
+              ...previousCases,
+            ].slice(0, 10);
+
+            console.log(
+              "NEW CASE INSERTED AT TOP:",
+              updatedCases[0]?.id
+            );
+
+            return updatedCases;
+          });
+
+          setPage(1);
+        }
         // CASE UPDATED
         else if (data.type === "case_updated") {
           console.log(

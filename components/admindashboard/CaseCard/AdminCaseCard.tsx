@@ -1,24 +1,21 @@
-import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import {
     Alert,
     StyleSheet,
-    Text,
-    TouchableOpacity,
     View,
 } from "react-native";
 
 import {
-    openCaseFile,
     downloadCaseFile,
+    openCaseFile,
 } from "@/services/fileService";
-import { Picker } from "@react-native-picker/picker";
 
 import {
     deleteCase,
-    uploadPreviewFile,
     updateCaseStatus,
+    uploadPreviewFile,
 } from "@/services/caseService";
+
 import * as DocumentPicker from "expo-document-picker";
 
 import AppointmentInfo from "@/components/shared/CaseCard/AppointmentInfo";
@@ -39,36 +36,29 @@ interface AdminCaseCardProps {
 export default function AdminCaseCard({
     caseData,
     onCaseDeleted,
-    onCaseUpdated
+    onCaseUpdated,
 }: AdminCaseCardProps) {
+
     const [uploadingPreview, setUploadingPreview] =
         useState(false);
 
-    /* =========================================================
-       EXPANDED / COLLAPSED STATE
+    const [expanded, setExpanded] =
+        useState(false);
 
-       Every AdminCaseCard gets its own state.
+    const [status, setStatus] =
+        useState(
+            caseData.status || "Submitted"
+        );
 
-       Initial state:
-       expanded = false
+    const [previewStatus, setPreviewStatus] =
+        useState(
+            caseData.preview_status
+        );
 
-       This means every case starts collapsed independently.
-    ========================================================= */
-
-    const [expanded, setExpanded] = useState(false);
-    const [status, setStatus] = useState(
-        caseData.status || "Submitted"
-    );
-    const STATUS_OPTIONS = [
-        "Submitted",
-        "InProduction",
-        "QualityCheck",
-        "Shipped",
-        "Delivered",
-    ];
     const handleStatusChange = async (
         newStatus: string
     ) => {
+
         if (newStatus === status) {
             return;
         }
@@ -76,7 +66,7 @@ export default function AdminCaseCard({
         const previousStatus = status;
 
         try {
-            // Update UI immediately
+
             setStatus(newStatus);
 
             console.log(
@@ -94,7 +84,6 @@ export default function AdminCaseCard({
                 "Status updated successfully"
             );
 
-            // Refresh parent list if needed
             onCaseUpdated?.();
 
         } catch (error: any) {
@@ -104,7 +93,6 @@ export default function AdminCaseCard({
                 error
             );
 
-            // Restore previous value
             setStatus(previousStatus);
 
             Alert.alert(
@@ -114,50 +102,48 @@ export default function AdminCaseCard({
             );
         }
     };
-    /* ================= PREVIEW STATUS ================= */
 
-    const [previewStatus, setPreviewStatus] = useState(
-        caseData.preview_status
-    );
+    const deadlinePassed =
+        caseData.delivery_deadline
+            ? new Date(
+                caseData.delivery_deadline
+            ) < new Date()
+            : false;
 
-    /* ================= DEADLINE ================= */
+    const files =
+        caseData.files || [];
 
-    const deadlinePassed = caseData.delivery_deadline
-        ? new Date(caseData.delivery_deadline) < new Date()
-        : false;
-
-    /* ================= FILES ================= */
-
-    const files = caseData.files || [];
-
-    const casePdf = files.find(
-        (file: any) =>
-            file.file_category === "case_document"
-    );
-
-    const digitalFiles = files
-        .filter(
+    const casePdf =
+        files.find(
             (file: any) =>
-                file.file_category === "digital_file"
-        )
-        .slice(0, 5);
+                file.file_category ===
+                "case_document"
+        );
 
-    const previewFile = files.find(
-        (file: any) =>
-            file.file_category === "preview_file"
-    );
+    const digitalFiles =
+        files
+            .filter(
+                (file: any) =>
+                    file.file_category ===
+                    "digital_file"
+            )
+            .slice(0, 5);
 
-    /* =========================================================
-       EXPAND / COLLAPSE
-    ========================================================= */
+    const previewFile =
+        files.find(
+            (file: any) =>
+                file.file_category ===
+                "preview_file"
+        );
 
     const toggleExpanded = () => {
-        setExpanded((previous) => !previous);
+        setExpanded(
+            previous => !previous
+        );
     };
 
-    /* ================= DELETE ================= */
-
     const handleDelete = () => {
+
         Alert.alert(
             "Delete Case",
             "Are you sure you want to delete this case?",
@@ -172,9 +158,12 @@ export default function AdminCaseCard({
                     style: "destructive",
 
                     onPress: async () => {
+
                         try {
 
-                            await deleteCase(caseData.id);
+                            await deleteCase(
+                                caseData.id
+                            );
 
                             Alert.alert(
                                 "Success",
@@ -187,12 +176,16 @@ export default function AdminCaseCard({
 
                         } catch (error: any) {
 
+                            console.error(
+                                "Delete case failed:",
+                                error
+                            );
+
                             Alert.alert(
                                 "Error",
                                 error?.response?.data?.detail ||
                                 "Failed to delete case."
                             );
-
                         }
                     },
                 },
@@ -200,119 +193,121 @@ export default function AdminCaseCard({
         );
     };
 
-    const handleUploadPreview = async () => {
-        console.log(
-            "================================"
-        );
-        console.log(
-            "UPLOAD PREVIEW CLICKED"
-        );
-        console.log(
-            "CASE ID:",
-            caseData.id
-        );
-        console.log(
-            "================================"
-        );
-        try {
-            const result =
-                await DocumentPicker.getDocumentAsync({
-                    type: [
-                        "application/pdf",
-                        "image/*",
-                    ],
-                    copyToCacheDirectory: true,
-                    multiple: false,
-                });
+    const handleUploadPreview =
+        async () => {
 
-            if (result.canceled) {
-                return;
+            console.log(
+                "================================"
+            );
+
+            console.log(
+                "UPLOAD PREVIEW CLICKED"
+            );
+
+            console.log(
+                "CASE ID:",
+                caseData.id
+            );
+
+            console.log(
+                "================================"
+            );
+
+            try {
+
+                const result =
+                    await DocumentPicker.getDocumentAsync({
+                        type: [
+                            "application/pdf",
+                            "image/*",
+                        ],
+                        copyToCacheDirectory: true,
+                        multiple: false,
+                    });
+
+                if (result.canceled) {
+                    return;
+                }
+
+                const file =
+                    result.assets[0];
+
+                setUploadingPreview(true);
+
+                console.log(
+                    "Uploading preview:",
+                    file
+                );
+
+                await uploadPreviewFile(
+                    caseData.id,
+                    file
+                );
+
+                Alert.alert(
+                    "Success",
+                    "Preview uploaded successfully."
+                );
+
+                onCaseUpdated?.();
+
+            } catch (error: any) {
+
+                console.error(
+                    "Preview upload failed:",
+                    error?.response?.data ||
+                    error?.message ||
+                    error
+                );
+
+                Alert.alert(
+                    "Error",
+                    error?.response?.data?.detail ||
+                    "Failed to upload preview."
+                );
+
+            } finally {
+
+                setUploadingPreview(
+                    false
+                );
             }
-
-            const file = result.assets[0];
-
-            setUploadingPreview(true);
-
-            console.log("Uploading preview:", file);
-
-            await uploadPreviewFile(
-                caseData.id,
-                file
-            );
-
-            Alert.alert(
-                "Success",
-                "Preview uploaded successfully."
-            );
-
-            // Refresh cases in Admin Dashboard
-            onCaseUpdated?.();
-
-        } catch (error: any) {
-            console.error(
-                "Preview upload failed:",
-                error?.response?.data ||
-                error?.message ||
-                error
-            );
-
-            Alert.alert(
-                "Error",
-                error?.response?.data?.detail ||
-                "Failed to upload preview."
-            );
-
-        } finally {
-            setUploadingPreview(false);
-        }
-    };
-
-    /* =========================================================
-       UI
-    ========================================================= */
+        };
 
     return (
         <View style={styles.card}>
 
-            {/* =================================================
-                COMPACT CASE HEADER
-
-                This is the only thing visible initially.
-
-                Example:
-
-                #39
-                John Singha                 ▼
-                Submitted
-            ================================================= */}
-
-
             <Header
-                caseId={caseData.id}
-                status={status}
-                doctorName={caseData.doctor_name}
-                patientName={caseData.patient_name}
-                isEdited={caseData.is_edited}
-                expanded={expanded}
-                onExpandPress={toggleExpanded}
+                caseId={
+                    caseData.id
+                }
+                status={
+                    status
+                }
+                doctorName={
+                    caseData.doctor_name
+                }
+                patientName={
+                    caseData.patient_name
+                }
+                isEdited={
+                    caseData.is_edited
+                }
+                expanded={
+                    expanded
+                }
+                onExpandPress={
+                    toggleExpanded
+                }
             />
 
-
-            {/* =================================================
-                EXISTING FULL CASE DETAILS
-
-                IMPORTANT:
-                Nothing inside this section has been redesigned.
-
-                The existing components are rendered exactly
-                when the card is expanded.
-            ================================================= */}
-
             {expanded && (
-                <View style={styles.expandedContent}>
 
-
-                    {/* ================= PATIENT ================= */}
+                <View
+                    style={
+                        styles.expandedContent
+                    }
+                >
 
                     <PatientInfo
                         patientName={
@@ -320,8 +315,6 @@ export default function AdminCaseCard({
                         }
                         profileImage=""
                     />
-
-                    {/* ================= APPOINTMENT ================= */}
 
                     <AppointmentInfo
                         appointmentDate={
@@ -334,14 +327,11 @@ export default function AdminCaseCard({
                         }
                     />
 
-                    {/* ================= CASE PDF ================= */}
-
                     <PDFSection
                         fileName={
                             casePdf?.file_name ||
                             "No Case PDF"
                         }
-
                         onPress={() => {
 
                             if (!casePdf) {
@@ -352,44 +342,48 @@ export default function AdminCaseCard({
                                 casePdf.file_path,
                                 casePdf.file_name
                             );
-
                         }}
                     />
-
-                    {/* ================= DIGITAL FILES ================= */}
 
                     <DigitalFileSection
                         title="Digital Files"
+                        files={
+                            digitalFiles.map(
+                                (file: any) => ({
+                                    id: file.id,
+                                    fileName:
+                                        file.file_name,
+                                    filePath:
+                                        file.file_path,
+                                })
+                            )
+                        }
+                        onDownload={
+                            (file: any) => {
 
-                        files={digitalFiles.map(
-                            (file: any) => ({
-                                id: file.id,
-                                fileName: file.file_name,
-                                filePath: file.file_path,
-                            })
-                        )}
+                                downloadCaseFile(
+                                    file.id,
+                                    file.fileName
+                                );
 
-                        onDownload={(file: any) => {
-
-                            downloadCaseFile(
-                                file.id,
-                                file.fileName
-                            );
-
-                        }}
+                            }
+                        }
                     />
-
-                    {/* ================= PREVIEW ================= */}
 
                     <PreviewSection
                         role="admin"
-                        previewStatus={previewStatus}
+                        previewStatus={
+                            previewStatus
+                        }
                         fileName={
                             previewFile?.file_name ||
                             "No Preview File"
                         }
-                        uploading={uploadingPreview}
+                        uploading={
+                            uploadingPreview
+                        }
                         onUpload={() => {
+
                             console.log(
                                 "UPLOAD PREVIEW CLICKED",
                                 caseData.id
@@ -398,6 +392,7 @@ export default function AdminCaseCard({
                             handleUploadPreview();
                         }}
                         onDownload={() => {
+
                             if (!previewFile) {
                                 return;
                             }
@@ -408,20 +403,32 @@ export default function AdminCaseCard({
                             );
                         }}
                     />
-                    {/* ================= DEADLINE ================= */}
 
                     <DeadlineSection
-                        deadline={caseData.delivery_deadline}
-                        status={status}
-                        deadlinePassed={deadlinePassed}
-                        previewStatus={previewStatus}
-                        editableStatus={true}
-                        onStatusChange={handleStatusChange}
+                        deadline={
+                            caseData.delivery_deadline
+                        }
+                        status={
+                            status
+                        }
+                        deadlinePassed={
+                            deadlinePassed
+                        }
+                        previewStatus={
+                            previewStatus
+                        }
+                        editableStatus={
+                            true
+                        }
+                        onStatusChange={
+                            handleStatusChange
+                        }
                     />
 
-                    {/* ================= FOOTER ================= */}
                     <FooterActions
-                        onDelete={handleDelete}
+                        onDelete={
+                            handleDelete
+                        }
                     />
 
                 </View>
@@ -431,109 +438,21 @@ export default function AdminCaseCard({
     );
 }
 
-/* ============================================================
-   STYLES
-
-   Existing card styling is preserved.
-   Only the new compact header styles are added.
-============================================================ */
-
 const styles = StyleSheet.create({
 
     card: {
         backgroundColor: "#FFFFFF",
-
         borderRadius: 18,
-
         marginHorizontal: 18,
-
         marginTop: 20,
-
         overflow: "hidden",
-
         borderWidth: 1,
-
         borderColor: "#D9E0EC",
-
         elevation: 3,
     },
 
-    /* =========================================================
-       COMPACT HEADER
-    ========================================================= */
-
-    compactHeader: {
-        flexDirection: "row",
-
-        alignItems: "center",
-
-        justifyContent: "space-between",
-
-        paddingHorizontal: 18,
-
-        paddingVertical: 15,
-
-        backgroundColor: "#FFFFFF",
-    },
-
-    compactInfo: {
-        flex: 1,
-
-        paddingRight: 12,
-    },
-
-    compactCaseId: {
-        fontSize: 15,
-
-        fontWeight: "700",
-
-        color: "#1F2937",
-
-        marginBottom: 4,
-    },
-
-    compactDoctorName: {
-        fontSize: 15,
-
-        fontWeight: "600",
-
-        color: "#1F2937",
-
-        marginBottom: 4,
-    },
-
-    compactStatus: {
-        fontSize: 13,
-
-        color: "#6B7280",
-    },
-
-    expandIconContainer: {
-        width: 32,
-
-        height: 32,
-
-        alignItems: "center",
-
-        justifyContent: "center",
-    },
-
-    /* =========================================================
-       EXPANDED CONTENT
-
-       No new styling is applied to the existing components.
-    ========================================================= */
-
     expandedContent: {
         width: "100%",
-    },
-
-    fileIconContainer: {
-        width: 42,
-        height: 42,
-        alignItems: "center",
-        justifyContent: "center",
-        marginRight: 14,
     },
 
 });

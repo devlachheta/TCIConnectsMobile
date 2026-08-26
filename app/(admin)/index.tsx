@@ -1,20 +1,19 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  ScrollView,
   StyleSheet,
   Text,
-  ScrollView,
   TextInput,
   View,
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import AdminCaseCard from "@/components/admindashboard/CaseCard/AdminCaseCard";
 import AdminDrawer from "@/components/admindashboard/AdminDrawer";
 import AdminHeader from "@/components/admindashboard/AdminHeader";
+import AdminCaseCard from "@/components/admindashboard/CaseCard/AdminCaseCard";
 import FilterSection from "@/components/shared/FilterSection";
 import StatCard from "@/components/shared/StatCard";
 import { getCases } from "@/services/caseService";
@@ -38,6 +37,8 @@ export default function AdminDashboard() {
   // =====================================================
 
   const websocketRef = useRef<WebSocket | null>(null);
+  const realtimeCasesRef = useRef<any[]>([]);
+  const scrollViewRef = useRef<ScrollView | null>(null);
 
   // =====================================================
   // FILTER
@@ -78,14 +79,56 @@ export default function AdminDashboard() {
         JSON.stringify(response, null, 2)
       );
 
-      const newCases = Array.isArray(response?.items)
+      const apiCases = Array.isArray(response?.items)
         ? response.items
         : [];
 
-      setCases(newCases);
+      const realtimeCases =
+        realtimeCasesRef.current;
+
+      const mergedCases = [
+        ...realtimeCases,
+        ...apiCases,
+      ];
+
+      const uniqueCases = Array.from(
+        new Map(
+          mergedCases.map((item) => [
+            item.id,
+            item,
+          ])
+        ).values()
+      );
+
+      uniqueCases.sort((a, b) => {
+        const dateA = a.created_at
+          ? new Date(a.created_at).getTime()
+          : 0;
+
+        const dateB = b.created_at
+          ? new Date(b.created_at).getTime()
+          : 0;
+
+        return dateB - dateA;
+      });
+
+      setCases(
+        uniqueCases.slice(0, 10)
+      );
+
       setPage(1);
 
-      setHasMore(newCases.length === 10);
+      setTimeout(() => {
+        scrollViewRef.current?.scrollTo({
+          y: 0,
+          animated: true,
+        });
+      }, 100);
+
+      setHasMore(
+        apiCases.length === 10
+      );
+
     } catch (error) {
       console.error(
         "Error loading cases:",
@@ -165,37 +208,59 @@ export default function AdminDashboard() {
             data.case_id
           );
 
-          // Fetch page 1 again
-          const response = await getCases({
-            page: 1,
-            limit: 10,
-            search,
-            status,
-            deadline,
+          const newCase = {
+            id: data.case_id,
+            doctor_id: data.doctor_id,
+            doctor_name: data.doctor_name,
+            patient_name: data.patient_name,
+            patient_phone: data.patient_phone,
+            gender: data.gender,
+            age: data.age,
+            appointment_date:
+              data.appointment_date,
+            appointment_time:
+              data.appointment_time,
+            delivery_deadline:
+              data.delivery_deadline,
+            preview_status:
+              data.preview_status,
+            status: data.status,
+            is_edited: data.is_edited,
+            created_at: data.created_at,
+            files: data.files || [],
+            details: data.details || {},
+          };
+
+          realtimeCasesRef.current = [
+            newCase,
+            ...realtimeCasesRef.current.filter(
+              (item) =>
+                item.id !== newCase.id
+            ),
+          ].slice(0, 10);
+
+          setCases((previousCases) => {
+
+            const filteredCases =
+              previousCases.filter(
+                (item) =>
+                  item.id !== newCase.id
+              );
+
+            const updatedCases = [
+              newCase,
+              ...filteredCases,
+            ].slice(0, 10);
+
+            console.log(
+              "NEW CASE INSERTED AT TOP:",
+              updatedCases[0]?.id
+            );
+
+            return updatedCases;
           });
 
-          console.log(
-            "REFRESHED ADMIN CASES AFTER WEBSOCKET:",
-            JSON.stringify(response, null, 2)
-          );
-
-          const refreshedCases =
-            Array.isArray(response?.items)
-              ? response.items
-              : [];
-
-          console.log(
-            "FIRST CASE AFTER REFRESH:",
-            refreshedCases[0]?.id
-          );
-
-          setCases(refreshedCases);
           setPage(1);
-          setHasMore(refreshedCases.length === 10);
-
-          console.log(
-            "ADMIN CASE LIST REFRESHED"
-          );
         }
 
         // =========================================
@@ -275,7 +340,7 @@ export default function AdminDashboard() {
 
     };
 
-  }, [loadInitialCases]);
+  }, []);
   // =====================================================
   // LOAD MORE CASES
   // =====================================================
@@ -364,6 +429,7 @@ export default function AdminDashboard() {
         />
 
         <ScrollView
+          ref={scrollViewRef}
           contentContainerStyle={
             styles.scrollContainer
           }

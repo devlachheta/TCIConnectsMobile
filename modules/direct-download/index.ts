@@ -19,6 +19,17 @@ interface DirectDownloadModule {
     getStatus(
         downloadId: number
     ): Promise<DownloadStatus>;
+
+    readChunk(
+        uri: string,
+        start: number,
+        length: number,
+        chunkName: string
+    ): Promise<string>;
+
+    deleteChunk(
+        path: string
+    ): Promise<boolean>;
 }
 
 const DirectDownload =

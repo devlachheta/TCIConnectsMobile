@@ -1,8 +1,8 @@
 import CaseCard from "@/components/doctordashboard/CaseCard/DoctorCaseCard";
 import DashboardHeader from "@/components/doctordashboard/DashboardHeader";
 import FilterSection from "@/components/shared/FilterSection";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "@/services/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -51,15 +51,44 @@ export default function Cases() {
                 },
             });
 
-            const newCases = response.data.items || [];
+            const newCases =
+                response.data.items || [];
 
-            setCases(newCases);
-            setTotalCases(response.data.total || 0);
+            setCases((previousCases) => {
 
-            setPage(1);
+                const mergedCases = [
+                    ...previousCases,
+                    ...newCases,
+                ];
 
-            // Backend tells us exactly how many pages exist
-            setHasMore(1 < response.data.pages);
+                const uniqueCases = Array.from(
+                    new Map(
+                        mergedCases.map((item) => [
+                            item.id,
+                            item,
+                        ])
+                    ).values()
+                );
+
+                uniqueCases.sort((a, b) => {
+
+                    const dateA = a.created_at
+                        ? new Date(a.created_at).getTime()
+                        : 0;
+
+                    const dateB = b.created_at
+                        ? new Date(b.created_at).getTime()
+                        : 0;
+
+                    return dateB - dateA;
+                });
+
+                return uniqueCases;
+            });
+
+            setTotalCases(
+                response.data.total || 0
+            );
 
         } catch (error: any) {
             console.log("========== CASE API ERROR ==========");
@@ -234,6 +263,65 @@ export default function Cases() {
                             "PARSED DOCTOR CASE EVENT:",
                             message
                         );
+
+                        if (message.type === "new_case") {
+
+                            console.log(
+                                "NEW CASE RECEIVED ON DOCTOR CASES:",
+                                message.case_id
+                            );
+
+                            const newCase = {
+                                id: message.case_id,
+                                doctor_id: message.doctor_id,
+                                doctor_name: message.doctor_name,
+                                patient_name: message.patient_name,
+                                patient_phone: message.patient_phone,
+                                gender: message.gender,
+                                age: message.age,
+                                appointment_date:
+                                    message.appointment_date,
+                                appointment_time:
+                                    message.appointment_time,
+                                delivery_deadline:
+                                    message.delivery_deadline,
+                                preview_status:
+                                    message.preview_status || "-",
+                                status:
+                                    message.status || "Submitted",
+                                is_edited:
+                                    message.is_edited || false,
+                                created_at:
+                                    message.created_at,
+                                files:
+                                    message.files || [],
+                                details:
+                                    message.details || {},
+                            };
+
+                            setCases((previousCases) => {
+
+                                const filteredCases =
+                                    previousCases.filter(
+                                        (caseItem) =>
+                                            caseItem.id !== newCase.id
+                                    );
+
+                                return [
+                                    newCase,
+                                    ...filteredCases,
+                                ];
+                            });
+
+                            setTotalCases(
+                                (previousTotal) =>
+                                    previousTotal + 1
+                            );
+
+                            setPage(1);
+
+                            setHasMore(true);
+                        }
 
                         // =========================================
                         // PREVIEW UPLOADED BY ADMIN

@@ -1,126 +1,281 @@
 import {
   File,
-  Paths,
 } from "expo-file-system";
 
+import DirectDownload from "../modules/direct-download";
 import api from "./api";
 
 const CHUNK_SIZE =
   8 * 1024 * 1024;
 
-const MAX_PARALLEL = 8;
+const MAX_PARALLEL =
+  3;
 
-export const submitCase = async (
-  data: any
-) => {
-  const response =
-    await api.post(
-      "/cases",
-      data
-    );
+const MAX_FILE_SIZE =
+  2 * 1024 * 1024 * 1024;
 
-  return response.data;
-};
+const MAX_RETRIES =
+  3;
 
-export const initUpload = async (
-  file: any
-) => {
-  const formData =
-    new FormData();
+const PROGRESS_INTERVAL =
+  150;
 
-  formData.append(
-    "file_name",
-    file.name ||
-    "uploaded-file"
-  );
+const uploadControllers =
+  new Map<string, Set<AbortController>>();
 
-  formData.append(
-    "total_size",
-    String(
-      file.size || 0
-    )
-  );
+const uploadCancelled =
+  new Set<string>();
 
-  const response =
-    await api.post(
-      "/upload/init",
-      formData
-    );
-
-  return response.data;
-};
-
-const createChunkFile = async (
-  fileBytes: Uint8Array,
-  start: number,
-  end: number,
-  chunkNumber: number
-) => {
-  const chunkBytes =
-    fileBytes.slice(
-      start,
-      end
-    );
-
-  const chunkFile =
-    new File(
-      Paths.cache,
-      `upload_chunk_${Date.now()}_${chunkNumber}`
-    );
-
-  chunkFile.create({
-    overwrite: true,
-  });
-
-  await chunkFile.write(
-    chunkBytes
-  );
-
-  return chunkFile;
-};
-
-export const uploadChunk = async (
+const registerController = (
   uploadId: string,
-  chunkFile: File,
-  chunkNumber: number,
-  totalChunks: number,
-  chunkSize: number,
-  onProgress?: (
-    uploadedBytes: number
-  ) => void
+  controller: AbortController
 ) => {
-  return new Promise<any>(
-    (
-      resolve,
-      reject
-    ) => {
-      try {
+  let controllers =
+    uploadControllers.get(
+      uploadId
+    );
+
+  if (!controllers) {
+    controllers =
+      new Set();
+
+    uploadControllers.set(
+      uploadId,
+      controllers
+    );
+  }
+
+  controllers.add(
+    controller
+  );
+};
+
+const unregisterController = (
+  uploadId: string,
+  controller: AbortController
+) => {
+  const controllers =
+    uploadControllers.get(
+      uploadId
+    );
+
+  if (!controllers) {
+    return;
+  }
+
+  controllers.delete(
+    controller
+  );
+
+  if (
+    controllers.size === 0
+  ) {
+    uploadControllers.delete(
+      uploadId
+    );
+  }
+};
+
+export const cancelUpload = (
+  uploadId: string
+) => {
+  uploadCancelled.add(
+    uploadId
+  );
+
+  const controllers =
+    uploadControllers.get(
+      uploadId
+    );
+
+  if (controllers) {
+    controllers.forEach(
+      controller => {
+        controller.abort();
+      }
+    );
+  }
+
+  uploadControllers.delete(
+    uploadId
+  );
+};
+
+const isUploadCancelled = (
+  uploadId: string
+) => {
+  return uploadCancelled.has(
+    uploadId
+  );
+};
+
+const cleanupUploadCancellation =
+  (
+    uploadId: string
+  ) => {
+    uploadCancelled.delete(
+      uploadId
+    );
+
+    uploadControllers.delete(
+      uploadId
+    );
+  };
+
+export const submitCase =
+  async (
+    data: any
+  ) => {
+    const response =
+      await api.post(
+        "/cases",
+        data
+      );
+
+    return response.data;
+  };
+
+export const initUpload =
+  async (
+    file: any
+  ) => {
+    const formData =
+      new FormData();
+
+    formData.append(
+      "file_name",
+      file.name ||
+      "uploaded-file"
+    );
+
+    formData.append(
+      "total_size",
+      String(
+        file.size || 0
+      )
+    );
+
+    const response =
+      await api.post(
+        "/upload/init",
+        formData
+      );
+
+    return response.data;
+  };
+
+const uploadChunk =
+  async (
+    uploadId: string,
+    chunkFile: File,
+    chunkNumber: number,
+    totalChunks: number,
+    chunkSize: number,
+    onProgress?: (
+      uploadedBytes: number
+    ) => void
+  ) => {
+
+    if (
+      isUploadCancelled(
+        uploadId
+      )
+    ) {
+      throw new Error(
+        "UPLOAD_CANCELLED"
+      );
+    }
+
+    return new Promise<any>(
+      (
+        resolve,
+        reject
+      ) => {
+
         const xhr =
           new XMLHttpRequest();
 
+        const controller =
+          new AbortController();
+
+        registerController(
+          uploadId,
+          controller
+        );
+
+        let finished =
+          false;
+
+        const cleanup =
+          () => {
+            unregisterController(
+              uploadId,
+              controller
+            );
+          };
+
+        const fail =
+          (
+            error: any
+          ) => {
+
+            if (
+              finished
+            ) {
+              return;
+            }
+
+            finished =
+              true;
+
+            cleanup();
+
+            reject(
+              error
+            );
+          };
+
+        controller.signal.addEventListener(
+          "abort",
+          () => {
+
+            try {
+              xhr.abort();
+            } catch { }
+
+            fail(
+              new Error(
+                "UPLOAD_CANCELLED"
+              )
+            );
+          }
+        );
+
         const baseURL =
           api.defaults
-            .baseURL || "";
-
-        const url =
-          `${baseURL}/upload/chunk`;
+            .baseURL ||
+          "";
 
         xhr.open(
           "POST",
-          url
+          `${baseURL}/upload/chunk`
         );
 
-        const token =
+        const authorization =
           api.defaults
             .headers
             .common?.[
           "Authorization"
           ];
 
-        if (token) {
+        if (
+          authorization
+        ) {
           xhr.setRequestHeader(
             "Authorization",
-            String(token)
+            String(
+              authorization
+            )
           );
         }
 
@@ -129,79 +284,136 @@ export const uploadChunk = async (
           "application/json"
         );
 
+        let lastReported =
+          0;
+
         xhr.upload.onprogress =
-          (event) => {
+          event => {
+
             if (
-              !event.lengthComputable ||
-              event.total <= 0
+              finished ||
+              isUploadCancelled(
+                uploadId
+              )
             ) {
               return;
             }
 
-            const uploaded =
+            if (
+              !event.lengthComputable
+            ) {
+              return;
+            }
+
+            const loaded =
               Math.min(
                 chunkSize,
                 event.loaded
               );
 
-            onProgress?.(
-              uploaded
+            if (
+              loaded ===
+              chunkSize ||
+              loaded -
+              lastReported >=
+              256 *
+              1024
+            ) {
+
+              lastReported =
+                loaded;
+
+              onProgress?.(
+                loaded
+              );
+            }
+          };
+
+        xhr.onload =
+          () => {
+
+            if (
+              finished
+            ) {
+              return;
+            }
+
+            if (
+              isUploadCancelled(
+                uploadId
+              )
+            ) {
+              fail(
+                new Error(
+                  "UPLOAD_CANCELLED"
+                )
+              );
+
+              return;
+            }
+
+            if (
+              xhr.status >=
+              200 &&
+              xhr.status <
+              300
+            ) {
+
+              finished =
+                true;
+
+              cleanup();
+
+              let data:
+                any =
+                xhr.responseText;
+
+              try {
+                data =
+                  JSON.parse(
+                    xhr.responseText
+                  );
+              } catch { }
+
+              onProgress?.(
+                chunkSize
+              );
+
+              resolve(
+                data
+              );
+
+              return;
+            }
+
+            fail(
+              new Error(
+                `Chunk ${chunkNumber +
+                1
+                }/${totalChunks} failed with status ${xhr.status}`
+              )
             );
           };
 
-        xhr.onload = () => {
-          if (
-            xhr.status >= 200 &&
-            xhr.status < 300
-          ) {
-            let responseData: any =
-              xhr.responseText;
+        xhr.onerror =
+          () => {
 
-            try {
-              responseData =
-                JSON.parse(
-                  xhr.responseText
-                );
-            } catch { }
-
-            onProgress?.(
-              chunkSize
+            fail(
+              new Error(
+                "NETWORK_ERROR"
+              )
             );
+          };
 
-            resolve(
-              responseData
+        xhr.onabort =
+          () => {
+
+            fail(
+              new Error(
+                "UPLOAD_CANCELLED"
+              )
             );
-
-            return;
-          }
-
-          reject(
-            new Error(
-              `Chunk ${chunkNumber + 1
-              }/${totalChunks} failed with status ${xhr.status
-              }: ${xhr.responseText
-              }`
-            )
-          );
-        };
-
-        xhr.onerror = () => {
-          reject(
-            new Error(
-              `Network error while uploading chunk ${chunkNumber + 1
-              }/${totalChunks}`
-            )
-          );
-        };
-
-        xhr.onabort = () => {
-          reject(
-            new Error(
-              `Chunk ${chunkNumber + 1
-              }/${totalChunks} was cancelled`
-            )
-          );
-        };
+          };
 
         const formData =
           new FormData();
@@ -230,25 +442,145 @@ export const uploadChunk = async (
           } as any
         );
 
-        console.log(
-          `SENDING CHUNK ${chunkNumber + 1
-          } OF ${totalChunks
-          }`
-        );
+        if (
+          isUploadCancelled(
+            uploadId
+          )
+        ) {
+          try {
+            xhr.abort();
+          } catch { }
+
+          fail(
+            new Error(
+              "UPLOAD_CANCELLED"
+            )
+          );
+
+          return;
+        }
 
         xhr.send(
           formData
         );
-      } catch (
-      error
+      }
+    );
+  };
+
+const uploadChunkWithRetry =
+  async (
+    uploadId: string,
+    chunkFile: File,
+    chunkNumber: number,
+    totalChunks: number,
+    chunkSize: number,
+    onProgress?: (
+      uploadedBytes: number
+    ) => void
+  ) => {
+
+    let lastError:
+      any;
+
+    for (
+      let attempt = 1;
+      attempt <=
+      MAX_RETRIES;
+      attempt++
+    ) {
+
+      if (
+        isUploadCancelled(
+          uploadId
+        )
       ) {
-        reject(
-          error
+        throw new Error(
+          "UPLOAD_CANCELLED"
         );
       }
+
+      try {
+
+        return await uploadChunk(
+          uploadId,
+          chunkFile,
+          chunkNumber,
+          totalChunks,
+          chunkSize,
+          onProgress
+        );
+
+      } catch (
+      error: any
+      ) {
+
+        lastError =
+          error;
+
+        if (
+          error?.message ===
+          "UPLOAD_CANCELLED"
+        ) {
+          throw error;
+        }
+
+        if (
+          isUploadCancelled(
+            uploadId
+          )
+        ) {
+          throw new Error(
+            "UPLOAD_CANCELLED"
+          );
+        }
+
+        console.log(
+          `Chunk ${chunkNumber +
+          1
+          } retry ${attempt}/${MAX_RETRIES}`
+        );
+
+        if (
+          attempt <
+          MAX_RETRIES
+        ) {
+
+          await new Promise(
+            (
+              resolve,
+              reject
+            ) => {
+
+              const timer =
+                setTimeout(
+                  resolve,
+                  attempt *
+                  1000
+                );
+
+              if (
+                isUploadCancelled(
+                  uploadId
+                )
+              ) {
+                clearTimeout(
+                  timer
+                );
+
+                reject(
+                  new Error(
+                    "UPLOAD_CANCELLED"
+                  )
+                );
+              }
+            }
+          );
+        }
+      }
     }
-  );
-};
+
+    throw lastError;
+  };
 
 export const completeUpload =
   async (
@@ -256,6 +588,17 @@ export const completeUpload =
     fileName: string,
     totalChunks: number
   ) => {
+
+    if (
+      isUploadCancelled(
+        uploadId
+      )
+    ) {
+      throw new Error(
+        "UPLOAD_CANCELLED"
+      );
+    }
+
     const formData =
       new FormData();
 
@@ -292,8 +635,16 @@ export const uploadTempFile =
       progress: number
     ) => void
   ) => {
+
+    let uploadId:
+      string | null =
+      null;
+
     try {
-      if (!file?.uri) {
+
+      if (
+        !file?.uri
+      ) {
         throw new Error(
           "Selected file does not contain a URI."
         );
@@ -302,11 +653,23 @@ export const uploadTempFile =
       const fileSize =
         Number(
           file.size
-        ) || 0;
+        );
 
-      if (fileSize <= 0) {
+      if (
+        !fileSize ||
+        fileSize <= 0
+      ) {
         throw new Error(
-          "Selected file size could not be determined."
+          "Unable to determine file size."
+        );
+      }
+
+      if (
+        fileSize >
+        MAX_FILE_SIZE
+      ) {
+        throw new Error(
+          "File size cannot exceed 2 GB."
         );
       }
 
@@ -317,7 +680,7 @@ export const uploadTempFile =
         );
 
       console.log(
-        "STARTING CHUNKED UPLOAD:",
+        "STARTING UPLOAD:",
         file.name
       );
 
@@ -327,76 +690,75 @@ export const uploadTempFile =
       );
 
       console.log(
-        "CHUNK SIZE:",
-        CHUNK_SIZE
-      );
-
-      console.log(
         "TOTAL CHUNKS:",
         totalChunks
       );
-
-      const sourceFile =
-        new File(
-          file.uri
-        );
-
-      console.log(
-        "READING SOURCE FILE ONCE..."
-      );
-
-      const fileBytes =
-        await sourceFile.bytes();
-
-      console.log(
-        "SOURCE FILE READ COMPLETE"
-      );
-
-      if (
-        fileBytes.length <
-        fileSize
-      ) {
-        console.warn(
-          "FILE BYTE LENGTH IS SMALLER THAN REPORTED FILE SIZE:",
-          fileBytes.length,
-          fileSize
-        );
-      }
 
       const init =
         await initUpload(
           file
         );
 
-      console.log(
-        "UPLOAD INIT RESPONSE:",
-        init
-      );
-
-      const uploadId =
+      uploadId =
         init?.upload_id;
 
-      if (!uploadId) {
+      if (
+        !uploadId
+      ) {
         throw new Error(
           "Upload ID was not returned by the server."
         );
       }
 
-      onProgress?.(
-        0
-      );
+      if (
+        isUploadCancelled(
+          uploadId
+        )
+      ) {
+        throw new Error(
+          "UPLOAD_CANCELLED"
+        );
+      }
 
       const uploadedBytes =
         new Array(
           totalChunks
-        ).fill(0);
+        ).fill(
+          0
+        );
 
       let lastProgress =
         -1;
 
+      let lastProgressTime =
+        0;
+
       const updateProgress =
-        () => {
-          const totalUploaded =
+        (
+          force = false
+        ) => {
+
+          if (
+            isUploadCancelled(
+              uploadId!
+            )
+          ) {
+            return;
+          }
+
+          const now =
+            Date.now();
+
+          if (
+            !force &&
+            now -
+            lastProgressTime <
+            PROGRESS_INTERVAL
+          ) {
+            return;
+          }
+
+          const uploaded =
             uploadedBytes.reduce(
               (
                 total,
@@ -412,7 +774,7 @@ export const uploadTempFile =
               100,
               Math.round(
                 (
-                  totalUploaded /
+                  uploaded /
                   fileSize
                 ) *
                 100
@@ -423,8 +785,12 @@ export const uploadTempFile =
             progress !==
             lastProgress
           ) {
+
             lastProgress =
               progress;
+
+            lastProgressTime =
+              now;
 
             onProgress?.(
               progress
@@ -432,10 +798,25 @@ export const uploadTempFile =
           }
         };
 
+      onProgress?.(
+        0
+      );
+
       const uploadOneChunk =
         async (
           chunkNumber: number
         ) => {
+
+          if (
+            isUploadCancelled(
+              uploadId!
+            )
+          ) {
+            throw new Error(
+              "UPLOAD_CANCELLED"
+            );
+          }
+
           const start =
             chunkNumber *
             CHUNK_SIZE;
@@ -451,29 +832,77 @@ export const uploadTempFile =
             end -
             start;
 
-          console.log(
-            `PREPARING CHUNK ${chunkNumber + 1
-            }/${totalChunks}`
-          );
+          const chunkName =
+            `tci_upload_${Date.now()}_${chunkNumber}`;
 
-          const chunkFile =
-            await createChunkFile(
-              fileBytes,
-              start,
-              end,
-              chunkNumber
-            );
+          let chunkPath:
+            string |
+            null =
+            null;
 
           try {
-            await uploadChunk(
-              uploadId,
+
+            console.log(
+              `READING CHUNK ${chunkNumber +
+              1
+              }/${totalChunks}`
+            );
+
+            chunkPath =
+              await DirectDownload.readChunk(
+                file.uri,
+                start,
+                actualChunkSize,
+                chunkName
+              );
+
+            if (
+              isUploadCancelled(
+                uploadId!
+              )
+            ) {
+              throw new Error(
+                "UPLOAD_CANCELLED"
+              );
+            }
+
+            if (
+              !chunkPath
+            ) {
+              throw new Error(
+                "Native reader did not return a chunk path."
+              );
+            }
+
+            const chunkFile =
+              new File(
+                chunkPath
+              );
+
+            if (
+              !chunkFile.exists
+            ) {
+              throw new Error(
+                `Chunk file does not exist: ${chunkPath}`
+              );
+            }
+
+            await uploadChunkWithRetry(
+              uploadId!,
               chunkFile,
               chunkNumber,
               totalChunks,
               actualChunkSize,
-              (
-                currentBytes
-              ) => {
+              currentBytes => {
+
+                if (
+                  isUploadCancelled(
+                    uploadId!
+                  )
+                ) {
+                  return;
+                }
+
                 uploadedBytes[
                   chunkNumber
                 ] =
@@ -486,49 +915,74 @@ export const uploadTempFile =
               }
             );
 
+            if (
+              isUploadCancelled(
+                uploadId!
+              )
+            ) {
+              throw new Error(
+                "UPLOAD_CANCELLED"
+              );
+            }
+
             uploadedBytes[
               chunkNumber
             ] =
               actualChunkSize;
 
-            updateProgress();
+            updateProgress(
+              true
+            );
 
             console.log(
-              `CHUNK ${chunkNumber + 1
-              }/${totalChunks
-              } COMPLETED`
+              `CHUNK ${chunkNumber +
+              1
+              }/${totalChunks} COMPLETED`
             );
+
           } finally {
-            try {
-              if (
-                chunkFile.exists
-              ) {
-                chunkFile.delete();
-              }
-            } catch { }
+
+            if (
+              chunkPath
+            ) {
+
+              try {
+
+                await DirectDownload.deleteChunk(
+                  chunkPath
+                );
+
+              } catch { }
+
+            }
           }
         };
 
       for (
-        let startChunk = 0;
+        let startChunk =
+          0;
         startChunk <
         totalChunks;
         startChunk +=
         MAX_PARALLEL
       ) {
+
+        if (
+          isUploadCancelled(
+            uploadId
+          )
+        ) {
+          throw new Error(
+            "UPLOAD_CANCELLED"
+          );
+        }
+
         const endChunk =
           Math.min(
             startChunk +
             MAX_PARALLEL,
             totalChunks
           );
-
-        console.log(
-          "STARTING CHUNK BATCH:",
-          startChunk + 1,
-          "TO",
-          endChunk
-        );
 
         const batch:
           Promise<any>[] =
@@ -541,6 +995,15 @@ export const uploadTempFile =
           endChunk;
           chunkNumber++
         ) {
+
+          if (
+            isUploadCancelled(
+              uploadId
+            )
+          ) {
+            break;
+          }
+
           batch.push(
             uploadOneChunk(
               chunkNumber
@@ -552,6 +1015,20 @@ export const uploadTempFile =
           batch
         );
       }
+
+      if (
+        isUploadCancelled(
+          uploadId
+        )
+      ) {
+        throw new Error(
+          "UPLOAD_CANCELLED"
+        );
+      }
+
+      updateProgress(
+        true
+      );
 
       onProgress?.(
         100
@@ -569,11 +1046,6 @@ export const uploadTempFile =
           totalChunks
         );
 
-      console.log(
-        "UPLOAD COMPLETE RESPONSE:",
-        completed
-      );
-
       if (
         !completed?.file_path
       ) {
@@ -581,10 +1053,6 @@ export const uploadTempFile =
           "Completed upload did not return file_path."
         );
       }
-
-      onProgress?.(
-        100
-      );
 
       return {
         ...completed,
@@ -602,155 +1070,88 @@ export const uploadTempFile =
           file.type ||
           "application/octet-stream",
       };
+
     } catch (
     error: any
     ) {
-      console.error(
-        "TEMP FILE UPLOAD ERROR:",
-        error?.response?.data ||
-        error?.message ||
-        error
-      );
+
+      if (
+        error?.message ===
+        "UPLOAD_CANCELLED"
+      ) {
+        console.log(
+          "UPLOAD CANCELLED:",
+          file?.name
+        );
+      } else {
+        console.error(
+          "TEMP FILE UPLOAD ERROR:",
+          error?.response
+            ?.data ||
+          error?.message ||
+          error
+        );
+      }
 
       throw error;
+
+    } finally {
+
+      if (
+        uploadId
+      ) {
+        uploadControllers.delete(
+          uploadId
+        );
+      }
     }
   };
-
-
-export const uploadPreviewFile = async (
-  caseId: number | string,
-  file: any
-) => {
-  try {
-    const formData = new FormData();
-
-    formData.append(
-      "category",
-      "preview_file"
-    );
-
-    formData.append(
-      "file",
-      {
-        uri: file.uri,
-        name: file.name || "preview-file",
-        type:
-          file.mimeType ||
-          file.type ||
-          "application/octet-stream",
-      } as any
-    );
-
-    console.log(
-      "UPLOADING PREVIEW:",
-      {
-        caseId,
-        fileName: file.name,
-      }
-    );
-
-    const response = await api.post(
-      `/cases/${caseId}/upload`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
-    );
-
-    console.log(
-      "PREVIEW UPLOAD RESPONSE:",
-      response.data
-    );
-
-    return response.data;
-
-  } catch (error: any) {
-
-    console.error(
-      "PREVIEW UPLOAD ERROR:",
-      error?.response?.data ||
-      error?.message ||
-      error
-    );
-
-    throw error;
-  }
-};
-
-
 export const uploadCaseFile =
   async (
-    caseId: number,
+    caseId:
+      number |
+      string,
     file: any,
     category: string,
     onProgress?: (
       progress: number
-    ) => void,
-    tempFilePath?: string
+    ) => void
   ) => {
     try {
-      let filePath =
-        tempFilePath;
-
-      if (!filePath) {
-        console.log(
-          "TEMP FILE PATH NOT PROVIDED. UPLOADING FILE..."
+      const uploaded =
+        await uploadTempFile(
+          file,
+          onProgress
         );
 
-        const uploaded =
-          await uploadTempFile(
-            file,
-            onProgress
-          );
-
-        filePath =
-          uploaded.file_path;
-      } else {
-        console.log(
-          "USING EXISTING TEMP FILE:",
-          filePath
-        );
-      }
-
-      if (!filePath) {
+      if (
+        !uploaded?.file_path
+      ) {
         throw new Error(
-          "Temporary file path is missing."
+          "Temporary upload did not return file_path."
         );
       }
 
-      console.log(
-        "SAVING TEMP FILE TO CASE:",
-        filePath
-      );
-
-      const saved =
+      const response =
         await api.post(
           `/cases/${caseId}/save-temp-file`,
           {
             file_path:
-              filePath,
+              uploaded.file_path,
             category:
               category,
           }
         );
 
-      onProgress?.(
-        100
-      );
+      onProgress?.(100);
 
-      console.log(
-        "FILE MOVED TO MAIN STORAGE:",
-        saved.data
-      );
+      return response.data;
 
-      return saved.data;
     } catch (
     error: any
     ) {
       console.error(
-        "ERROR SAVING CASE FILE:",
+        "CASE FILE UPLOAD ERROR:",
         error?.response?.data ||
         error?.message ||
         error
@@ -759,236 +1160,228 @@ export const uploadCaseFile =
       throw error;
     }
   };
+export const uploadPreviewFile =
+  async (
+    caseId:
+      number |
+      string,
+    file: any
+  ) => {
 
+    try {
 
-export const getCases = async ({
-  page = 1,
-  limit = 10,
-  search = "",
-  status = "",
-  deadline = "",
-}: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  status?: string;
-  deadline?: string;
-} = {}) => {
-  try {
+      const formData =
+        new FormData();
+
+      formData.append(
+        "category",
+        "preview_file"
+      );
+
+      formData.append(
+        "file",
+        {
+          uri:
+            file.uri,
+          name:
+            file.name ||
+            "preview-file",
+          type:
+            file.mimeType ||
+            file.type ||
+            "application/octet-stream",
+        } as any
+      );
+
+      const response =
+        await api.post(
+          `/cases/${caseId}/upload`,
+          formData,
+          {
+            headers: {
+              "Content-Type":
+                "multipart/form-data",
+            },
+          }
+        );
+
+      return response.data;
+
+    } catch (
+    error: any
+    ) {
+
+      console.error(
+        "PREVIEW UPLOAD ERROR:",
+        error?.response
+          ?.data ||
+        error?.message ||
+        error
+      );
+
+      throw error;
+    }
+  };
+
+export const getCases =
+  async ({
+    page = 1,
+    limit = 10,
+    search = "",
+    status = "",
+    deadline = "",
+  }: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+    deadline?: string;
+  } = {}) => {
+
     const params: any = {
       page,
       limit,
     };
 
-    if (search) {
-      params.search = search;
+    if (
+      search
+    ) {
+      params.search =
+        search;
     }
 
-    if (status) {
-      params.status = status;
-    }
-    if (deadline) {
-      params.deadline = deadline;
+    if (
+      status
+    ) {
+      params.status =
+        status;
     }
 
-    const response = await api.get("/cases", {
-      params,
-    });
+    if (
+      deadline
+    ) {
+      params.deadline =
+        deadline;
+    }
+
+    const response =
+      await api.get(
+        "/cases",
+        {
+          params,
+        }
+      );
 
     return response.data;
-  } catch (error: any) {
-    console.error(
-      "Error fetching cases:",
-      error?.response?.data ||
-      error?.message ||
-      error
-    );
-
-    throw error;
-  }
-};
+  };
 
 export const getCase =
   async (
     caseId:
-      number | string
+      number |
+      string
   ) => {
-    try {
-      const response =
-        await api.get(
-          `/cases/${caseId}`
-        );
 
-      return response.data;
-    } catch (
-    error: any
-    ) {
-      console.error(
-        "Error fetching case:",
-        error?.response?.data ||
-        error?.message ||
-        error
+    const response =
+      await api.get(
+        `/cases/${caseId}`
       );
 
-      throw error;
-    }
+    return response.data;
   };
 
 export const updateCase =
   async (
     caseId:
-      number | string,
+      number |
+      string,
     data: any
   ) => {
-    try {
-      const response =
-        await api.put(
-          `/cases/${caseId}`,
-          data
-        );
 
-      return response.data;
-    } catch (
-    error: any
-    ) {
-      console.error(
-        "Error updating case:",
-        error?.response?.data ||
-        error?.message ||
-        error
+    const response =
+      await api.put(
+        `/cases/${caseId}`,
+        data
       );
 
-      throw error;
-    }
+    return response.data;
   };
 
 export const deleteCase =
   async (
     caseId:
-      number | string
+      number |
+      string
   ) => {
-    try {
-      const response =
-        await api.delete(
-          `/cases/${caseId}`
-        );
 
-      return response.data;
-    } catch (
-    error: any
-    ) {
-      console.error(
-        "Error deleting case:",
-        error?.response?.data ||
-        error?.message ||
-        error
+    const response =
+      await api.delete(
+        `/cases/${caseId}`
       );
 
-      throw error;
-    }
+    return response.data;
   };
 
 export const confirmPreviewFiles =
   async (
     caseId:
-      number | string
+      number |
+      string
   ) => {
-    try {
-      const response =
-        await api.put(
-          `/cases/${caseId}/confirm-preview-files`
-        );
 
-      return response.data;
-    } catch (
-    error: any
-    ) {
-      console.error(
-        "Error confirming preview files:",
-        error?.response?.data ||
-        error?.message ||
-        error
+    const response =
+      await api.put(
+        `/cases/${caseId}/confirm-preview-files`
       );
 
-      throw error;
-    }
+    return response.data;
   };
 
 export const approvePreview =
   async (
     caseId:
-      number | string
+      number |
+      string
   ) => {
-    try {
-      const response =
-        await api.put(
-          `/cases/${caseId}/approve-preview`
-        );
 
-      return response.data;
-    } catch (
-    error: any
-    ) {
-      console.error(
-        "Error approving preview:",
-        error?.response?.data ||
-        error?.message ||
-        error
+    const response =
+      await api.put(
+        `/cases/${caseId}/approve-preview`
       );
 
-      throw error;
-    }
+    return response.data;
   };
 
+export const updateCaseStatus =
+  async (
+    caseId:
+      number |
+      string,
+    status: string
+  ) => {
 
-
-export const updateCaseStatus = async (
-  caseId: number | string,
-  status: string
-) => {
-  try {
-    const response = await api.put(
-      `/cases/${caseId}/status`,
-      {
-        status,
-      }
-    );
-
-    console.log(
-      "Case status updated:",
-      response.data
-    );
+    const response =
+      await api.put(
+        `/cases/${caseId}/status`,
+        {
+          status,
+        }
+      );
 
     return response.data;
-  } catch (error: any) {
-    console.error(
-      "Error updating case status:",
-      error?.response?.data ||
-      error?.message ||
-      error
-    );
+  };
 
-    throw error;
-  }
-};
+export const rejectPreview =
+  async (
+    caseId:
+      number |
+      string
+  ) => {
 
-export const rejectPreview = async (
-  caseId: number | string
-) => {
-  try {
-    const response = await api.put(
-      `/cases/${caseId}/reject-preview`
-    );
+    const response =
+      await api.put(
+        `/cases/${caseId}/reject-preview`
+      );
 
     return response.data;
-  } catch (error: any) {
-    console.error(
-      "Error rejecting preview:",
-      error?.response?.data ||
-      error?.message ||
-      error
-    );
-
-    throw error;
-  }
-};
+  };

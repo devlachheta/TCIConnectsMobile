@@ -13,6 +13,7 @@ import Step3Review from "@/components/doctordashboard/newcases/Step3Review";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
+    cancelUpload,
     submitCase as submitCaseApi,
     uploadCaseFile,
     uploadTempFile,
@@ -340,6 +341,7 @@ export default function NewCases() {
 
     const selectTestFile =
         async () => {
+
             if (
                 uploadedFiles.length >= 5
             ) {
@@ -350,15 +352,17 @@ export default function NewCases() {
             }
 
             try {
+
+                const remainingSlots =
+                    5 -
+                    uploadedFiles.length;
+
                 const result =
-                    await DocumentPicker.getDocumentAsync(
-                        {
-                            type: "*/*",
-                            multiple: true,
-                            copyToCacheDirectory:
-                                false,
-                        }
-                    );
+                    await DocumentPicker.getDocumentAsync({
+                        type: "*/*",
+                        multiple: true,
+                        copyToCacheDirectory: true,
+                    });
 
                 if (
                     result.canceled
@@ -366,15 +370,20 @@ export default function NewCases() {
                     return;
                 }
 
-                const remainingSlots =
-                    5 -
-                    uploadedFiles.length;
-
                 const selectedFiles =
                     result.assets.slice(
                         0,
                         remainingSlots
                     );
+
+                if (
+                    selectedFiles.length === 0
+                ) {
+                    setStep2Error(
+                        "You can upload a maximum of 5 files."
+                    );
+                    return;
+                }
 
                 setUploadedFiles(
                     (previous) => [
@@ -385,13 +394,17 @@ export default function NewCases() {
 
                 setUploadProgress(
                     (previous) => {
+
                         const updated =
                         {
                             ...previous,
                         };
 
                         selectedFiles.forEach(
-                            (file) => {
+                            (
+                                file
+                            ) => {
+
                                 updated[
                                     file.uri
                                 ] = 0;
@@ -409,13 +422,16 @@ export default function NewCases() {
                         async (
                             file
                         ) => {
+
                             try {
+
                                 const uploaded =
                                     await uploadTempFile(
                                         file,
                                         (
                                             progress
                                         ) => {
+
                                             setUploadProgress(
                                                 (
                                                     previous
@@ -461,9 +477,23 @@ export default function NewCases() {
                                             100,
                                     })
                                 );
+
                             } catch (
                             error: any
                             ) {
+
+                                if (
+                                    error?.message ===
+                                    "UPLOAD_CANCELLED"
+                                ) {
+                                    console.log(
+                                        "UPLOAD CANCELLED:",
+                                        file.name
+                                    );
+
+                                    return;
+                                }
+
                                 console.error(
                                     "DIGITAL FILE UPLOAD ERROR:",
                                     file.name,
@@ -485,6 +515,7 @@ export default function NewCases() {
                                     (
                                         previous
                                     ) => {
+
                                         const updated =
                                         {
                                             ...previous,
@@ -514,9 +545,11 @@ export default function NewCases() {
                         "You can upload a maximum of 5 files."
                     );
                 }
+
             } catch (
             error
             ) {
+
                 console.error(
                     "FILE PICKER ERROR:",
                     error
@@ -531,6 +564,16 @@ export default function NewCases() {
     const removeUploadedFile = (
         uri: string
     ) => {
+
+        console.log(
+            "CANCELLING UPLOAD:",
+            uri
+        );
+
+        cancelUpload(
+            uri
+        );
+
         setUploadedFiles(
             (previous) =>
                 previous.filter(
@@ -541,6 +584,7 @@ export default function NewCases() {
 
         setUploadProgress(
             (previous) => {
+
                 const updated = {
                     ...previous,
                 };
@@ -555,6 +599,7 @@ export default function NewCases() {
 
         setUploadedFilePaths(
             (previous) => {
+
                 const updated = {
                     ...previous,
                 };
@@ -570,16 +615,15 @@ export default function NewCases() {
 
     const selectCaseDocument =
         async () => {
+
             try {
+
                 const result =
-                    await DocumentPicker.getDocumentAsync(
-                        {
-                            type: "application/pdf",
-                            multiple: false,
-                            copyToCacheDirectory:
-                                false,
-                        }
-                    );
+                    await DocumentPicker.getDocumentAsync({
+                        type: "application/pdf",
+                        multiple: true,
+                        copyToCacheDirectory: true,
+                    });
 
                 if (
                     result.canceled
@@ -608,6 +652,7 @@ export default function NewCases() {
                         (
                             progress
                         ) => {
+
                             setCaseDocumentProgress(
                                 progress
                             );
@@ -634,9 +679,11 @@ export default function NewCases() {
                     "CASE DOCUMENT TEMP FILE READY:",
                     uploaded.file_path
                 );
+
             } catch (
             error: any
             ) {
+
                 console.error(
                     "CASE DOCUMENT UPLOAD ERROR:",
                     error?.response?.data ||
@@ -656,6 +703,7 @@ export default function NewCases() {
 
     const getDoctorId =
         async () => {
+
             const userData =
                 await AsyncStorage.getItem(
                     "user"
@@ -677,375 +725,485 @@ export default function NewCases() {
             return user.id;
         };
 
-    const submitCase = async () => {
-        if (submitting) {
-            return;
-        }
+    const submitCase =
+        async () => {
 
-        setGdprError("");
-        setAgreementError("");
-        setConsentError("");
+            if (
+                submitting
+            ) {
+                return;
+            }
 
-        let hasError = false;
+            setGdprError("");
+            setAgreementError("");
+            setConsentError("");
 
-        if (!confirmDigitalMedical) {
-            setGdprError(
-                "You must confirm GDPR compliance."
-            );
-            hasError = true;
-        }
+            let hasError =
+                false;
 
-        if (!confirmGdpr) {
-            setAgreementError(
-                "You must confirm Data Processing & Confidentiality Agreement."
-            );
-            hasError = true;
-        }
+            if (
+                !confirmDigitalMedical
+            ) {
 
-        if (!confirmCaseInstructions) {
-            setConsentError(
-                "Patient consent is required."
-            );
-            hasError = true;
-        }
+                setGdprError(
+                    "You must confirm GDPR compliance."
+                );
 
-        if (hasError) {
-            return;
-        }
+                hasError =
+                    true;
+            }
 
-        if (uploadedFiles.length === 0) {
-            setStep2Error(
-                "Please upload at least one digital file."
-            );
-            setCurrentStep(2);
-            return;
-        }
+            if (
+                !confirmGdpr
+            ) {
 
-        const missingDigitalFile =
-            uploadedFiles.find(
-                (file) =>
-                    !uploadedFilePaths[file.uri]
-            );
+                setAgreementError(
+                    "You must confirm Data Processing & Confidentiality Agreement."
+                );
 
-        if (missingDigitalFile) {
-            setStep2Error(
-                `Please wait until ${missingDigitalFile.name} finishes uploading.`
-            );
-            setCurrentStep(2);
-            return;
-        }
+                hasError =
+                    true;
+            }
 
-        if (
-            caseDocument &&
-            !caseDocumentPath
-        ) {
-            setCaseDocumentProgress(0);
+            if (
+                !confirmCaseInstructions
+            ) {
 
-            try {
-                const uploaded =
-                    await uploadTempFile(
-                        caseDocument,
-                        (progress) => {
-                            setCaseDocumentProgress(
+                setConsentError(
+                    "Patient consent is required."
+                );
+
+                hasError =
+                    true;
+            }
+
+            if (
+                hasError
+            ) {
+                return;
+            }
+
+            if (
+                uploadedFiles.length === 0
+            ) {
+
+                setStep2Error(
+                    "Please upload at least one digital file."
+                );
+
+                setCurrentStep(
+                    2
+                );
+
+                return;
+            }
+
+            const missingDigitalFile =
+                uploadedFiles.find(
+                    (file) =>
+                        !uploadedFilePaths[
+                        file.uri
+                        ]
+                );
+
+            if (
+                missingDigitalFile
+            ) {
+
+                setStep2Error(
+                    `Please wait until ${missingDigitalFile.name} finishes uploading.`
+                );
+
+                setCurrentStep(
+                    2
+                );
+
+                return;
+            }
+
+            if (
+                caseDocument &&
+                !caseDocumentPath
+            ) {
+
+                setCaseDocumentProgress(
+                    0
+                );
+
+                try {
+
+                    const uploaded =
+                        await uploadTempFile(
+                            caseDocument,
+                            (
                                 progress
-                            );
-                        }
+                            ) => {
+
+                                setCaseDocumentProgress(
+                                    progress
+                                );
+                            }
+                        );
+
+                    if (
+                        !uploaded?.file_path
+                    ) {
+                        throw new Error(
+                            "Temporary case document path was not returned."
+                        );
+                    }
+
+                    setCaseDocumentPath(
+                        uploaded.file_path
                     );
 
+                    setCaseDocumentProgress(
+                        100
+                    );
+
+                } catch (
+                error: any
+                ) {
+
+                    console.error(
+                        "CASE DOCUMENT TEMP UPLOAD ERROR:",
+                        error?.response?.data ||
+                        error?.message ||
+                        error
+                    );
+
+                    setConsentError(
+                        "Unable to upload the case document."
+                    );
+
+                    return;
+                }
+            }
+
+            try {
+
+                setSubmitting(
+                    true
+                );
+
+                const doctorId =
+                    await getDoctorId();
+
+                const implantDetails =
+                    implantTable.map(
+                        (
+                            row
+                        ) => ({
+                            implant_type:
+                                row[0],
+
+                            platform_diameter:
+                                row[1],
+
+                            screw_retained:
+                                row[2],
+
+                            screw_retained_hybrid:
+                                row[3],
+
+                            cement_retained_ti_abutment:
+                                row[4],
+
+                            zr_abutment:
+                                row[5],
+
+                            implant_bar_type:
+                                row[6],
+
+                            attachment_type:
+                                row[7],
+                        })
+                    );
+
+                const payload = {
+
+                    doctor_id:
+                        doctorId,
+
+                    patient_name:
+                        patientName,
+
+                    gender:
+                        gender ||
+                        null,
+
+                    age:
+                        age
+                            ? Number(
+                                age
+                            )
+                            : null,
+
+                    appointment_date:
+                        date
+                            ? date
+                                .toISOString()
+                                .split(
+                                    "T"
+                                )[0]
+                            : null,
+
+                    appointment_time:
+                        time
+                            ? time
+                                .toTimeString()
+                                .slice(
+                                    0,
+                                    5
+                                )
+                            : null,
+
+                    delivery_deadline:
+                        deliveryDate
+                            ? deliveryDate
+                                .toISOString()
+                                .split(
+                                    "T"
+                                )[0]
+                            : null,
+
+                    preview_status:
+                        "-",
+
+                    status:
+                        "Submitted",
+
+                    details: {
+
+                        case_stage:
+                            caseStages,
+
+                        surface_texture:
+                            surfaceTexture,
+
+                        glazed_polish:
+                            glazedPolish,
+
+                        incisal_translucency:
+                            incisalTranslucency,
+
+                        prepared_tooth_shade:
+                            preparedToothShade,
+
+                        shade_guide_color:
+                            shadeInstructions,
+
+                        material_type:
+                            materialTypes,
+
+                        crown_bridge:
+                            crownBridgeTypes,
+
+                        additional_restorations:
+                            additionalRestorations,
+
+                        implant_details:
+                            implantDetails,
+
+                        design_preview:
+                            designPreview,
+
+                        additional_instructions:
+                            implantInstructions,
+                    },
+
+                    files: [],
+                };
+
+                console.log(
+                    "CREATING CASE..."
+                );
+
+                const response =
+                    await submitCaseApi(
+                        payload
+                    );
+
+                const caseId =
+                    response?.id;
+
                 if (
-                    !uploaded?.file_path
+                    !caseId
                 ) {
                     throw new Error(
-                        "Temporary case document path was not returned."
+                        "Case ID was not returned after case creation."
                     );
                 }
 
-                setCaseDocumentPath(
-                    uploaded.file_path
+                console.log(
+                    "CASE CREATED:",
+                    caseId
                 );
 
-                setCaseDocumentProgress(
-                    100
+                const processedFiles =
+                    new Set<string>();
+
+                for (
+                    const file of uploadedFiles
+                ) {
+
+                    if (
+                        processedFiles.has(
+                            file.uri
+                        )
+                    ) {
+
+                        console.log(
+                            "SKIPPING DUPLICATE DIGITAL FILE:",
+                            file.name
+                        );
+
+                        continue;
+                    }
+
+                    processedFiles.add(
+                        file.uri
+                    );
+
+                    const tempPath =
+                        uploadedFilePaths[
+                        file.uri
+                        ];
+
+                    if (
+                        !tempPath
+                    ) {
+                        throw new Error(
+                            `Temporary file path not found for ${file.name}.`
+                        );
+                    }
+
+                    console.log(
+                        "MOVING DIGITAL FILE TO CASE:",
+                        file.name,
+                        tempPath
+                    );
+
+                    await uploadCaseFile(
+                        caseId,
+                        file,
+                        "digital_file",
+                        undefined,
+                        tempPath
+                    );
+
+                    console.log(
+                        "DIGITAL FILE MOVED SUCCESSFULLY:",
+                        file.name
+                    );
+                }
+
+                if (
+                    caseDocument &&
+                    caseDocumentPath
+                ) {
+
+                    console.log(
+                        "MOVING CASE DOCUMENT TO CASE:",
+                        caseDocumentPath
+                    );
+
+                    await uploadCaseFile(
+                        caseId,
+                        caseDocument,
+                        "case_document",
+                        undefined,
+                        caseDocumentPath
+                    );
+
+                    console.log(
+                        "CASE DOCUMENT MOVED SUCCESSFULLY"
+                    );
+                }
+
+                console.log(
+                    "CASE SUBMISSION COMPLETE:",
+                    caseId
                 );
-            } catch (error: any) {
+
+                setCaseSubmitted(
+                    true
+                );
+
+            } catch (
+            error: any
+            ) {
+
                 console.error(
-                    "CASE DOCUMENT TEMP UPLOAD ERROR:",
+                    "CASE SUBMISSION ERROR:",
                     error?.response?.data ||
                     error?.message ||
                     error
                 );
 
-                setConsentError(
-                    "Unable to upload the case document."
-                );
+            } finally {
 
-                return;
-            }
-        }
-
-        try {
-            setSubmitting(true);
-
-            const doctorId =
-                await getDoctorId();
-
-            const implantDetails =
-                implantTable.map(
-                    (row) => ({
-                        implant_type:
-                            row[0],
-
-                        platform_diameter:
-                            row[1],
-
-                        screw_retained:
-                            row[2],
-
-                        screw_retained_hybrid:
-                            row[3],
-
-                        cement_retained_ti_abutment:
-                            row[4],
-
-                        zr_abutment:
-                            row[5],
-
-                        implant_bar_type:
-                            row[6],
-
-                        attachment_type:
-                            row[7],
-                    })
-                );
-
-            const payload = {
-                doctor_id:
-                    doctorId,
-
-                patient_name:
-                    patientName,
-
-                gender:
-                    gender || null,
-
-                age:
-                    age
-                        ? Number(age)
-                        : null,
-
-                appointment_date:
-                    date
-                        ? date
-                            .toISOString()
-                            .split("T")[0]
-                        : null,
-
-                appointment_time:
-                    time
-                        ? time
-                            .toTimeString()
-                            .slice(0, 5)
-                        : null,
-
-                delivery_deadline:
-                    deliveryDate
-                        ? deliveryDate
-                            .toISOString()
-                            .split("T")[0]
-                        : null,
-
-                preview_status:
-                    "-",
-
-                status:
-                    "Submitted",
-
-                details: {
-                    case_stage:
-                        caseStages,
-
-                    surface_texture:
-                        surfaceTexture,
-
-                    glazed_polish:
-                        glazedPolish,
-
-                    incisal_translucency:
-                        incisalTranslucency,
-
-                    prepared_tooth_shade:
-                        preparedToothShade,
-
-                    shade_guide_color:
-                        shadeInstructions,
-
-                    material_type:
-                        materialTypes,
-
-                    crown_bridge:
-                        crownBridgeTypes,
-
-                    additional_restorations:
-                        additionalRestorations,
-
-                    implant_details:
-                        implantDetails,
-
-                    design_preview:
-                        designPreview,
-
-                    additional_instructions:
-                        implantInstructions,
-                },
-
-                files: [],
-            };
-
-            console.log(
-                "CREATING CASE..."
-            );
-
-            const response =
-                await submitCaseApi(
-                    payload
-                );
-
-            const caseId =
-                response?.id;
-
-            if (!caseId) {
-                throw new Error(
-                    "Case ID was not returned after case creation."
+                setSubmitting(
+                    false
                 );
             }
+        };
 
-            console.log(
-                "CASE CREATED:",
-                caseId
-            );
-
-            const processedFiles =
-                new Set<string>();
-
-            for (
-                const file of uploadedFiles
-            ) {
-                if (
-                    processedFiles.has(
-                        file.uri
-                    )
-                ) {
-                    console.log(
-                        "SKIPPING DUPLICATE DIGITAL FILE:",
-                        file.name
-                    );
-
-                    continue;
-                }
-
-                processedFiles.add(
-                    file.uri
-                );
-
-                const tempPath =
-                    uploadedFilePaths[
-                    file.uri
-                    ];
-
-                if (!tempPath) {
-                    throw new Error(
-                        `Temporary file path not found for ${file.name}.`
-                    );
-                }
-
-                console.log(
-                    "MOVING DIGITAL FILE TO CASE:",
-                    file.name,
-                    tempPath
-                );
-
-                await uploadCaseFile(
-                    caseId,
-                    file,
-                    "digital_file",
-                    undefined,
-                    tempPath
-                );
-
-                console.log(
-                    "DIGITAL FILE MOVED SUCCESSFULLY:",
-                    file.name
-                );
-            }
-
-            if (
-                caseDocument &&
-                caseDocumentPath
-            ) {
-                console.log(
-                    "MOVING CASE DOCUMENT TO CASE:",
-                    caseDocumentPath
-                );
-
-                await uploadCaseFile(
-                    caseId,
-                    caseDocument,
-                    "case_document",
-                    undefined,
-                    caseDocumentPath
-                );
-
-                console.log(
-                    "CASE DOCUMENT MOVED SUCCESSFULLY"
-                );
-            }
-
-            console.log(
-                "CASE SUBMISSION COMPLETE:",
-                caseId
-            );
-
-            setCaseSubmitted(
-                true
-            );
-        } catch (
-        error: any
-        ) {
-            console.error(
-                "CASE SUBMISSION ERROR:",
-                error?.response?.data ||
-                error?.message ||
-                error
-            );
-        } finally {
-            setSubmitting(
-                false
-            );
-        }
-    };
     const startNewCase =
         () => {
+
             setPatientName("");
             setPatientId("");
             setAge("");
             setGender("");
 
-            setDate(null);
-            setTime(null);
-            setDeliveryDate(null);
+            setDate(
+                null
+            );
 
-            setSurfaceTexture([]);
-            setGlazedPolish([]);
-            setIncisalTranslucency([]);
-            setPreparedToothShade([]);
+            setTime(
+                null
+            );
 
-            setShadeInstructions("");
+            setDeliveryDate(
+                null
+            );
 
-            setMaterialTypes([]);
-            setCrownBridgeTypes([]);
-            setCaseStages([]);
+            setSurfaceTexture(
+                []
+            );
 
-            setImplantInstructions("");
+            setGlazedPolish(
+                []
+            );
+
+            setIncisalTranslucency(
+                []
+            );
+
+            setPreparedToothShade(
+                []
+            );
+
+            setShadeInstructions(
+                ""
+            );
+
+            setMaterialTypes(
+                []
+            );
+
+            setCrownBridgeTypes(
+                []
+            );
+
+            setCaseStages(
+                []
+            );
+
+            setImplantInstructions(
+                ""
+            );
 
             setAdditionalRestorations(
                 []
@@ -1067,7 +1225,10 @@ export default function NewCases() {
                 )
             );
 
-            setUploadedFiles([]);
+            setUploadedFiles(
+                []
+            );
+
             setCaseDocument(
                 null
             );
@@ -1088,8 +1249,13 @@ export default function NewCases() {
                 0
             );
 
-            setStep1Error("");
-            setStep2Error("");
+            setStep1Error(
+                ""
+            );
+
+            setStep2Error(
+                ""
+            );
 
             setConfirmDigitalMedical(
                 false
@@ -1103,9 +1269,17 @@ export default function NewCases() {
                 false
             );
 
-            setGdprError("");
-            setAgreementError("");
-            setConsentError("");
+            setGdprError(
+                ""
+            );
+
+            setAgreementError(
+                ""
+            );
+
+            setConsentError(
+                ""
+            );
 
             setCaseSubmitted(
                 false
@@ -1126,175 +1300,232 @@ export default function NewCases() {
                 styles.container
             }
         >
+
             <View
                 style={
                     styles.content
                 }
             >
+
                 {currentStep === 1 && (
                     <Step1CaseDetails
+
                         patientName={
                             patientName
                         }
+
                         setPatientName={
                             setPatientName
                         }
+
                         patientId={
                             patientId
                         }
+
                         setPatientId={
                             setPatientId
                         }
+
                         age={
                             age
                         }
+
                         setAge={
                             setAge
                         }
+
                         gender={
                             gender
                         }
+
                         setGender={
                             setGender
                         }
+
                         date={
                             date
                         }
+
                         setDate={
                             setDate
                         }
+
                         time={
                             time
                         }
+
                         setTime={
                             setTime
                         }
+
                         deliveryDate={
                             deliveryDate
                         }
+
                         setDeliveryDate={
                             setDeliveryDate
                         }
+
                         showDatePicker={
                             showDatePicker
                         }
+
                         setShowDatePicker={
                             setShowDatePicker
                         }
+
                         showTimePicker={
                             showTimePicker
                         }
+
                         setShowTimePicker={
                             setShowTimePicker
                         }
+
                         showDeliveryPicker={
                             showDeliveryPicker
                         }
+
                         setShowDeliveryPicker={
                             setShowDeliveryPicker
                         }
+
                         shadeOpen={
                             shadeOpen
                         }
+
                         setShadeOpen={
                             setShadeOpen
                         }
+
                         implantOpen={
                             implantOpen
                         }
+
                         setImplantOpen={
                             setImplantOpen
                         }
+
                         surfaceTexture={
                             surfaceTexture
                         }
+
                         toggleSurfaceTexture={
                             toggleSurfaceTexture
                         }
+
                         glazedPolish={
                             glazedPolish
                         }
+
                         toggleGlazedPolish={
                             toggleGlazedPolish
                         }
+
                         incisalTranslucency={
                             incisalTranslucency
                         }
+
                         toggleIncisalTranslucency={
                             toggleIncisalTranslucency
                         }
+
                         preparedToothShade={
                             preparedToothShade
                         }
+
                         togglePreparedToothShade={
                             togglePreparedToothShade
                         }
+
                         materialTypes={
                             materialTypes
                         }
+
                         toggleMaterialType={
                             toggleMaterialType
                         }
+
                         crownBridgeTypes={
                             crownBridgeTypes
                         }
+
                         toggleCrownBridgeType={
                             toggleCrownBridgeType
                         }
+
                         caseStages={
                             caseStages
                         }
+
                         toggleCaseStage={
                             toggleCaseStage
                         }
+
                         shadeInstructions={
                             shadeInstructions
                         }
+
                         setShadeInstructions={
                             setShadeInstructions
                         }
+
                         implantInstructions={
                             implantInstructions
                         }
+
                         setImplantInstructions={
                             setImplantInstructions
                         }
+
                         additionalRestorations={
                             additionalRestorations
                         }
+
                         toggleAdditionalRestoration={
                             toggleAdditionalRestoration
                         }
+
                         designPreview={
                             designPreview
                         }
+
                         setDesignPreview={
                             setDesignPreview
                         }
+
                         implantTable={
                             implantTable
                         }
+
                         updateImplantCell={
                             updateImplantCell
                         }
+
                         caseDocument={
                             caseDocument
                         }
+
                         setCaseDocument={
                             setCaseDocument
                         }
+
                         selectCaseDocument={
                             selectCaseDocument
                         }
+
                         caseDocumentProgress={
                             caseDocumentProgress
                         }
+
                         step1Error={
                             step1Error
                         }
+
                         onNext={
                             goToStep2
                         }
+
                         onBack={() =>
                             router.replace(
                                 "/(doctor)/newcases"
@@ -1305,38 +1536,49 @@ export default function NewCases() {
 
                 {currentStep === 2 && (
                     <Step2DigitalFiles
+
                         uploadedFiles={
                             uploadedFiles
                         }
+
                         setUploadedFiles={
                             setUploadedFiles
                         }
+
                         uploadProgress={
                             uploadProgress
                         }
+
                         setUploadProgress={
                             setUploadProgress
                         }
+
                         step2Error={
                             step2Error
                         }
+
                         setStep2Error={
                             setStep2Error
                         }
+
                         selectTestFile={
                             selectTestFile
                         }
+
                         removeUploadedFile={
                             removeUploadedFile
                         }
+
                         submitting={
                             submitting
                         }
+
                         onBack={() =>
                             setCurrentStep(
                                 1
                             )
                         }
+
                         onNext={
                             goToStep3
                         }
@@ -1345,167 +1587,220 @@ export default function NewCases() {
 
                 {currentStep === 3 && (
                     <Step3Review
+
                         patientName={
                             patientName
                         }
+
                         patientId={
                             patientId
                         }
+
                         age={
                             age
                         }
+
                         gender={
                             gender
                         }
+
                         date={
                             date
                         }
+
                         time={
                             time
                         }
+
                         deliveryDate={
                             deliveryDate
                         }
+
                         caseStages={
                             caseStages
                         }
+
                         surfaceTexture={
                             surfaceTexture
                         }
+
                         glazedPolish={
                             glazedPolish
                         }
+
                         incisalTranslucency={
                             incisalTranslucency
                         }
+
                         preparedToothShade={
                             preparedToothShade
                         }
+
                         shadeInstructions={
                             shadeInstructions
                         }
+
                         materialTypes={
                             materialTypes
                         }
+
                         crownBridgeTypes={
                             crownBridgeTypes
                         }
+
                         implantTable={
                             implantTable
                         }
+
                         additionalRestorations={
                             additionalRestorations
                         }
+
                         designPreview={
                             designPreview
                         }
+
                         implantInstructions={
                             implantInstructions
                         }
+
                         caseDocument={
                             caseDocument
                         }
+
                         uploadedFiles={
                             uploadedFiles
                         }
+
                         caseDetailsOpen={
                             caseDetailsOpen
                         }
+
                         setCaseDetailsOpen={
                             setCaseDetailsOpen
                         }
+
                         shadeOpen={
                             shadeOpen
                         }
+
                         setShadeOpen={
                             setShadeOpen
                         }
+
                         reviewImplantOpen={
                             reviewImplantOpen
                         }
+
                         setReviewImplantOpen={
                             setReviewImplantOpen
                         }
+
                         caseDocumentOpen={
                             caseDocumentOpen
                         }
+
                         setCaseDocumentOpen={
                             setCaseDocumentOpen
                         }
+
                         digitalFilesOpen={
                             digitalFilesOpen
                         }
+
                         setDigitalFilesOpen={
                             setDigitalFilesOpen
                         }
+
                         additionalInfoOpen={
                             additionalInfoOpen
                         }
+
                         setAdditionalInfoOpen={
                             setAdditionalInfoOpen
                         }
+
                         confirmDigitalMedical={
                             confirmDigitalMedical
                         }
+
                         setConfirmDigitalMedical={
                             setConfirmDigitalMedical
                         }
+
                         confirmGdpr={
                             confirmGdpr
                         }
+
                         setConfirmGdpr={
                             setConfirmGdpr
                         }
+
                         confirmCaseInstructions={
                             confirmCaseInstructions
                         }
+
                         setConfirmCaseInstructions={
                             setConfirmCaseInstructions
                         }
+
                         gdprError={
                             gdprError
                         }
+
                         setGdprError={
                             setGdprError
                         }
+
                         agreementError={
                             agreementError
                         }
+
                         setAgreementError={
                             setAgreementError
                         }
+
                         consentError={
                             consentError
                         }
+
                         setConsentError={
                             setConsentError
                         }
+
                         submitting={
                             submitting
                         }
+
                         caseSubmitted={
                             caseSubmitted
                         }
+
                         onBack={() =>
                             setCurrentStep(
                                 2
                             )
                         }
+
                         onSubmit={
                             submitCase
                         }
+
                         onSubmitAnother={
                             startNewCase
                         }
                     />
                 )}
+
             </View>
+
         </SafeAreaView>
     );
 }
 
 const styles =
     StyleSheet.create({
+
         container: {
             flex: 1,
             backgroundColor:

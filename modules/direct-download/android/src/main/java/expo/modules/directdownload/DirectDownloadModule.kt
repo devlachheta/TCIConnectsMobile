@@ -4,21 +4,17 @@ import android.app.DownloadManager
 import android.content.Context
 import android.net.Uri
 import android.os.Environment
-
+import java.io.File
+import java.io.FileOutputStream
+import java.io.FileInputStream
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
-
 
 class DirectDownloadModule : Module() {
 
     override fun definition() = ModuleDefinition {
 
         Name("DirectDownload")
-
-
-        // =========================================================
-        // START DOWNLOAD
-        // =========================================================
 
         AsyncFunction("download") {
             url: String,
@@ -50,50 +46,26 @@ class DirectDownloadModule : Module() {
                 )
             }
 
-            // -----------------------------------------------------
-            // Sanitize filename
-            // -----------------------------------------------------
-
             val safeFileName =
                 fileName
                     .replace("/", "_")
                     .replace("\\", "_")
                     .replace("..", "_")
 
-
-            // -----------------------------------------------------
-            // Android DownloadManager
-            // -----------------------------------------------------
-
             val downloadManager =
                 context.getSystemService(
                     Context.DOWNLOAD_SERVICE
                 ) as DownloadManager
-
-
-            // -----------------------------------------------------
-            // Request
-            // -----------------------------------------------------
 
             val request =
                 DownloadManager.Request(
                     Uri.parse(url)
                 )
 
-
-            // -----------------------------------------------------
-            // JWT authentication
-            // -----------------------------------------------------
-
             request.addRequestHeader(
                 "Authorization",
                 "Bearer $accessToken"
             )
-
-
-            // -----------------------------------------------------
-            // File information
-            // -----------------------------------------------------
 
             request.setTitle(
                 safeFileName
@@ -111,11 +83,6 @@ class DirectDownloadModule : Module() {
                 }
             )
 
-
-            // -----------------------------------------------------
-            // Network settings
-            // -----------------------------------------------------
-
             request.setAllowedOverMetered(
                 true
             )
@@ -124,44 +91,23 @@ class DirectDownloadModule : Module() {
                 false
             )
 
-
-            // -----------------------------------------------------
-            // Save to Downloads
-            // -----------------------------------------------------
-
             request.setDestinationInExternalPublicDir(
                 Environment.DIRECTORY_DOWNLOADS,
                 safeFileName
             )
-
-
-            // -----------------------------------------------------
-            // Notification
-            // -----------------------------------------------------
 
             request.setNotificationVisibility(
                 DownloadManager.Request
                     .VISIBILITY_VISIBLE_NOTIFY_COMPLETED
             )
 
-
-            // -----------------------------------------------------
-            // Start download
-            // -----------------------------------------------------
-
             val downloadId =
                 downloadManager.enqueue(
                     request
                 )
 
-
             return@AsyncFunction downloadId
         }
-
-
-        // =========================================================
-        // GET DOWNLOAD STATUS
-        // =========================================================
 
         AsyncFunction("getStatus") {
             downloadId: Long ->
@@ -172,12 +118,10 @@ class DirectDownloadModule : Module() {
                         "React context is unavailable"
                     )
 
-
             val downloadManager =
                 context.getSystemService(
                     Context.DOWNLOAD_SERVICE
                 ) as DownloadManager
-
 
             val query =
                 DownloadManager.Query()
@@ -186,18 +130,12 @@ class DirectDownloadModule : Module() {
                 downloadId
             )
 
-
             val cursor =
                 downloadManager.query(
                     query
                 )
 
-
             cursor.use {
-
-                // -------------------------------------------------
-                // Download not found
-                // -------------------------------------------------
 
                 if (!it.moveToFirst()) {
 
@@ -210,22 +148,12 @@ class DirectDownloadModule : Module() {
                     )
                 }
 
-
-                // -------------------------------------------------
-                // Status
-                // -------------------------------------------------
-
                 val status =
                     it.getInt(
                         it.getColumnIndexOrThrow(
                             DownloadManager.COLUMN_STATUS
                         )
                     )
-
-
-                // -------------------------------------------------
-                // Reason
-                // -------------------------------------------------
 
                 val reason =
                     it.getInt(
@@ -234,11 +162,6 @@ class DirectDownloadModule : Module() {
                         )
                     )
 
-
-                // -------------------------------------------------
-                // Local URI
-                // -------------------------------------------------
-
                 val localUri =
                     it.getString(
                         it.getColumnIndexOrThrow(
@@ -246,22 +169,12 @@ class DirectDownloadModule : Module() {
                         )
                     )
 
-
-                // -------------------------------------------------
-                // Title
-                // -------------------------------------------------
-
                 val title =
                     it.getString(
                         it.getColumnIndexOrThrow(
                             DownloadManager.COLUMN_TITLE
                         )
                     )
-
-
-                // -------------------------------------------------
-                // Convert status to readable text
-                // -------------------------------------------------
 
                 val statusText =
                     when (status) {
@@ -285,11 +198,6 @@ class DirectDownloadModule : Module() {
                             "UNKNOWN"
                     }
 
-
-                // -------------------------------------------------
-                // Return result
-                // -------------------------------------------------
-
                 return@AsyncFunction mapOf(
                     "status" to statusText,
                     "statusCode" to status,
@@ -298,6 +206,163 @@ class DirectDownloadModule : Module() {
                     "title" to (title ?: "")
                 )
             }
+        }
+
+        AsyncFunction("readChunk") {
+            uriString: String,
+            start: Long,
+            length: Int,
+            chunkName: String ->
+
+            val context =
+                appContext.reactContext
+                    ?: throw Exception(
+                        "React context is unavailable"
+                    )
+
+            if (uriString.isBlank()) {
+                throw Exception(
+                    "File URI is empty"
+                )
+            }
+
+            if (start < 0) {
+                throw Exception(
+                    "Invalid chunk start position"
+                )
+            }
+
+            if (length <= 0) {
+                throw Exception(
+                    "Invalid chunk length"
+                )
+            }
+
+            val safeChunkName =
+                chunkName
+                    .replace("/", "_")
+                    .replace("\\", "_")
+                    .replace("..", "_")
+
+            val outputFile =
+                File(
+                    context.cacheDir,
+                    safeChunkName
+                )
+
+            val uri =
+                Uri.parse(uriString)
+
+            val parcelFileDescriptor =
+                context.contentResolver
+                    .openFileDescriptor(
+                        uri,
+                        "r"
+                    )
+                    ?: throw Exception(
+                        "Unable to open content URI"
+                    )
+
+            try {
+
+                FileInputStream(
+                    parcelFileDescriptor.fileDescriptor
+                ).use { inputStream ->
+
+                    val channel =
+                        inputStream.channel
+
+                    try {
+                        channel.position(
+                            start
+                        )
+                    } catch (
+                        positionError: Exception
+                    ) {
+
+                        inputStream.skip(
+                            start
+                        )
+                    }
+
+                    FileOutputStream(
+                        outputFile,
+                        false
+                    ).use { outputStream ->
+
+                        val buffer =
+                            ByteArray(
+                                1024 * 1024
+                            )
+
+                        var remaining =
+                            length.toLong()
+
+                        while (
+                            remaining > 0
+                        ) {
+
+                            val bytesToRead =
+                                minOf(
+                                    buffer.size.toLong(),
+                                    remaining
+                                ).toInt()
+
+                            val bytesRead =
+                                inputStream.read(
+                                    buffer,
+                                    0,
+                                    bytesToRead
+                                )
+
+                            if (
+                                bytesRead <= 0
+                            ) {
+                                break
+                            }
+
+                            outputStream.write(
+                                buffer,
+                                0,
+                                bytesRead
+                            )
+
+                            remaining -=
+                                bytesRead
+                        }
+
+                        outputStream.flush()
+                    }
+                }
+
+            } finally {
+
+                try {
+                    parcelFileDescriptor.close()
+                } catch (
+                    _: Exception
+                ) {
+                }
+            }
+
+            return@AsyncFunction Uri.fromFile(outputFile).toString()
+        }
+
+        AsyncFunction("deleteChunk") {
+            path: String ->
+
+            if (path.isBlank()) {
+                return@AsyncFunction false
+            }
+
+            val file =
+                File(path)
+
+            if (file.exists()) {
+                return@AsyncFunction file.delete()
+            }
+
+            return@AsyncFunction true
         }
     }
 }
