@@ -361,7 +361,9 @@ export default function NewCases() {
                     await DocumentPicker.getDocumentAsync({
                         type: "*/*",
                         multiple: true,
-                        copyToCacheDirectory: true,
+                        // Keep the provider URI so large files are not copied
+                        // into the app cache before chunked upload starts.
+                        copyToCacheDirectory: false,
                     });
 
                 if (
@@ -622,7 +624,7 @@ export default function NewCases() {
                     await DocumentPicker.getDocumentAsync({
                         type: "application/pdf",
                         multiple: true,
-                        copyToCacheDirectory: true,
+                        copyToCacheDirectory: false,
                     });
 
                 if (

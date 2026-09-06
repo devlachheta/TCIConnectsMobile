@@ -1,15 +1,15 @@
-import {
-  File,
-} from "expo-file-system";
+import { File } from "expo-file-system";
+
+import * as FileSystem from "expo-file-system/legacy";
 
 import DirectDownload from "../modules/direct-download";
 import api from "./api";
 
 const CHUNK_SIZE =
-  8 * 1024 * 1024;
+  4 * 1024 * 1024;
 
 const MAX_PARALLEL =
-  3;
+  2;
 
 const MAX_FILE_SIZE =
   2 * 1024 * 1024 * 1024;
@@ -135,452 +135,235 @@ export const submitCase =
     return response.data;
   };
 
-export const initUpload =
-  async (
-    file: any
-  ) => {
-    const formData =
-      new FormData();
+export const initUpload = async (
+  file: any
+) => {
+  const formData = new FormData();
 
-    formData.append(
-      "file_name",
-      file.name ||
-      "uploaded-file"
-    );
+  formData.append(
+    "file_name",
+    file.name || "uploaded-file"
+  );
 
-    formData.append(
-      "total_size",
-      String(
-        file.size || 0
-      )
-    );
+  formData.append(
+    "total_size",
+    String(file.size || 0)
+  );
 
-    const response =
-      await api.post(
-        "/upload/init",
-        formData
-      );
+  const response = await api.post(
+    "/upload/init",
+    formData
+  );
 
-    return response.data;
-  };
+  return response.data;
+};
 
-const uploadChunk =
-  async (
-    uploadId: string,
-    chunkFile: File,
-    chunkNumber: number,
-    totalChunks: number,
-    chunkSize: number,
-    onProgress?: (
-      uploadedBytes: number
-    ) => void
-  ) => {
+const uploadChunk = async (
+  uploadId: string,
+  chunkFile: File,
+  chunkNumber: number,
+  totalChunks: number,
+  chunkSize: number,
+  onProgress?: (uploadedBytes: number) => void
+) => {
+  if (isUploadCancelled(uploadId)) {
+    throw new Error("UPLOAD_CANCELLED");
+  }
 
-    if (
-      isUploadCancelled(
-        uploadId
-      )
-    ) {
-      throw new Error(
-        "UPLOAD_CANCELLED"
-      );
-    }
+  const baseURL = api.defaults.baseURL || "";
+  const url = `${baseURL}/upload/chunk`;
 
-    return new Promise<any>(
-      (
-        resolve,
-        reject
-      ) => {
+  const authorization =
+    api.defaults.headers.common?.["Authorization"];
 
-        const xhr =
-          new XMLHttpRequest();
+  console.log(
+    `CHUNK ${chunkNumber + 1}/${totalChunks} NATIVE UPLOAD START: ${chunkFile.uri}`
+  );
 
-        const controller =
-          new AbortController();
+  const startTime = Date.now();
 
-        registerController(
-          uploadId,
-          controller
-        );
+  try {
+    const options: FileSystem.FileSystemUploadOptions = {
+      httpMethod: "POST",
+      uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+      fieldName: "file",
+      mimeType: "application/octet-stream",
 
-        let finished =
-          false;
+      parameters: {
+        upload_id: uploadId,
+        chunk_number: String(chunkNumber),
+      },
 
-        const cleanup =
-          () => {
-            unregisterController(
-              uploadId,
-              controller
-            );
-          };
+      headers: {
+        Accept: "application/json",
+        ...(authorization
+          ? { Authorization: String(authorization) }
+          : {}),
+      },
+    };
 
-        const fail =
-          (
-            error: any
-          ) => {
-
-            if (
-              finished
-            ) {
-              return;
-            }
-
-            finished =
-              true;
-
-            cleanup();
-
-            reject(
-              error
-            );
-          };
-
-        controller.signal.addEventListener(
-          "abort",
-          () => {
-
-            try {
-              xhr.abort();
-            } catch { }
-
-            fail(
-              new Error(
-                "UPLOAD_CANCELLED"
-              )
-            );
-          }
-        );
-
-        const baseURL =
-          api.defaults
-            .baseURL ||
-          "";
-
-        xhr.open(
-          "POST",
-          `${baseURL}/upload/chunk`
-        );
-
-        const authorization =
-          api.defaults
-            .headers
-            .common?.[
-          "Authorization"
-          ];
-
-        if (
-          authorization
-        ) {
-          xhr.setRequestHeader(
-            "Authorization",
-            String(
-              authorization
-            )
-          );
-        }
-
-        xhr.setRequestHeader(
-          "Accept",
-          "application/json"
-        );
-
-        let lastReported =
-          0;
-
-        xhr.upload.onprogress =
-          event => {
-
-            if (
-              finished ||
-              isUploadCancelled(
-                uploadId
-              )
-            ) {
-              return;
-            }
-
-            if (
-              !event.lengthComputable
-            ) {
-              return;
-            }
-
-            const loaded =
-              Math.min(
-                chunkSize,
-                event.loaded
-              );
-
-            if (
-              loaded ===
-              chunkSize ||
-              loaded -
-              lastReported >=
-              256 *
-              1024
-            ) {
-
-              lastReported =
-                loaded;
-
-              onProgress?.(
-                loaded
-              );
-            }
-          };
-
-        xhr.onload =
-          () => {
-
-            if (
-              finished
-            ) {
-              return;
-            }
-
-            if (
-              isUploadCancelled(
-                uploadId
-              )
-            ) {
-              fail(
-                new Error(
-                  "UPLOAD_CANCELLED"
-                )
-              );
-
-              return;
-            }
-
-            if (
-              xhr.status >=
-              200 &&
-              xhr.status <
-              300
-            ) {
-
-              finished =
-                true;
-
-              cleanup();
-
-              let data:
-                any =
-                xhr.responseText;
-
-              try {
-                data =
-                  JSON.parse(
-                    xhr.responseText
-                  );
-              } catch { }
-
-              onProgress?.(
-                chunkSize
-              );
-
-              resolve(
-                data
-              );
-
-              return;
-            }
-
-            fail(
-              new Error(
-                `Chunk ${chunkNumber +
-                1
-                }/${totalChunks} failed with status ${xhr.status}`
-              )
-            );
-          };
-
-        xhr.onerror =
-          () => {
-
-            fail(
-              new Error(
-                "NETWORK_ERROR"
-              )
-            );
-          };
-
-        xhr.onabort =
-          () => {
-
-            fail(
-              new Error(
-                "UPLOAD_CANCELLED"
-              )
-            );
-          };
-
-        const formData =
-          new FormData();
-
-        formData.append(
-          "upload_id",
-          uploadId
-        );
-
-        formData.append(
-          "chunk_number",
-          String(
-            chunkNumber
-          )
-        );
-
-        formData.append(
-          "file",
-          {
-            uri:
-              chunkFile.uri,
-            name:
-              `chunk_${chunkNumber}`,
-            type:
-              "application/octet-stream",
-          } as any
-        );
-
-        if (
-          isUploadCancelled(
-            uploadId
-          )
-        ) {
-          try {
-            xhr.abort();
-          } catch { }
-
-          fail(
-            new Error(
-              "UPLOAD_CANCELLED"
-            )
-          );
-
+    const uploadTask = FileSystem.createUploadTask(
+      url,
+      chunkFile.uri,
+      options,
+      ({
+        totalBytesSent,
+        totalBytesExpectedToSend,
+      }) => {
+        if (isUploadCancelled(uploadId)) {
           return;
         }
 
-        xhr.send(
-          formData
+        const uploadedBytes = Math.min(
+          totalBytesSent,
+          chunkSize
         );
+
+        onProgress?.(uploadedBytes);
+
+        if (totalBytesExpectedToSend > 0) {
+          const percent =
+            (totalBytesSent / totalBytesExpectedToSend) * 100;
+
+          console.log(
+            `CHUNK ${chunkNumber + 1}/${totalChunks} PROGRESS: ${percent.toFixed(
+              1
+            )}%`
+          );
+        }
       }
     );
-  };
 
-const uploadChunkWithRetry =
-  async (
-    uploadId: string,
-    chunkFile: File,
-    chunkNumber: number,
-    totalChunks: number,
-    chunkSize: number,
-    onProgress?: (
-      uploadedBytes: number
-    ) => void
-  ) => {
+    // ACTUAL UPLOAD STARTS HERE
+    const response = await uploadTask.uploadAsync();
 
-    let lastError:
-      any;
+    // ACTUAL UPLOAD ENDS HERE
+    const uploadTime = Date.now() - startTime;
 
-    for (
-      let attempt = 1;
-      attempt <=
-      MAX_RETRIES;
-      attempt++
+    if (!response) {
+      throw new Error(
+        "Upload task was cancelled or returned no response."
+      );
+    }
+
+    console.log(
+      `CHUNK ${chunkNumber + 1}/${totalChunks} NATIVE UPLOAD TIME: ${uploadTime}ms`
+    );
+
+    console.log(
+      `CHUNK ${chunkNumber + 1}/${totalChunks} RESPONSE STATUS: ${response.status}`
+    );
+
+    if (response.status < 200 || response.status >= 300) {
+      throw new Error(
+        `Chunk upload failed with status ${response.status}: ${response.body}`
+      );
+    }
+
+    let data: any;
+
+    try {
+      data = JSON.parse(response.body);
+    } catch {
+      data = {
+        message: response.body,
+      };
+    }
+
+    if (isUploadCancelled(uploadId)) {
+      throw new Error("UPLOAD_CANCELLED");
+    }
+
+    onProgress?.(chunkSize);
+
+    console.log(
+      `CHUNK ${chunkNumber + 1}/${totalChunks} NATIVE UPLOAD COMPLETED`
+    );
+
+    return data;
+
+  } catch (error: any) {
+    const uploadTime = Date.now() - startTime;
+
+    console.error(
+      `CHUNK ${chunkNumber + 1}/${totalChunks} NATIVE UPLOAD FAILED AFTER ${uploadTime}ms`
+    );
+
+    if (
+      isUploadCancelled(uploadId) ||
+      error?.message === "UPLOAD_CANCELLED"
     ) {
+      throw new Error("UPLOAD_CANCELLED");
+    }
+
+    console.error("Native upload error:", error);
+
+    throw error;
+  }
+};
+const uploadChunkWithRetry = async (
+  uploadId: string,
+  chunkFile: File,
+  chunkNumber: number,
+  totalChunks: number,
+  chunkSize: number,
+  onProgress?: (uploadedBytes: number) => void
+) => {
+  let lastError: any;
+
+  for (
+    let attempt = 1;
+    attempt <= MAX_RETRIES;
+    attempt++
+  ) {
+    if (isUploadCancelled(uploadId)) {
+      throw new Error("UPLOAD_CANCELLED");
+    }
+
+    try {
+      return await uploadChunk(
+        uploadId,
+        chunkFile,
+        chunkNumber,
+        totalChunks,
+        chunkSize,
+        onProgress
+      );
+    } catch (error: any) {
+      lastError = error;
 
       if (
-        isUploadCancelled(
-          uploadId
-        )
+        error?.message ===
+        "UPLOAD_CANCELLED"
       ) {
+        throw error;
+      }
+
+      if (isUploadCancelled(uploadId)) {
         throw new Error(
           "UPLOAD_CANCELLED"
         );
       }
 
-      try {
+      console.log(
+        `Chunk ${chunkNumber + 1}/${totalChunks} ` +
+        `attempt ${attempt}/${MAX_RETRIES} failed:`,
+        error?.message || error
+      );
 
-        return await uploadChunk(
-          uploadId,
-          chunkFile,
-          chunkNumber,
-          totalChunks,
-          chunkSize,
-          onProgress
-        );
-
-      } catch (
-      error: any
-      ) {
-
-        lastError =
-          error;
-
-        if (
-          error?.message ===
-          "UPLOAD_CANCELLED"
-        ) {
-          throw error;
-        }
-
-        if (
-          isUploadCancelled(
-            uploadId
+      if (attempt < MAX_RETRIES) {
+        await new Promise(resolve =>
+          setTimeout(
+            resolve,
+            attempt * 1000
           )
-        ) {
-          throw new Error(
-            "UPLOAD_CANCELLED"
-          );
-        }
-
-        console.log(
-          `Chunk ${chunkNumber +
-          1
-          } retry ${attempt}/${MAX_RETRIES}`
         );
-
-        if (
-          attempt <
-          MAX_RETRIES
-        ) {
-
-          await new Promise(
-            (
-              resolve,
-              reject
-            ) => {
-
-              const timer =
-                setTimeout(
-                  resolve,
-                  attempt *
-                  1000
-                );
-
-              if (
-                isUploadCancelled(
-                  uploadId
-                )
-              ) {
-                clearTimeout(
-                  timer
-                );
-
-                reject(
-                  new Error(
-                    "UPLOAD_CANCELLED"
-                  )
-                );
-              }
-            }
-          );
-        }
       }
     }
+  }
 
-    throw lastError;
-  };
+  throw lastError;
+};
 
 export const completeUpload =
   async (
@@ -628,184 +411,286 @@ export const completeUpload =
     return response.data;
   };
 
-export const uploadTempFile =
-  async (
-    file: any,
-    onProgress?: (
-      progress: number
-    ) => void
-  ) => {
 
-    let uploadId:
-      string | null =
-      null;
 
-    try {
 
-      if (
-        !file?.uri
-      ) {
-        throw new Error(
-          "Selected file does not contain a URI."
-        );
+export const uploadCaseFile = async (
+  caseId: number,
+  file: any,
+  category: string,
+  onProgress?: (progress: number) => void,
+  tempPath?: string
+) => {
+  try {
+    if (!tempPath) {
+      throw new Error("Temporary file path is missing");
+    }
+
+    const response = await api.post(
+      `/cases/${caseId}/save-temp-file`,
+      {
+        file_path: tempPath,
+        category,
       }
+    );
 
-      const fileSize =
-        Number(
-          file.size
-        );
+    onProgress?.(100);
 
-      if (
-        !fileSize ||
-        fileSize <= 0
-      ) {
-        throw new Error(
-          "Unable to determine file size."
-        );
-      }
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Failed to save temporary file:",
+      error
+    );
 
-      if (
-        fileSize >
-        MAX_FILE_SIZE
-      ) {
-        throw new Error(
-          "File size cannot exceed 2 GB."
-        );
-      }
+    throw error;
+  }
+};
 
-      const totalChunks =
-        Math.ceil(
-          fileSize /
-          CHUNK_SIZE
-        );
 
-      console.log(
-        "STARTING UPLOAD:",
-        file.name
+
+export const uploadTempFile = async (
+  file: any,
+  onProgress?: (
+    progress: number
+  ) => void
+) => {
+  let uploadId: string | null = null;
+
+  try {
+    if (!file?.uri) {
+      throw new Error(
+        "Selected file does not contain a URI."
+      );
+    }
+
+    const totalUploadStart =
+      Date.now();
+
+    console.log(
+      "========== TOTAL UPLOAD START =========="
+    );
+
+    console.log(
+      `FILE: ${file.name || file.uri}`
+    );
+
+    const fileSize =
+      Number(file.size);
+
+    if (!fileSize || fileSize <= 0) {
+      throw new Error(
+        "Unable to determine file size."
+      );
+    }
+
+    if (
+      fileSize >
+      MAX_FILE_SIZE
+    ) {
+      throw new Error(
+        "File size cannot exceed 2 GB."
+      );
+    }
+
+    const totalChunks =
+      Math.ceil(
+        fileSize /
+        CHUNK_SIZE
       );
 
-      console.log(
-        "FILE SIZE:",
-        fileSize
+    console.log(
+      "STARTING UPLOAD:",
+      file.name
+    );
+
+    console.log(
+      "FILE SIZE:",
+      fileSize
+    );
+
+    console.log(
+      "TOTAL CHUNKS:",
+      totalChunks
+    );
+
+    /*
+     * ----------------------------------------
+     * INITIALIZE UPLOAD
+     * ----------------------------------------
+     */
+
+    const init =
+      await initUpload(file);
+
+    uploadId =
+      init?.upload_id;
+
+    if (!uploadId) {
+      throw new Error(
+        "Upload ID was not returned by the server."
       );
+    }
 
-      console.log(
-        "TOTAL CHUNKS:",
-        totalChunks
+    console.log(
+      "UPLOAD ID:",
+      uploadId
+    );
+
+    if (
+      isUploadCancelled(uploadId)
+    ) {
+      throw new Error(
+        "UPLOAD_CANCELLED"
       );
+    }
 
-      const init =
-        await initUpload(
-          file
-        );
+    /*
+     * ----------------------------------------
+     * PROGRESS TRACKING
+     * ----------------------------------------
+     */
 
-      uploadId =
-        init?.upload_id;
+    const uploadedBytes =
+      new Array(totalChunks)
+        .fill(0);
 
+    let lastProgress = -1;
+
+    let lastProgressTime = 0;
+
+    const updateProgress = (
+      force = false
+    ) => {
       if (
-        !uploadId
+        !uploadId ||
+        isUploadCancelled(uploadId)
       ) {
-        throw new Error(
-          "Upload ID was not returned by the server."
-        );
+        return;
       }
 
+      const now =
+        Date.now();
+
       if (
-        isUploadCancelled(
-          uploadId
-        )
+        !force &&
+        now - lastProgressTime <
+        PROGRESS_INTERVAL
       ) {
-        throw new Error(
-          "UPLOAD_CANCELLED"
-        );
+        return;
       }
 
-      const uploadedBytes =
-        new Array(
-          totalChunks
-        ).fill(
+      const uploaded =
+        uploadedBytes.reduce(
+          (
+            total,
+            value
+          ) =>
+            total + value,
           0
         );
 
-      let lastProgress =
-        -1;
+      const progress =
+        Math.min(
+          100,
+          Math.round(
+            (
+              uploaded /
+              fileSize
+            ) * 100
+          )
+        );
 
-      let lastProgressTime =
-        0;
+      if (
+        progress !==
+        lastProgress
+      ) {
+        lastProgress =
+          progress;
 
-      const updateProgress =
-        (
-          force = false
-        ) => {
+        lastProgressTime =
+          now;
 
-          if (
-            isUploadCancelled(
-              uploadId!
-            )
-          ) {
-            return;
-          }
+        onProgress?.(
+          progress
+        );
+      }
+    };
 
-          const now =
+    onProgress?.(0);
+
+    /*
+     * ----------------------------------------
+     * SINGLE CHUNK
+     * ----------------------------------------
+     */
+
+    const uploadOneChunk =
+      async (
+        chunkNumber: number
+      ) => {
+        if (
+          isUploadCancelled(
+            uploadId!
+          )
+        ) {
+          throw new Error(
+            "UPLOAD_CANCELLED"
+          );
+        }
+
+        const start =
+          chunkNumber *
+          CHUNK_SIZE;
+
+        const end =
+          Math.min(
+            start +
+            CHUNK_SIZE,
+            fileSize
+          );
+
+        const actualChunkSize =
+          end - start;
+
+        const chunkName =
+          `tci_upload_${Date.now()}_${chunkNumber}`;
+
+        let chunkPath:
+          string | null =
+          null;
+
+        try {
+          /*
+           * --------------------------------
+           * CREATE CHUNK
+           * --------------------------------
+           */
+
+          console.log(
+            `READING CHUNK ${chunkNumber + 1
+            }/${totalChunks}`
+          );
+
+          const readStart =
             Date.now();
 
-          if (
-            !force &&
-            now -
-            lastProgressTime <
-            PROGRESS_INTERVAL
-          ) {
-            return;
-          }
-
-          const uploaded =
-            uploadedBytes.reduce(
-              (
-                total,
-                value
-              ) =>
-                total +
-                value,
-              0
+          chunkPath =
+            await DirectDownload.readChunk(
+              file.uri,
+              start,
+              actualChunkSize,
+              chunkName
             );
 
-          const progress =
-            Math.min(
-              100,
-              Math.round(
-                (
-                  uploaded /
-                  fileSize
-                ) *
-                100
-              )
-            );
+          const readTime =
+            Date.now() -
+            readStart;
 
-          if (
-            progress !==
-            lastProgress
-          ) {
-
-            lastProgress =
-              progress;
-
-            lastProgressTime =
-              now;
-
-            onProgress?.(
-              progress
-            );
-          }
-        };
-
-      onProgress?.(
-        0
-      );
-
-      const uploadOneChunk =
-        async (
-          chunkNumber: number
-        ) => {
+          console.log(
+            `CHUNK ${chunkNumber + 1
+            }/${totalChunks} READ TIME: ${readTime}ms`
+          );
 
           if (
             isUploadCancelled(
@@ -817,205 +702,123 @@ export const uploadTempFile =
             );
           }
 
-          const start =
-            chunkNumber *
-            CHUNK_SIZE;
-
-          const end =
-            Math.min(
-              start +
-              CHUNK_SIZE,
-              fileSize
+          if (!chunkPath) {
+            throw new Error(
+              "Native reader did not return a chunk path."
             );
-
-          const actualChunkSize =
-            end -
-            start;
-
-          const chunkName =
-            `tci_upload_${Date.now()}_${chunkNumber}`;
-
-          let chunkPath:
-            string |
-            null =
-            null;
-
-          try {
-
-            console.log(
-              `READING CHUNK ${chunkNumber +
-              1
-              }/${totalChunks}`
-            );
-
-            chunkPath =
-              await DirectDownload.readChunk(
-                file.uri,
-                start,
-                actualChunkSize,
-                chunkName
-              );
-
-            if (
-              isUploadCancelled(
-                uploadId!
-              )
-            ) {
-              throw new Error(
-                "UPLOAD_CANCELLED"
-              );
-            }
-
-            if (
-              !chunkPath
-            ) {
-              throw new Error(
-                "Native reader did not return a chunk path."
-              );
-            }
-
-            const chunkFile =
-              new File(
-                chunkPath
-              );
-
-            if (
-              !chunkFile.exists
-            ) {
-              throw new Error(
-                `Chunk file does not exist: ${chunkPath}`
-              );
-            }
-
-            await uploadChunkWithRetry(
-              uploadId!,
-              chunkFile,
-              chunkNumber,
-              totalChunks,
-              actualChunkSize,
-              currentBytes => {
-
-                if (
-                  isUploadCancelled(
-                    uploadId!
-                  )
-                ) {
-                  return;
-                }
-
-                uploadedBytes[
-                  chunkNumber
-                ] =
-                  Math.min(
-                    actualChunkSize,
-                    currentBytes
-                  );
-
-                updateProgress();
-              }
-            );
-
-            if (
-              isUploadCancelled(
-                uploadId!
-              )
-            ) {
-              throw new Error(
-                "UPLOAD_CANCELLED"
-              );
-            }
-
-            uploadedBytes[
-              chunkNumber
-            ] =
-              actualChunkSize;
-
-            updateProgress(
-              true
-            );
-
-            console.log(
-              `CHUNK ${chunkNumber +
-              1
-              }/${totalChunks} COMPLETED`
-            );
-
-          } finally {
-
-            if (
-              chunkPath
-            ) {
-
-              try {
-
-                await DirectDownload.deleteChunk(
-                  chunkPath
-                );
-
-              } catch { }
-
-            }
           }
-        };
 
-      for (
-        let startChunk =
-          0;
-        startChunk <
-        totalChunks;
-        startChunk +=
-        MAX_PARALLEL
-      ) {
+          /*
+           * --------------------------------
+           * CREATE EXPO FILE
+           * --------------------------------
+           */
 
-        if (
-          isUploadCancelled(
-            uploadId
-          )
-        ) {
-          throw new Error(
-            "UPLOAD_CANCELLED"
-          );
-        }
-
-        const endChunk =
-          Math.min(
-            startChunk +
-            MAX_PARALLEL,
-            totalChunks
-          );
-
-        const batch:
-          Promise<any>[] =
-          [];
-
-        for (
-          let chunkNumber =
-            startChunk;
-          chunkNumber <
-          endChunk;
-          chunkNumber++
-        ) {
+          const chunkFile =
+            new File(chunkPath);
 
           if (
-            isUploadCancelled(
-              uploadId
-            )
+            !chunkFile.exists
           ) {
-            break;
+            throw new Error(
+              `Chunk file does not exist: ${chunkPath}`
+            );
           }
 
-          batch.push(
-            uploadOneChunk(
-              chunkNumber
-            )
+          console.log(
+            `CHUNK ${chunkNumber + 1
+            }/${totalChunks} SIZE: ${chunkFile.size}`
           );
+
+          /*
+           * --------------------------------
+           * UPLOAD
+           * --------------------------------
+           */
+
+          const uploadStart =
+            Date.now();
+
+          await uploadChunkWithRetry(
+            uploadId!,
+            chunkFile,
+            chunkNumber,
+            totalChunks,
+            actualChunkSize,
+            currentBytes => {
+              if (
+                isUploadCancelled(
+                  uploadId!
+                )
+              ) {
+                return;
+              }
+
+              uploadedBytes[
+                chunkNumber
+              ] =
+                Math.min(
+                  actualChunkSize,
+                  currentBytes
+                );
+
+              updateProgress();
+            }
+          );
+
+          const uploadTime =
+            Date.now() -
+            uploadStart;
+
+          console.log(
+            `CHUNK ${chunkNumber + 1
+            }/${totalChunks} UPLOAD TIME: ${uploadTime}ms`
+          );
+
+          uploadedBytes[
+            chunkNumber
+          ] =
+            actualChunkSize;
+
+          updateProgress(true);
+
+          console.log(
+            `CHUNK ${chunkNumber + 1
+            }/${totalChunks} COMPLETED`
+          );
+        } finally {
+          /*
+           * --------------------------------
+           * DELETE TEMP CHUNK
+           * --------------------------------
+           */
+
+          if (chunkPath) {
+            try {
+              await DirectDownload.deleteChunk(
+                chunkPath
+              );
+            } catch (error) {
+              console.log(
+                "Failed to delete temporary chunk:",
+                error
+              );
+            }
+          }
         }
+      };
 
-        await Promise.all(
-          batch
-        );
-      }
+    /*
+     * ----------------------------------------
+     * PARALLEL CHUNKS
+     * ----------------------------------------
+     */
 
+    for (
+      let startChunk = 0;
+      startChunk < totalChunks;
+      startChunk += MAX_PARALLEL
+    ) {
       if (
         isUploadCancelled(
           uploadId
@@ -1026,140 +829,166 @@ export const uploadTempFile =
         );
       }
 
-      updateProgress(
-        true
-      );
-
-      onProgress?.(
-        100
-      );
-
-      console.log(
-        "ALL CHUNKS UPLOADED"
-      );
-
-      const completed =
-        await completeUpload(
-          uploadId,
-          file.name ||
-          "uploaded-file",
+      const endChunk =
+        Math.min(
+          startChunk +
+          MAX_PARALLEL,
           totalChunks
         );
 
-      if (
-        !completed?.file_path
+      console.log(
+        `STARTING CHUNK BATCH: ${startChunk + 1
+        }-${endChunk}/${totalChunks}`
+      );
+
+      const batch: Promise<any>[] =
+        [];
+
+      for (
+        let chunkNumber =
+          startChunk;
+        chunkNumber <
+        endChunk;
+        chunkNumber++
       ) {
-        throw new Error(
-          "Completed upload did not return file_path."
+        batch.push(
+          uploadOneChunk(
+            chunkNumber
+          )
         );
       }
 
-      return {
-        ...completed,
+      await Promise.all(
+        batch
+      );
 
-        file_name:
-          completed.file_name ||
-          file.name ||
-          "uploaded-file",
-
-        file_path:
-          completed.file_path,
-
-        file_type:
-          file.mimeType ||
-          file.type ||
-          "application/octet-stream",
-      };
-
-    } catch (
-    error: any
-    ) {
-
-      if (
-        error?.message ===
-        "UPLOAD_CANCELLED"
-      ) {
-        console.log(
-          "UPLOAD CANCELLED:",
-          file?.name
-        );
-      } else {
-        console.error(
-          "TEMP FILE UPLOAD ERROR:",
-          error?.response
-            ?.data ||
-          error?.message ||
-          error
-        );
-      }
-
-      throw error;
-
-    } finally {
-
-      if (
-        uploadId
-      ) {
-        uploadControllers.delete(
-          uploadId
-        );
-      }
+      console.log(
+        `CHUNK BATCH COMPLETED: ${startChunk + 1
+        }-${endChunk}/${totalChunks}`
+      );
     }
-  };
-export const uploadCaseFile =
-  async (
-    caseId:
-      number |
-      string,
-    file: any,
-    category: string,
-    onProgress?: (
-      progress: number
-    ) => void
-  ) => {
-    try {
-      const uploaded =
-        await uploadTempFile(
-          file,
-          onProgress
-        );
 
-      if (
-        !uploaded?.file_path
-      ) {
-        throw new Error(
-          "Temporary upload did not return file_path."
-        );
-      }
+    /*
+     * ----------------------------------------
+     * ALL CHUNKS FINISHED
+     * ----------------------------------------
+     */
 
-      const response =
-        await api.post(
-          `/cases/${caseId}/save-temp-file`,
-          {
-            file_path:
-              uploaded.file_path,
-            category:
-              category,
-          }
-        );
-
-      onProgress?.(100);
-
-      return response.data;
-
-    } catch (
-    error: any
+    if (
+      isUploadCancelled(
+        uploadId
+      )
     ) {
+      throw new Error(
+        "UPLOAD_CANCELLED"
+      );
+    }
+
+    updateProgress(true);
+
+    onProgress?.(100);
+
+    console.log(
+      "ALL CHUNKS UPLOADED"
+    );
+
+    const totalUploadTime =
+      Date.now() -
+      totalUploadStart;
+
+    console.log(
+      `========== TOTAL CHUNK UPLOAD TIME: ${(
+        totalUploadTime /
+        1000
+      ).toFixed(2)
+      } seconds ==========`
+    );
+
+    /*
+     * ----------------------------------------
+     * COMPLETE UPLOAD
+     * ----------------------------------------
+     */
+
+    const completed =
+      await completeUpload(
+        uploadId,
+        file.name ||
+        "uploaded-file",
+        totalChunks
+      );
+
+    console.log(
+      `========== COMPLETE UPLOAD PROCESS: ${(
+        (
+          Date.now() -
+          totalUploadStart
+        ) /
+        1000
+      ).toFixed(2)
+      } seconds ==========`
+    );
+
+    if (
+      !completed?.file_path
+    ) {
+      throw new Error(
+        "Completed upload did not return file_path."
+      );
+    }
+
+    return {
+      ...completed,
+
+      file_name:
+        completed.file_name ||
+        file.name ||
+        "uploaded-file",
+
+      file_path:
+        completed.file_path,
+
+      file_type:
+        file.mimeType ||
+        file.type ||
+        "application/octet-stream",
+    };
+  } catch (
+  error: any
+  ) {
+    if (
+      error?.message ===
+      "UPLOAD_CANCELLED"
+    ) {
+      console.log(
+        "UPLOAD CANCELLED:",
+        file?.name
+      );
+    } else {
       console.error(
-        "CASE FILE UPLOAD ERROR:",
-        error?.response?.data ||
+        "TEMP FILE UPLOAD ERROR:",
+        error?.response
+          ?.data ||
         error?.message ||
         error
       );
-
-      throw error;
     }
-  };
+
+    throw error;
+  } finally {
+    if (uploadId) {
+      uploadControllers.delete(
+        uploadId
+      );
+
+      uploadCancelled.delete(
+        uploadId
+      );
+    }
+  }
+};
+
+
 export const uploadPreviewFile =
   async (
     caseId:

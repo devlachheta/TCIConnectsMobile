@@ -221,7 +221,7 @@ export default function AdminCaseCard({
                             "application/pdf",
                             "image/*",
                         ],
-                        copyToCacheDirectory: true,
+                        copyToCacheDirectory: false,
                         multiple: false,
                     });
 
