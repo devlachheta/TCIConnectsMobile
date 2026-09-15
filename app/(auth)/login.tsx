@@ -166,7 +166,7 @@ export default function Login() {
                 >
                     <AuthHeader />
                     <View style={styles.content}>
-                        <Text style={styles.heading}>Login to TCI Connect</Text>
+                        <Text style={styles.heading}>Login to TCI dental lab</Text>
                         <Text style={styles.label}>Email</Text>
                         <AuthInput
                             placeholder="Enter your email"

@@ -16,7 +16,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ResetPassword() {
     const router = useRouter();
-    const { email } = useLocalSearchParams<{ email: string }>();
+
+    const { token } = useLocalSearchParams<{ token?: string }>();
 
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -29,6 +30,11 @@ export default function ResetPassword() {
         setPasswordError("");
         setConfirmPasswordError("");
         setError("");
+
+        if (!token) {
+            setError("Invalid or expired password reset link");
+            return;
+        }
 
         const trimmedPassword = password.trim();
         const trimmedConfirmPassword = confirmPassword.trim();
@@ -62,7 +68,7 @@ export default function ResetPassword() {
 
         try {
             const response = await resetPassword(
-                email as string,
+                token,
                 trimmedPassword
             );
 
@@ -74,13 +80,16 @@ export default function ResetPassword() {
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 setError(
-                    error.response?.data?.message || "Something went wrong"
+                    error.response?.data?.detail ||
+                    error.response?.data?.message ||
+                    "Something went wrong"
                 );
             } else {
                 setError("Unexpected error");
             }
         }
     };
+
     return (
         <SafeAreaView style={styles.safeArea} edges={["top"]}>
             <LinearGradient
@@ -101,11 +110,7 @@ export default function ResetPassword() {
                         </Text>
 
                         <Text style={styles.subtitle}>
-                            Reset password for
-                        </Text>
-
-                        <Text style={styles.email}>
-                            {email}
+                            Enter your new password below.
                         </Text>
 
                         <Text style={styles.label}>
@@ -159,7 +164,6 @@ export default function ResetPassword() {
     );
 }
 
-
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
@@ -188,13 +192,7 @@ const styles = StyleSheet.create({
     subtitle: {
         color: "#fff",
         fontSize: 16,
-    },
-
-    email: {
-        color: "#BFD8FF",
-        fontSize: 16,
-        fontWeight: "600",
-        marginBottom: 30,
+        marginBottom: 10,
     },
 
     label: {

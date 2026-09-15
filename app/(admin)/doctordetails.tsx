@@ -109,7 +109,7 @@ export default function DoctorDetails() {
       return null;
     }
 
-    return `https://tcidentallab.com/uploads/profile/${encodeURIComponent(
+    return `https://tcidentallab.com/tci-uploads/profile/${encodeURIComponent(
       doctor.profile_image
     )}`;
   };

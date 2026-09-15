@@ -1,4 +1,3 @@
-
 import AuthHeader from "@/components/authheader";
 import AuthInput from "@/components/authInput";
 import PrimaryButton from "@/components/PrimaryBotton";
@@ -6,16 +5,22 @@ import Checkbox from "expo-checkbox";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
-import { Text } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { register } from "../../services/authService";
+
+
 export default function Register() {
   const router = useRouter();
-
   const [loading, setLoading] = useState(false);
-
   const [password, setPassword] = useState("");
   const [country, setCountry] = useState("");
   const [businessType, setBusinessType] = useState("");
@@ -133,14 +138,15 @@ export default function Register() {
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         style={styles.gradient}
-      >      <AuthHeader />
+      >
+        <AuthHeader />
         <ScrollView
           contentContainerStyle={styles.container}
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.content}>
             <Text style={styles.Rheading}>
-              TCI Connect Sign Up
+              TCI dental lab Sign Up
             </Text>
           </View>
 
@@ -179,9 +185,12 @@ export default function Register() {
             style={styles.dropdown}
             placeholderStyle={styles.placeholderStyle}
             selectedTextStyle={styles.selectedTextStyle}
-            itemTextStyle={styles.itemTextStyle}
-            activeColor="transparent"
-            data={businessData}
+            data={[
+              { label: "Dentist", value: "Dentist" },
+              { label: "Dental Lab", value: "Dental Lab" },
+              { label: "Other", value: "Other" },
+            ]}
+            maxHeight={200}
             labelField="label"
             valueField="value"
             placeholder="Select Type of Business"
@@ -211,12 +220,15 @@ export default function Register() {
             style={styles.dropdown}
             placeholderStyle={styles.placeholderStyle}
             selectedTextStyle={styles.selectedTextStyle}
-            itemTextStyle={styles.itemTextStyle}
-            activeColor="rgb(2,30,72)"
-            data={countryData}
+            data={[
+              { label: "Belgium", value: "Belgium" },
+              { label: "Lebanon", value: "Lebanon" },
+              { label: "Other", value: "Other" },
+            ]}
+            maxHeight={200}
             labelField="label"
-            placeholder="Select Country"
             valueField="value"
+            placeholder="Select Country"
             value={country}
             onChange={(item) => {
               setCountry(item.value);
@@ -359,7 +371,7 @@ const styles = StyleSheet.create({
   dropdown: {
     width: "100%",
     alignSelf: "center",
-    height: 45,
+    height: 50,
     borderWidth: 1,
     borderColor: "#FFFFFF",
     borderRadius: 30,

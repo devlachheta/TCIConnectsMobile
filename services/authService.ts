@@ -284,7 +284,7 @@ export const forgotPassword = async (
 
 
 export const resetPassword = async (
-    email: string,
+    token: string,
     password: string
 ) => {
     try {
@@ -292,7 +292,7 @@ export const resetPassword = async (
         const response = await api.post(
             "/reset-password",
             {
-                email,
+                token,
                 password,
             }
         );

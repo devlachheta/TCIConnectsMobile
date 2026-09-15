@@ -14,7 +14,7 @@ export default function WelcomeScreen() {
                 <View style={styles.container}>
                     <View style={styles.content}>
                         <Text style={styles.title}>
-                            Welcome to TCI Connect
+                            Welcome to TCI dental lab
                         </Text>
 
                         <View style={styles.buttonContainer}>

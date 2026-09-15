@@ -19,6 +19,7 @@ export default function Forgot() {
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const router = useRouter();
 
   const handleForgotPassword = async () => {
@@ -38,7 +39,6 @@ export default function Forgot() {
       setEmailError("Enter a valid email address");
       return;
     }
-
     try {
       const response = await forgotPassword(trimmedEmail);
 
@@ -47,13 +47,11 @@ export default function Forgot() {
         return;
       }
 
-      router.push({
-        pathname: "/(auth)/resetpassword",
-        params: {
-          email: trimmedEmail,
-        },
-      });
-    } catch (error) {
+      setSuccess(
+        "If an account exists with this email, a password reset link has been sent. Please check your email."
+      );
+    }
+    catch (error) {
       if (axios.isAxiosError(error)) {
         setError(
           error.response?.data?.message || "Something went wrong"
@@ -89,7 +87,11 @@ export default function Forgot() {
             <AuthInput
               placeholder="Enter your email"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                setSuccess("");
+                setError("");
+              }}
               keyboardType="email-address"
               autoCapitalize="none"
             />
@@ -103,6 +105,12 @@ export default function Forgot() {
             {error ? (
               <Text style={styles.errorText}>
                 {error}
+              </Text>
+            ) : null}
+
+            {success ? (
+              <Text style={styles.successText}>
+                {success}
               </Text>
             ) : null}
 
@@ -164,6 +172,12 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginHorizontal: 8,
   },
+  successText: {
+  color: "#22C55E",
+  fontSize: 14,
+  marginTop: 8,
+  marginHorizontal: 8,
+},
 
   backToLogin: {
     color: "#fff",
