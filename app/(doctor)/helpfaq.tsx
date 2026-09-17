@@ -1,4 +1,4 @@
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation } from "expo-router";
 import React from "react";
 import {
   Linking,
@@ -12,7 +12,7 @@ import {
 import {
   SafeAreaView
 } from "react-native-safe-area-context";
-import Ionicons from "react-native-vector-icons/Ionicons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 const HelpAndFAQ = () => {
   const navigation = useNavigation();
 
@@ -20,11 +20,11 @@ const HelpAndFAQ = () => {
     navigation.goBack();
   };
 
-  const openEmail = (email) => {
+  const openEmail = (email: string) => {
     Linking.openURL(`mailto:${email}`);
   };
 
-  const openPhone = (phone) => {
+  const openPhone = (phone: string) => {
     Linking.openURL(`tel:${phone}`);
   };
 

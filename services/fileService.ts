@@ -1,8 +1,487 @@
+// import {
+//     Directory,
+//     File,
+//     Paths,
+// } from "expo-file-system";
+
+// import * as SecureStore from "expo-secure-store";
+// import * as Sharing from "expo-sharing";
+
+// const API_URL = "https://tcidentallab.com/api";
+
+// /**
+//  * Get MIME type from file extension
+//  */
+// const getMimeType = (fileName: string): string => {
+//     const extension = fileName
+//         .split(".")
+//         .pop()
+//         ?.toLowerCase();
+
+//     switch (extension) {
+//         case "pdf":
+//             return "application/pdf";
+
+//         case "png":
+//             return "image/png";
+
+//         case "jpg":
+//         case "jpeg":
+//             return "image/jpeg";
+
+//         case "mp4":
+//             return "video/mp4";
+
+//         case "zip":
+//             return "application/zip";
+
+//         case "txt":
+//             return "text/plain";
+
+//         case "doc":
+//             return "application/msword";
+
+//         case "docx":
+//             return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+//         case "stl":
+//             return "application/octet-stream";
+
+//         default:
+//             return "application/octet-stream";
+//     }
+// };
+
+// /**
+//  * Get JWT token
+//  */
+// const getAccessToken = async (): Promise<string> => {
+//     const token = await SecureStore.getItemAsync(
+//         "access_token"
+//     );
+
+//     if (!token) {
+//         throw new Error(
+//             "Authentication token not found"
+//         );
+//     }
+
+//     return token;
+// };
+
+
+// /**
+//  * --------------------------------------------------
+//  * DOWNLOAD CASE FILE
+//  * --------------------------------------------------
+//  *
+//  * Expo Go compatible download.
+//  *
+//  * This replaces the old DirectDownload native
+//  * Android DownloadManager implementation.
+//  *
+//  * Files are downloaded to the application's
+//  * cache directory.
+//  *
+//  * Used for:
+//  *
+//  * - Case PDF
+//  * - Digital files
+//  * - Preview files
+//  *
+//  * Returns:
+//  *      local file URI
+//  */
+// export const downloadCaseFile = async (
+//     fileId: number,
+//     fileName: string
+// ): Promise<string> => {
+
+//     try {
+
+//         console.log(
+//             "Starting case file download:",
+//             fileName
+//         );
+
+//         console.log(
+//             "File ID:",
+//             fileId
+//         );
+
+//         /**
+//          * Get JWT
+//          */
+//         const token =
+//             await getAccessToken();
+
+//         /**
+//          * Download API
+//          */
+//         const downloadUrl =
+//             `${API_URL}/mobile-download/${fileId}`;
+
+//         console.log(
+//             "Download URL:",
+//             downloadUrl
+//         );
+
+//         /**
+//          * Cache directory
+//          */
+//         const directory =
+//             new Directory(
+//                 Paths.cache,
+//                 "case-files"
+//             );
+
+//         /**
+//          * Create directory if it does not exist
+//          */
+//         if (!directory.exists) {
+
+//             directory.create({
+//                 intermediates: true,
+//             });
+
+//         }
+
+//         /**
+//          * Destination file
+//          */
+//         const destinationFile =
+//             new File(
+//                 directory,
+//                 fileName
+//             );
+
+//         /**
+//          * If an old file with the same name exists,
+//          * remove it first.
+//          */
+//         if (destinationFile.exists) {
+
+//             destinationFile.delete();
+
+//         }
+
+//         /**
+//          * Download file
+//          */
+//         const downloadedFile =
+//             await File.downloadFileAsync(
+//                 downloadUrl,
+//                 destinationFile,
+//                 {
+//                     headers: {
+//                         Authorization:
+//                             `Bearer ${token}`,
+//                     },
+
+//                     idempotent: true,
+//                 }
+//             );
+
+//         console.log(
+//             "Case file download completed:"
+//         );
+
+//         console.log(
+//             downloadedFile.uri
+//         );
+
+//         /**
+//          * Return local file URI
+//          */
+//         return downloadedFile.uri;
+
+//     } catch (error) {
+
+//         console.error(
+//             "Case file download error:",
+//             error
+//         );
+
+//         throw error;
+//     }
+// };
+
+
+// /**
+//  * --------------------------------------------------
+//  * TEMPORARY DOWNLOAD
+//  * --------------------------------------------------
+//  *
+//  * Used for:
+//  *
+//  * - Open
+//  * - Share
+//  *
+//  * Files are downloaded to the application's
+//  * cache directory.
+//  *
+//  * This does NOT download directly to the
+//  * Android Downloads folder.
+//  */
+// export const downloadTemporaryFile = async (
+//     filePath: string,
+//     fileName: string
+// ): Promise<string> => {
+
+//     try {
+
+//         console.log(
+//             "Starting temporary download:",
+//             fileName
+//         );
+
+//         /**
+//          * Get JWT
+//          */
+//         const token =
+//             await getAccessToken();
+
+//         /**
+//          * Existing backend API
+//          *
+//          * Keeps your existing file_path based
+//          * download system.
+//          */
+//         const downloadUrl =
+//             `${API_URL}/download-file?file_path=` +
+//             encodeURIComponent(filePath);
+
+//         console.log(
+//             "Temporary download URL:",
+//             downloadUrl
+//         );
+
+//         /**
+//          * Cache directory
+//          */
+//         const directory =
+//             new Directory(
+//                 Paths.cache,
+//                 "case-files"
+//             );
+
+//         /**
+//          * Create directory if it does not exist
+//          */
+//         if (!directory.exists) {
+
+//             directory.create({
+//                 intermediates: true,
+//             });
+
+//         }
+
+//         /**
+//          * Destination file
+//          */
+//         const destinationFile =
+//             new File(
+//                 directory,
+//                 fileName
+//             );
+
+//         /**
+//          * Delete existing cached file
+//          */
+//         if (destinationFile.exists) {
+
+//             destinationFile.delete();
+
+//         }
+
+//         /**
+//          * Download file
+//          */
+//         const downloadedFile =
+//             await File.downloadFileAsync(
+//                 downloadUrl,
+//                 destinationFile,
+//                 {
+//                     headers: {
+//                         Authorization:
+//                             `Bearer ${token}`,
+//                     },
+
+//                     idempotent: true,
+//                 }
+//             );
+
+//         console.log(
+//             "Temporary download completed:"
+//         );
+
+//         console.log(
+//             downloadedFile.uri
+//         );
+
+//         return downloadedFile.uri;
+
+//     } catch (error) {
+
+//         console.error(
+//             "Temporary download error:",
+//             error
+//         );
+
+//         throw error;
+//     }
+// };
+
+
+// /**
+//  * --------------------------------------------------
+//  * OPEN FILE
+//  * --------------------------------------------------
+//  *
+//  * Downloads the file temporarily and opens
+//  * the system share/open dialog.
+//  *
+//  * Works with Expo Go.
+//  */
+// export const openCaseFile = async (
+//     filePath: string,
+//     fileName: string
+// ): Promise<void> => {
+
+//     try {
+
+//         console.log(
+//             "Opening file:",
+//             fileName
+//         );
+
+//         /**
+//          * Download file to cache
+//          */
+//         const uri =
+//             await downloadTemporaryFile(
+//                 filePath,
+//                 fileName
+//             );
+
+//         /**
+//          * Check whether sharing is available
+//          */
+//         const sharingAvailable =
+//             await Sharing.isAvailableAsync();
+
+//         if (!sharingAvailable) {
+
+//             throw new Error(
+//                 "File sharing is not available on this device"
+//             );
+
+//         }
+
+//         /**
+//          * Open Android/iOS system
+//          * share/open dialog
+//          */
+//         await Sharing.shareAsync(
+//             uri,
+//             {
+//                 mimeType:
+//                     getMimeType(fileName),
+
+//                 dialogTitle:
+//                     `Open ${fileName}`,
+//             }
+//         );
+
+//     } catch (error) {
+
+//         console.error(
+//             "Open file error:",
+//             error
+//         );
+
+//         throw error;
+//     }
+// };
+
+
+// /**
+//  * --------------------------------------------------
+//  * SHARE FILE
+//  * --------------------------------------------------
+//  *
+//  * Downloads the file temporarily and opens
+//  * the system share dialog.
+//  */
+// export const shareCaseFile = async (
+//     filePath: string,
+//     fileName: string
+// ): Promise<void> => {
+
+//     try {
+
+//         console.log(
+//             "Sharing file:",
+//             fileName
+//         );
+
+//         /**
+//          * Download file to cache
+//          */
+//         const uri =
+//             await downloadTemporaryFile(
+//                 filePath,
+//                 fileName
+//             );
+
+//         /**
+//          * Check sharing availability
+//          */
+//         const sharingAvailable =
+//             await Sharing.isAvailableAsync();
+
+//         if (!sharingAvailable) {
+
+//             throw new Error(
+//                 "File sharing is not available on this device"
+//             );
+
+//         }
+
+//         /**
+//          * Open system share dialog
+//          */
+//         await Sharing.shareAsync(
+//             uri,
+//             {
+//                 mimeType:
+//                     getMimeType(fileName),
+
+//                 dialogTitle:
+//                     `Share ${fileName}`,
+//             }
+//         );
+
+//     } catch (error) {
+
+//         console.error(
+//             "Share file error:",
+//             error
+//         );
+
+//         throw error;
+//     }
+// };
+
+
+
+
 import {
     Directory,
     File,
     Paths,
 } from "expo-file-system";
+import axios from "axios";
 
 import * as SecureStore from "expo-secure-store";
 import * as Sharing from "expo-sharing";
@@ -73,108 +552,64 @@ const getAccessToken = async (): Promise<string> => {
     return token;
 };
 
+const getFreshAccessToken = async (): Promise<string> => {
 
-/**
- * --------------------------------------------------
- * DIRECT ANDROID DOWNLOAD
- * --------------------------------------------------
- *
- * This is used for:
- *
- * - Case PDF
- * - Digital files
- * - Preview files
- *
- * Flow:
- *
- * React Native
- *      ↓
- * Android DownloadManager
- *      ↓
- * GET /mobile-download/{file_id}
- *      ↓
- * FastAPI
- *      ↓
- * Downloads folder
- *
- * Android shows the system download notification.
- */
-// export const downloadCaseFile = async (
-//     fileId: number,
-//     fileName: string
-// ): Promise<number> => {
+    const refreshToken =
+        await SecureStore.getItemAsync(
+            "refresh_token"
+        );
 
-//     try {
+    if (!refreshToken) {
+        throw new Error(
+            "Refresh token not found. Please login again."
+        );
+    }
 
-//         console.log(
-//             "Starting direct download:",
-//             fileName
-//         );
+    console.log(
+        "Refreshing access token before download..."
+    );
 
-//         console.log(
-//             "File ID:",
-//             fileId
-//         );
+    const response = await axios.post(
+        `${API_URL}/refresh-token`,
+        {
+            refresh_token: refreshToken,
+        },
+        {
+            headers: {
+                "Content-Type": "application/json",
+            },
+            timeout: 30000,
+        }
+    );
 
-//         /**
-//          * Get JWT
-//          */
-//         const token =
-//             await getAccessToken();
+    const newAccessToken =
+        response.data?.access_token;
 
-//         /**
-//          * New mobile download API
-//          */
-//         const downloadUrl =
-//             `${API_URL}/mobile-download/${fileId}`;
+    if (!newAccessToken) {
+        throw new Error(
+            "Refresh response did not contain access token."
+        );
+    }
 
-//         console.log(
-//             "Download URL:",
-//             downloadUrl
-//         );
+    await SecureStore.setItemAsync(
+        "access_token",
+        newAccessToken
+    );
 
-//         /**
-//          * Get MIME type
-//          */
-//         const mimeType =
-//             getMimeType(fileName);
+    console.log(
+        "NEW ACCESS TOKEN SAVED:",
+        newAccessToken.length
+    );
 
-//         /**
-//          * Start Android DownloadManager
-//          */
-//         const downloadId =
-//             await DirectDownload.download(
-//                 downloadUrl,
-//                 fileName,
-//                 mimeType,
-//                 token
-//             );
+    return newAccessToken;
+};
 
-//         console.log(
-//             "Android DownloadManager ID:",
-//             downloadId
-//         );
-
-//         return downloadId;
-
-//     } catch (error) {
-
-//         console.error(
-//             "Direct download error:",
-//             error
-//         );
-
-//         throw error;
-//     }
-// };
 
 export const downloadCaseFile = async (
     fileId: number,
     fileName: string
 ): Promise<number> => {
-
     try {
-
         console.log(
             "Starting direct download:",
             fileName
@@ -185,8 +620,20 @@ export const downloadCaseFile = async (
             fileId
         );
 
-        const token =
-            await getAccessToken();
+        // ------------------------------------------
+        // Get a fresh access token
+        // ------------------------------------------
+
+        let token = await getFreshAccessToken();
+
+        console.log(
+            "FINAL TOKEN LENGTH:",
+            token.length
+        );
+
+        // ------------------------------------------
+        // Download URL
+        // ------------------------------------------
 
         const downloadUrl =
             `${API_URL}/mobile-download/${fileId}`;
@@ -196,8 +643,16 @@ export const downloadCaseFile = async (
             downloadUrl
         );
 
+        // ------------------------------------------
+        // MIME type
+        // ------------------------------------------
+
         const mimeType =
             getMimeType(fileName);
+
+        // ------------------------------------------
+        // Android DownloadManager
+        // ------------------------------------------
 
         const downloadId =
             await DirectDownload.download(
@@ -212,7 +667,10 @@ export const downloadCaseFile = async (
             downloadId
         );
 
-        // Wait a little before checking status
+        // ------------------------------------------
+        // Check download status
+        // ------------------------------------------
+
         setTimeout(async () => {
 
             try {
@@ -233,6 +691,7 @@ export const downloadCaseFile = async (
                     "DOWNLOAD STATUS ERROR:",
                     error
                 );
+
             }
 
         }, 3000);

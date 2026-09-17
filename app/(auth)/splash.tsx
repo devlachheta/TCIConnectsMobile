@@ -272,7 +272,7 @@ export default function Splash() {
         <View style={styles.container}>
 
             <Text style={styles.title}>
-                TCI Connect
+                TCI Dental Lab
             </Text>
 
         </View>

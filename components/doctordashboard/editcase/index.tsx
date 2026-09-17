@@ -41,6 +41,9 @@ export default function EditCase() {
   const [gender, setGender] = useState("");
   const [date, setDate] = useState<Date | null>(null);
   const [time, setTime] = useState<Date | null>(null);
+
+  const [existingCaseDocumentId, setExistingCaseDocumentId] =
+  useState<number | null>(null);
   const [deliveryDate, setDeliveryDate] =
     useState<Date | null>(null);
 
@@ -398,22 +401,20 @@ export default function EditCase() {
             "case_document"
         );
 
-      if (existingCaseDocument) {
+          if (existingCaseDocument) {
+        setExistingCaseDocumentId(existingCaseDocument.id);
+
         setCaseDocument({
-          uri:
-            existingCaseDocument.file_path ||
-            "",
-          name:
-            existingCaseDocument.file_name ||
-            "Case Document",
+          uri: existingCaseDocument.file_path || "",
+          name: existingCaseDocument.file_name || "Case Document",
           mimeType:
-            existingCaseDocument.file_type ||
-            "application/pdf",
+            existingCaseDocument.file_type || "application/pdf",
         } as DocumentPicker.DocumentPickerAsset);
 
         setCaseDocumentIsNew(false);
         setCaseDocumentProgress(100);
       } else {
+        setExistingCaseDocumentId(null);
         setCaseDocument(null);
         setCaseDocumentIsNew(false);
         setCaseDocumentProgress(0);
@@ -631,19 +632,44 @@ export default function EditCase() {
       }
     };
 
-  const removeCaseDocument =
-    () => {
-      if (caseDocument?.uri) {
-        cancelUpload(
-          caseDocument.uri
-        );
-      }
+ const removeCaseDocument = async () => {
+  try {
+    // New PDF that is currently being uploaded
+    if (caseDocumentIsNew && caseDocument?.uri) {
+      cancelUpload(caseDocument.uri);
+    }
 
-      setCaseDocument(null);
-      setCaseDocumentIsNew(false);
-      setCaseDocumentProgress(0);
-      setCaseDocumentUploading(false);
-    };
+    // Existing PDF already stored on server
+    if (
+      !caseDocumentIsNew &&
+      existingCaseDocumentId
+    ) {
+      await api.delete(
+        `/case-files/${existingCaseDocumentId}`
+      );
+
+      setExistingCaseDocumentId(null);
+    }
+
+    setCaseDocument(null);
+    setCaseDocumentIsNew(false);
+    setCaseDocumentProgress(0);
+    setCaseDocumentUploading(false);
+
+  } catch (error: any) {
+    console.log(
+      "REMOVE CASE DOCUMENT ERROR:",
+      error?.response?.data ||
+        error?.message ||
+        error
+    );
+
+    Alert.alert(
+      "Error",
+      "Unable to remove case document."
+    );
+  }
+};
 
   const uploadDigitalFile = async (
     file: DocumentPicker.DocumentPickerAsset
@@ -871,54 +897,67 @@ export default function EditCase() {
       }
     };
 
-  const removeDigitalFile = (
-    index: number
-  ) => {
-    const file =
-      uploadedFiles[index];
+    const removeDigitalFile = async (index: number) => {
+  const file = uploadedFiles[index];
 
-    if (!file) {
-      return;
+  if (!file) {
+    return;
+  }
+
+  const key = getFileKey(file);
+
+  try {
+    // Cancel if upload is still running
+    if (file.uri) {
+      cancelUpload(file.uri);
     }
 
-    const key = getFileKey(file);
+    // IMPORTANT:
+    // If upload already created a server CaseFile,
+    // delete that server file.
+    if ((file as any).serverFileId) {
+      await api.delete(
+        `/case-files/${(file as any).serverFileId}`
+      );
+    }
 
-    cancelUpload(file.uri);
-
-    setUploadedFiles(
-      (previous) =>
-        previous.filter(
-          (_, fileIndex) =>
-            fileIndex !== index
-        )
+    setUploadedFiles((previous) =>
+      previous.filter(
+        (_, fileIndex) =>
+          fileIndex !== index
+      )
     );
 
-    setDigitalFileProgress(
-      (previous) => {
-        const next = {
-          ...previous,
-        };
+    setDigitalFileProgress((previous) => {
+      const next = { ...previous };
+      delete next[key];
+      return next;
+    });
 
-        delete next[key];
-
-        return next;
-      }
-    );
-
-    setDigitalFileUploading(
-      (previous) => {
-        const next = {
-          ...previous,
-        };
-
-        delete next[key];
-
-        return next;
-      }
-    );
+    setDigitalFileUploading((previous) => {
+      const next = { ...previous };
+      delete next[key];
+      return next;
+    });
 
     setStep2Error("");
-  };
+
+  } catch (error: any) {
+    console.log(
+      "REMOVE DIGITAL FILE ERROR:",
+      error?.response?.data ||
+        error?.message ||
+        error
+    );
+
+    Alert.alert(
+      "Error",
+      "Unable to remove digital file."
+    );
+  }
+};
+
+
 
   const removeExistingFile = async (
     file: any
